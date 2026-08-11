@@ -176,7 +176,8 @@ def run(n=96, K=9, u_px=6.0, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
 
     print("all errors as % of 0.5*||y||^2;  (P0) optimum is exactly 0 by construction")
     print(f"{'r':>5} {'sep_px':>7} {'BLraw':>8} {'BLdebi':>8} {'BLpolish':>9} "
-          f"{'P0rstrt':>9} {'certgap':>9} {'K_BL':>5}", flush=True)
+          f"{'P0rstrt':>9} {'certgap':>9} {'K_BL':>5} {'absE_db':>10} {'halfyy':>10}",
+          flush=True)
     rows = []
     for r in ratios:
         spacing = r * u
@@ -243,9 +244,14 @@ def run(n=96, K=9, u_px=6.0, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
         # The target IS a sum of K Gaussians, so (P0) at N=K attains error exactly
         # 0 at the ground truth. The relaxation gap is therefore E_BL itself --
         # exact, not a bound. E_p0 is kept only as a difficulty diagnostic.
+        # NB: 0.5*||y||^2 is NOT constant across r -- overlapping same-sign atoms
+        # sum constructively, so it inflates as r falls. Percentages are therefore
+        # not comparable across rows on their own; absolute E and the energy are
+        # printed so the trend can be renormalized against a fixed reference.
         pc = lambda e: 100 * e / (0.5 * ynorm)
         print(f"{r:5.2f} {spacing*n:6.1f} {pc(E_bl):8.2f} {pc(E_db):8.2f} {pc(E_pol):9.3f} "
-              f"{pc(E_p0):9.2f} {pc(cg):9.4f} {c.size:5d}", flush=True)
+              f"{pc(E_p0):9.2f} {pc(cg):9.4f} {c.size:5d} {E_db:10.3f} {0.5*ynorm:10.2f}",
+              flush=True)
         rows.append(dict(r=r, sep_px=spacing * n, E_p0=E_p0, E_bl=E_bl, E_db=E_db,
                          E_pol=E_pol, certgap=cg, K_bl=int(c.size), ynorm=ynorm))
     return rows
