@@ -322,6 +322,39 @@ re-solve. **[A]** The transferable element is the certificate as densification c
 batched, adding many atoms per round at local maxima of $|\eta|$ — not the iteration
 schedule or the termination theorem.
 
+#### 6.1.1 The TV norm is not commensurate across scales
+
+**[A]** The fixed-kernel restriction is not merely a gap in what has been proved. Leaving it
+breaks the objective itself, and the failure is measurable.
+
+Every atom in a translation-only dictionary has the same norm, so $\lambda\sum_i|c_i|$ prices
+all atoms alike. With free covariance $\|\varphi_\theta\|$ varies: for the Gaussian family,
+$\|\varphi_\theta\|^2 = n^2\pi e^{-(u+w)}$ on an $n\times n$ grid, growing with width. A wide
+atom therefore buys more inner product per unit of penalty, and both the regularizer and the
+certificate argmax are biased toward it.
+
+**Measured** (`experiments/e2_relaxation_gap.py`, target built from 5px atoms in a 192px
+image): scanning candidate width at a *true* atom centre, the raw $\langle\varphi,y\rangle$
+rises monotonically — 18.8 at 2.5px to 105.0 at 80px — so the widest candidate wins even
+though the true atom is 5px. At a location containing **no atom**, an 80px candidate scores
+141.2, higher than anything attainable at a true centre. Normalized by $\|\varphi_\theta\|$,
+the same scan peaks exactly at the true width and reads 1.09 at the empty location.
+
+Consequences:
+
+- **The commensurate regularizer is $\sum_i |c_i|\,\|\varphi_{\theta_i}\|$**, a norm-weighted
+  TV. Equivalently, use a unit-norm dictionary. This changes the *problem*, not just the
+  solver, and any rate-regularized formulation over a scale-varying dictionary must choose
+  one or the other deliberately.
+- **[V]** The classical literature already does this: `papers/tip2006.pdf` specifies
+  generating functions of unit $L^2$ norm.
+- **[A]** GaussianImage is unaffected, having no $\ell_1$ term — but that is precisely why the
+  question has not come up in the 2D splatting literature.
+
+**[A] Empirically decisive.** Unnormalized, greedy selection at $\lambda=0$ placed its first
+atom 57px from any true centre. Normalized, it recovered all four atoms to 0.00px in position
+and to the correct width, reaching exactly 0.0000% error.
+
 ### 6.2 Conic Particle Gradient Descent
 
 **[V]** `papers/1907.10300v2.pdf` — Chizat. Discretize the measure into particles, run
@@ -745,6 +778,71 @@ evidence that greedy certificate-like encoders over this atom family were compet
 
 **[V]** `papers/gbc.pdf` gives the one atom-axis data point available: ~1024 anisotropic
 Gaussians for a recognizable natural image under a non-negative, single-channel objective.
+
+---
+
+## 12. E2 results
+
+Status: the instrument is validated and the high-separation end is measured; the
+low-separation rows that decide §7 are still outstanding. Implementation in
+`experiments/e2_relaxation_gap.py`.
+
+### 12.1 What is established
+
+**[V]** Targets are sums of $K$ Gaussians, so the (P0) optimum at $N=K$ is exactly 0 and the
+relaxation gap is the BLASSO error itself. Fixed width in pixels, centre spacing swept, so
+$r$ = separation / width is the only variable. Unit-norm dictionary (§6.1.1); $L^2$; single
+channel; truncated $\Theta$ (§5.1).
+
+| $r$ | sep (px) | BL raw | BL debiased | BL polished | certgap | $K_{BL}$ |
+|---|---|---|---|---|---|---|
+| 30 | 150 | 0.01 | 0.00 | 0.000 | 0.0017 | 4 |
+| 15 | 75 | 0.01–0.02 | 0.00 | 0.000 | ~0 | 4 |
+
+Percentages of $\tfrac12\|y\|^2$. Absolute debiased error 0.000 in both.
+
+**Exact support recovery above the threshold**, as predicted. r=30 reproduced identically
+across two launches; r=15 holds on two independent random instances.
+
+**[A] The threshold is conservative.** §7 derives ~28–35 widths from Theorem 5.1. Recovery is
+still exact at $r=15$, half of that, consistent with the constants being proof artefacts.
+Where it actually breaks is not yet known.
+
+**[A] Certificate-driven placement vs random initialization**, all else equal: greedy at
+$\arg\max_\theta|\eta(\theta)|$ recovers four atoms exactly; best-of-restarts scores
+66–100% error on the same instances. Direct support for I4, independent of §5.
+
+### 12.2 What the certificate did
+
+Three times, and this is the strongest practical argument for §5:
+
+1. **Separated relaxation loss from solver failure** — a certified gap of $5\times10^{-5}$
+   alongside 20% reconstruction error means the $\ell_1$ solution is genuinely far from the
+   $\ell_0$ optimum, not that the optimizer stalled.
+2. **Detected its own invalidity** — a *negative* duality gap is impossible for a valid bound,
+   and flagged that the grid-based supremum was underestimating $\max|\eta|$, leaving the
+   rescaled residual dual-infeasible. A heuristic stopping rule fails silently here.
+3. **Exposed the norm bias (§6.1.1)** — a certified-converged solve that still left 61% error
+   is a contradiction, which forced attention to the dictionary rather than the optimizer.
+
+### 12.3 Methodological warnings
+
+**[A]** §11's description of E2 understates the difficulty. Three confounds were invisible in
+design and obvious only in data:
+
+- **Resolution tracked overlap.** Varying width to control separation also changed how well
+  atoms were resolved; every method improved together, including the control. Fix: hold width
+  fixed in pixels, vary spacing.
+- **The normalization inflates.** $\tfrac12\|y\|^2$ grows ~4× as atoms merge, because
+  same-sign atoms sum constructively, so percentages are not comparable across rows. Report
+  absolute error too.
+- **The control fails at sparsity.** Random-restart (P0) finds nothing when atoms are small
+  and far apart, so it is uninformative exactly where the theory is sharpest. Certificate-
+  driven greedy at $\lambda=0$ is a strictly better (P0) reference.
+
+**[A]** Two interpretations were proposed and withdrawn: that dense configurations are
+intrinsically easier to approximate, and that certification degrades with coherence. Both
+were artefacts — the first of the norm bias, the second of a single outlier row.
 
 ---
 
