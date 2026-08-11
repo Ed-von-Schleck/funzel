@@ -800,12 +800,25 @@ channel; truncated $\Theta$ (§5.1).
 | 15 | 75 | 0.01–0.02 | 0.00 | 0.000 | ~0 | 4 |
 | 8 | 40 | 0.02 | 0.00 | 0.000 | ~0 | 4 |
 | 4 | 20 | 53.5 / 61.6 | **21.5 / 22.9** | 0.4 / 13.0 | 0.002–0.034 | 4 |
+| 2 | 10 | 8.8 / 8.9 | **4.0 / 4.7** | 0.5 / 1.8 | 0.002–0.017 | 3–4 |
 
 Percentages of $\tfrac12\|y\|^2$; two independent instances per row. Absolute debiased error
 is 0.000 at $r \ge 8$.
 
-**Exact support recovery down to $r=8$**, then a sharp transition. The gap is not a gradual
-degradation: 0.00 at $r=8$, ~22% at $r=4$, replicated across instances.
+**Exact support recovery down to $r=8$**, then a sharp transition, then partial recovery.
+The gap is **non-monotone**: 0.00 at $r=8$, ~22% at $r=4$, ~4% at $r=2$, each replicated on
+two independent instances. Absolute error falls alongside the percentage from $r=4$ to $r=2$
+(35853 to 18677), so this is not the energy-normalization effect of §12.3.
+
+**[A] Recovery difficulty and approximation difficulty peak at different separations.** The
+natural reading: at wide separation recovery succeeds outright; at heavy overlap the
+representation becomes redundant, so many atom sets reconstruct the signal well and
+approximation is easy *because* recovery is hopeless; in between, recovery has failed and
+redundancy has not yet arrived. If this holds at $r=1$, image encoding sits past the
+difficult region rather than inside it, and §7's conclusion — that operating outside the
+recovery theory matters — is considerably weakened. Note that an earlier version of this
+reading was withdrawn when its supporting evidence proved to be the §6.1.1 artefact; it is
+reinstated here on corrected-solver data where absolute and relative measures agree.
 
 **[A] The theorem's threshold is loose, but a real breakdown exists.** §7 derives ~28–35
 widths from Theorem 5.1. Recovery is exact at $r=8$, so the sufficient condition overstates
