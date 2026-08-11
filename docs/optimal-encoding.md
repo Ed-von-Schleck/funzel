@@ -39,8 +39,14 @@ $$\min_{m \in \mathcal{M}(\Theta)} \tfrac12 \|\Phi m - I\|^2 + \lambda |m|(\Thet
 **[V]** This is the BLASSO exactly as stated in `papers/1811.06416v1.pdf`. $|m|(\Theta)$ is
 the total variation norm; for $m = \sum_i c_i\delta_{\theta_i}$ it equals $\sum_i|c_i|$.
 
-Convex — infinite-dimensional but convex. No spurious local minima, no permutation
-symmetry. $N$ is not a parameter; it emerges from $\lambda$.
+Convex — infinite-dimensional but convex. No spurious local minima, and no permutation
+symmetry, since a measure has no ordering. $N$ is not a parameter; it emerges from $\lambda$.
+
+**[A]** The symmetry claim holds for the *formulation*, not for any algorithm. Every
+practical method discretizes the measure into labelled particles, which reintroduces the $N!$
+symmetry in the discretized landscape. What the measure view buys is that the symmetry is an
+artefact of the parameterization rather than of the problem — useful for analysis, not
+something the optimizer stops seeing.
 
 **(P∞) Achievable rate.** How fast can error decay with $N$ for a given image class? (§3)
 
@@ -80,7 +86,12 @@ $c_n$ and opacity $o_n$ are both learnable and merge them into a single coeffici
 $$C_i = \sum_{n\in N} c'_n \exp(-\sigma_n) \tag{Eq. 7}$$
 
 No sorting, no accumulated transparency, no separate opacity, no normalization by
-accumulated weight, no clamping in the render path.
+accumulated weight.
+
+**[A] Scope of this check:** verified from the paper's rendering equation, not from the
+released CUDA kernel. An output clamp to $[0,1]$ before the loss, or any activation on
+$c'_n$, would break linearity at saturation without appearing in Eq. 7. Worth confirming
+against the implementation before relying on it.
 
 **[A]** This is exactly $\Phi m$ with $m = \sum_n c'_n \delta_{\theta_n}$,
 $\theta = (\mu,\Sigma)$, linear in $c'_n$. The precondition holds.
@@ -162,7 +173,13 @@ richness, but not evidence that real images live in $\mathcal{C}^\alpha$ for use
 theorem. Curvelets achieve $O(N^{-1}(\log N)^{3/2})$; Gaussian mixtures achieve the same.
 This is a genuine statement about an independently-defined image class.
 
-**Three limits on what follows.**
+**[A] It also bounds the wrong objective.** The theorem is an $N$-term bound with
+unconstrained amplitudes — a statement about (P0). (P$\lambda$) additionally penalizes
+$\sum_i|c_i|$, so the rate does not transfer without control of the amplitude scale of the
+approximant, which the theorem does not provide. And it is stated in $L^2(\mathbb{R}^2)$,
+whereas encoding is on a finite pixel grid.
+
+**Three further limits on what follows.**
 
 1. **Asymptotic, with unquantified $C_f$.** At $N=10^3$–$10^5$ — the operating regime —
    asymptotic rates with unknown constants constrain very little.
@@ -221,12 +238,28 @@ position and a covariance.
 **[A] Why these two survive where the rest of the theory does not (§7).** Both are
 consequences of convex duality for a TV-regularized problem with a bounded linear $\Phi$.
 They need no condition on the kernel, no separation between atoms, and no non-degeneracy.
-$\|\varphi_\theta\|$ is uniformly bounded for Gaussians, so $\Phi$ is bounded and the
-duality argument applies directly.
+$\|\varphi_\theta\|$ is uniformly bounded for Gaussians, so $\Phi$ is bounded and the duality
+argument applies.
 
-This matters because §7 shows that almost everything else in the BLASSO literature is
-conditioned on a regime that image encoding is not in. The certificate is the part that
-transfers.
+### 5.1 The certificate needs compactness too — but less of it
+
+**[A]** The test is a supremum over $\Theta$, so it must be attained and computable. **[V]**
+SFW assumes exactly this, taking the maximum of $|\eta^{[k]}|$ *"over the compact domain $X$"*
+by grid search plus Newton.
+
+So the certificate is not free of the topological requirement that defeats CPGD in §6.2. The
+difference is what kind of compactness each needs:
+
+| | requires | truncating the scale range gives |
+|---|---|---|
+| Certificate (§5) | $\Theta$ compact, $\eta$ continuous | ✔ satisfied |
+| CPGD (A1) | $\Theta$ compact **and boundaryless** | ✘ boundary introduced |
+
+Bounding positions to the image and log-scales to $[\log s_{\min},\log s_{\max}]$ yields a
+compact set with boundary. That is enough to evaluate and certify, and not enough for the
+Riemannian gradient-flow analysis. The distinction is real, but it means the certificate
+certifies optimality **for (P$\lambda$) restricted to that truncated $\Theta$**, not for the
+unrestricted problem. Any reported gap must state the truncation.
 
 **[A] Scope.** Both are statements about (P$\lambda$) under $L^2$ loss for scalar atoms.
 Neither certifies (P0) (§1.1), and neither survives a change of loss (§2.2).
@@ -457,10 +490,30 @@ with $t$ the means and $u$ the standard deviations. The first term is centre sep
 normalized by **combined width**. Guarantees are stated on "near regions" — balls of radius
 $r_e$ in this semi-distance around each true component — versus a complementary "far region".
 
-**[A] Two atoms are at semi-distance of order 1 when their centres differ by roughly their
-combined width.** A dense image tiling places neighbouring Gaussians exactly there, by
-construction: that is what tiling *is*. So image encoding sits at the bottom of the
-separation scale, not above the threshold the theorems require.
+**[V] The threshold is explicit.** Theorem 5.1 requires, for $\mathcal{X}$ compact in
+$\mathbb{R}^d\times[u_{\min},u_{\max}]^d$,
+
+$$\min_{i\neq j} d_g(x_i^0,x_j^0) \ \ge\ \max\left\{\sqrt{u_{\max}^2+\tfrac14}\,\tfrac{0.3025^2}{d}\tfrac{(2u_{\max}^2+\tau^2)}{u_{\min}}\Big(\Delta+\tfrac{0.3025}{\sqrt d}\Big),\ \tfrac{2u_{\max}}{u_{\min}}\Delta\right\} + \sqrt{d\ln\tfrac{u_{\max}^2}{u_{\min}^2}}$$
+
+with $\Delta = 2\sqrt{11.9 + 3\ln(d+6.62) + \ln(s-1)}$.
+
+**[A] Evaluated for $d=2$, equal widths $u$, and $s$ atoms**, $\Delta$ is almost independent
+of $s$ (it enters logarithmically): $\Delta \approx 9.1$ at $s=10$ and $\approx 10.5$ at
+$s=10^4$, giving a required semi-distance of $\approx 18$–$21$. Inverting the semi-distance
+for two equal-width Gaussians, and noting it has a floor of $\approx 1.2$ from its
+log term even at coincident centres, this corresponds to a **centre separation of roughly
+28–35 times the Gaussian width**.
+
+A dense image tiling places adjacent atoms at 1–2 widths, because that is what tiling is. The
+shortfall is a factor of order 20 in centre distance, or several hundred in squared
+semi-distance.
+
+**[A] Two caveats, both in the same direction.** This is a *sufficient* condition arising
+from one certificate construction, so the true threshold is likely lower — the constants
+$11.9$ and $0.3025$ look like proof artefacts. And the setting is density estimation from
+i.i.d. samples, so the numbers are indicative rather than directly transferable. But the
+margin is large enough that an order-of-magnitude improvement in the constants would still
+leave image encoding well inside the unsupported regime.
 
 **What this invalidates at image densities:**
 
@@ -580,8 +633,8 @@ grows like $1/s$. So the heuristic gives $\beta/\alpha \propto s$: **the positio
 should scale with the atom's spatial extent.** This is not "positions move slowly"; it is a
 per-atom, scale-dependent coupling.
 
-**[A]** 3DGS scales its position learning rate by scene extent, which is the same idea
-arrived at empirically. Worth checking whether a *per-atom* version — step-size proportional
+**[U]** 3DGS is widely reported to scale its position learning rate by scene extent, which
+would be the same idea arrived at empirically; I have not checked this against its code. Worth checking whether a *per-atom* version — step-size proportional
 to each Gaussian's own scale rather than a global constant — outperforms the global one.
 That is a cheap, self-contained experiment and the most directly actionable item here.
 
@@ -632,10 +685,25 @@ same (P$\lambda$) objective*. Report the certified distance to optimum for each.
 because everything is scored on one objective; note that existing encoders are not trying to
 minimize it, so this measures representational distance, not encoder failure.
 
-**E2 — The relaxation gap.** On instances small enough for near-exhaustive search over (P0)
-— tiny images, $N$ of order 10 — compare the best (P0) solution found to the (P$\lambda$)
-solution at matched support size. Isolates the $\ell_1/\ell_0$ gap from encoder
-suboptimality, which E1 cannot. Small, and it decides how much E1 is worth.
+**E2 — The relaxation gap, *as a function of overlap*.** The variable that matters is
+separation, not $N$. A small-$N$ well-separated instance sits in exactly the regime where §7
+says the gap is provably zero, so measuring there would confirm the theory and say nothing
+about image encoding.
+
+Design: synthesize targets as sums of $K$ Gaussians whose centre separation is swept from
+well-separated (order 10 widths) down to dense tiling (order 1 width), holding $K$ and the
+widths fixed. At each separation, compare the best (P0) fit at $N=K$ (best of many restarts)
+against the (P$\lambda$) solution with $\lambda$ tuned to support size $K$, both under $L^2$
+on a truncated $\Theta$ (§5.1).
+
+Prediction from §7: the gap is negligible when separated and grows as overlap increases. A
+flat curve would falsify §7's practical relevance and make the certificate far more useful
+than §7 currently allows. A steeply growing curve confirms that certifying (P$\lambda$) says
+little about (P0) at image densities.
+
+Note what this cannot do: "best of many restarts" is not a proof of (P0) optimality, so the
+measured gap is an *upper* bound on the true relaxation gap. It can show the gap is large; it
+cannot show it is small.
 
 **E3 — Certificate-driven densification.** Batched $\arg\max_\theta|\eta(\theta)|$ over a
 coarse covariance grid, replacing error-magnitude sampling. Compare at equal $N$ and equal
