@@ -13,8 +13,9 @@ Not a compression document. Rate, entropy coding and decode speed are out of sco
 - **[A]** my analysis, reasoning from **[V]** facts
 - **[A←U]** my analysis, resting on at least one **[U]** premise
 
-`[A←U]` claims are the fragile ones. Several load-bearing arguments are `[A←U]`, including
-the applicability precondition in §2.1.
+`[A←U]` claims are the fragile ones. The largest remaining dependency is §6.2: CPGD's
+assumptions (A1–5) have not been checked against the Gaussian dictionary, and §8 rests on
+them.
 
 ---
 
@@ -64,43 +65,48 @@ grounds that it is equivalent to (P0), because that is unestablished.
 Three structural requirements. The first is probably satisfiable, the second is a real
 constraint, the third is unresolved.
 
-### 2.1 Linearity of the forward model — **[A←U]**
+### 2.1 Linearity of the forward model — satisfied
 
 The measure formulation requires $\Phi$ linear in the atom coefficients.
 
-**[U]** GaussianImage's rasterizer is reported to replace depth sorting and $\alpha$-blending
-with *accumulated summation*: each pixel is the plain weighted sum of contributing
-Gaussians. **This is from search summaries; the GaussianImage paper is not in `papers/` and
-has not been read.** It is the single most load-bearing unverified fact in this document and
-should be checked first.
+**[V]** `papers/2403.08551v5.pdf` §3.2. GaussianImage replaces 3D GS's sorted
+$\alpha$-blending with accumulated summation. Starting from
+$C_i = \sum_n c_n \alpha_n T_n$ with $\alpha_n = o_n\exp(-\sigma_n)$ and
+$\sigma_n = \tfrac12 d_n^T\Sigma^{-1}d_n$, they fold $T_n$ into $o_n$, then note that colour
+$c_n$ and opacity $o_n$ are both learnable and merge them into a single coefficient:
 
-**[A←U]** If accurate, then
+$$C_i = \sum_{n\in N} c'_n \exp(-\sigma_n) \tag{Eq. 7}$$
 
-$$I(p) = \sum_i c_i\, G_{\theta_i}(p) = \Phi m, \qquad m = \sum_i c_i \delta_{\theta_i}$$
+No sorting, no accumulated transparency, no separate opacity, no normalization by
+accumulated weight, no clamping in the render path.
 
-is linear in the $c_i$ with atoms indexed by $\theta$, and 2D splatting with accumulated
-summation is a BLASSO forward model.
+**[A]** This is exactly $\Phi m$ with $m = \sum_n c'_n \delta_{\theta_n}$,
+$\theta = (\mu,\Sigma)$, linear in $c'_n$. The precondition holds.
 
-**[A]** 3D Gaussian splatting is not, regardless: $\alpha$-blending is nonlinear in the
-primitives because of occlusion. So none of this transfers to 3D. That part does not depend
-on the unverified fact.
+**[A]** The atom family is also *identical* to the one in §3: GaussianImage uses
+$\exp(-\tfrac12 d^T\Sigma^{-1}d)$, Erb–Hangelbroek–Ron use $e^{-|A(x-k)|^2}$, and
+$A^TA = \tfrac12\Sigma^{-1}$ ranges over all SPD matrices as $A$ ranges over $GL(2,\mathbb{R})$.
+Same set of functions.
 
-### 2.2 The loss must be Hilbertian
+**[A]** 3D Gaussian splatting does not satisfy this: $\alpha$-blending is nonlinear in the
+primitives because of occlusion. None of this transfers to 3D.
 
-The certificate is $\eta_\lambda = \Phi^* p_\lambda$ — it requires an adjoint, hence an
-inner-product structure. $L^2$ works. **L1 and SSIM do not.**
+### 2.2 The loss must be Hilbertian — satisfied for the main baseline
 
-**[A]** Consequences:
+The certificate is $\eta_\lambda = \Phi^*p_\lambda$; it requires an adjoint, hence an
+inner-product structure. $L^2$ works. **SSIM and L1 do not.**
 
-- A certified encoder must optimize $L^2$. There is no certificate for the L1+SSIM
-  objective that 2D GS encoders actually use.
-- Published 2D GS quality numbers are therefore not directly comparable to anything
-  produced here, and re-running baselines under $L^2$ is necessary for any honest
-  comparison.
-- Whether $L^2$-optimal encodings are *perceptually* acceptable at low atom counts is a
-  separate empirical question this framework cannot answer.
+**[V]** GaussianImage's representation objective is $L^2$: *"we employ the L2 loss function
+to optimize the Gaussian parameters."* So the requirement is met by the primary baseline
+rather than being a constraint imposed on it.
 
-This is a genuine cost of the approach, not a technicality.
+**[A]** It is still a real restriction on the family of methods this can cover. **[U]**
+Image-GS optimizes a perceptual objective (its repo depends on `fused-ssim`), and methods
+with SSIM or L1 terms admit no certificate. Any comparison across that boundary requires
+re-running under $L^2$.
+
+Whether $L^2$-optimal encodings are perceptually acceptable at low atom counts is a separate
+empirical question this framework cannot answer.
 
 ### 2.3 Colour — unresolved
 
@@ -217,6 +223,11 @@ Neither certifies (P0) (§1.1), and neither survives a change of loss (§2.2).
 distortion-driven growth, positional-gradient magnitude — are surrogates for $\eta_\lambda$,
 and none of them search the covariance dimension. They choose *where* and let SGD find the
 shape. The certificate chooses both in one argmax.
+
+**[V]** GaussianImage has no densification at all: it *"discard[s] adaptive density
+control"*, reasoning that *"there is no so-called empty area in the 2D image space"*, and
+fixes the atom count in advance. So in the baseline case the comparison is not
+certificate-versus-heuristic but certificate-versus-nothing.
 
 ---
 
@@ -403,11 +414,22 @@ smaller $\bar H(\nu^\star,\rho)$ improves the bounds, so the indicated design is
 geometry-informed $\rho$ that remains **strictly positive everywhere** — neither uniform nor
 concentrated.
 
-**[A] Caveat against overreading this.** Uniform-random initialization over positions and
-covariances is *not* the reference measure the theorem asks for either: $\mathrm{SPD}(2)$ is
-non-compact and a bounded uniform sample over scale parameters is not a dense sample of
-$\Theta$. Existing initializations are all some distance from the hypothesis; none of them
-satisfies it.
+**[A] Caveat against overreading this.** Uniform-random initialization does not satisfy the
+hypothesis either. **[V]** GaussianImage initializes covariance parameters and colour
+coefficients from a uniform distribution and positions as $\mu = \mathrm{atanh}(2\,\mathrm{rand}(2)-1)$,
+and imposes a lower bound on the scaling elements to stop covariances collapsing.
+
+**[A]** Two problems. First, the uniform is over a *chart* — either Cholesky factors or
+$(R,S)$ rotation–scaling, and **[V]** GaussianImage offers both and notes the decomposition
+is not unique. The pushforward of a uniform density on Cholesky coordinates is not the
+pushforward of a uniform on $(R,S)$, and neither is a canonical measure on $\mathrm{SPD}(2)$.
+The reference measure $\rho$ is therefore an artefact of parameterization. Second, the scale
+lower bound truncates $\Theta$, which helps with non-compactness but is not the same as
+sampling $\rho$ densely.
+
+So no existing initialization satisfies the hypothesis, and *which chart you parameterize
+covariance in silently determines $\rho$*. That is a concrete, checkable design question
+that current work does not appear to treat as one.
 
 **I2 — Weight updates should be multiplicative. *(moderate)*** The Fisher-Rao component acts
 multiplicatively on mass. Additive Adam on amplitudes does not implement this. Directly
@@ -456,10 +478,6 @@ None of these have numbers yet, and several gate the programme.
 ## 10. Programme
 
 Ordered so that the results that could invalidate the rest come first.
-
-**E0 — Verify §2.1.** Read the GaussianImage paper; confirm the forward model is genuinely
-linear with no hidden nonlinearity (clamping, normalization, tone mapping). One afternoon.
-If it fails, most of this document does not apply.
 
 **E1 — Certified suboptimality under (P$\lambda$).** Fix $L^2$, single channel. Run a BLASSO
 solver to a certified duality gap. Separately, evaluate existing encoders' outputs *under the
@@ -529,10 +547,11 @@ PDFs in `papers/`; citations in `papers/README.md`.
 | **[V]** | `BLdG+16.pdf` | Hessian-based anisotropy, Bregman diagrams |
 | **[V]** | `gbc.pdf` | CCVT + EM precedent, ~1024 kernels, initialization comparison |
 | **[V]** | `tip2006.pdf` | matching pursuit reference, atom definition |
+| **[V]** | `2403.08551v5.pdf` | Eq. 7 linearity, $L^2$ loss, no density control, initialization |
 
-**Not read.** GaussianImage (§2.1, the key applicability premise); SteepGS; Zador /
-quantization theory; anisotropic mesh adaptation; sparse-approximation hardness; group
-BLASSO; Structure-Guided Allocation. All **[U]**.
+**Not read.** SteepGS; Zador / quantization theory; anisotropic mesh adaptation;
+sparse-approximation hardness; group BLASSO; Structure-Guided Allocation; Image-GS. All
+**[U]**.
 
 **Closest theoretical result to the target problem.** **[V]**
 `papers/2509.12889v5.pdf` extends BLASSO to Gaussian mixtures with component-specific unknown
