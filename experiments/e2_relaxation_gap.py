@@ -1,5 +1,9 @@
 """E2: the (P-lambda)/(P0) relaxation gap as a function of atom overlap.
 
+NOTE: a negative certgap is not a bug in the duality bound, it is evidence that
+the grid+refine supremum underestimated max|eta|, leaving p dual-infeasible.
+It is printed raw rather than clamped, as a diagnostic on the certificate.
+
 Targets are sums of K anisotropic 2D Gaussians on a fixed centre grid; the only
 swept variable is the width u, so the separation ratio r = (centre spacing)/u
 runs from well-separated to densely overlapping.
@@ -101,7 +105,7 @@ def shape_bank(log_s, aspects, rots):
     return np.array(out)
 
 
-def eta_sup(resid_img, bank, n, X, Y, n_refine=3, nm_iter=120):
+def eta_sup(resid_img, bank, n, X, Y, n_refine=8, nm_iter=200):
     """max_theta |<phi_theta, resid>| over truncated Theta, grid + local refine."""
     best = []
     for (u, v, w) in bank:
@@ -159,23 +163,26 @@ def blasso_fw(y, n, X, Y, lam, bank, bounds_lo, bounds_hi, max_atoms=25, tol=1e-
 
 
 # ------------------------------------------------------------------ experiment
-def run(n=96, K=9, spacing=0.15, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
-        n_restarts=24, seed=0):
+def run(n=96, K=9, u_px=6.0, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
+        n_restarts=6, seed=0):
+    """u_px is held FIXED so pixel resolution is constant across the sweep;
+    the centre spacing is r*u, so r is the only thing that varies."""
     X, Y = _grid(n)
     rng = np.random.default_rng(seed)
-    gx = 0.5 + spacing * np.array([-1, 0, 1])
-    cxs, cys = np.meshgrid(gx, gx, indexing="ij")
-    centres = np.stack([cxs.ravel(), cys.ravel()], 1)[:K]
+    u = u_px / n
 
     bounds_lo = np.array([0.0, 0.0, np.log(1.0), -50.0, np.log(1.0)])
     bounds_hi = np.array([1.0, 1.0, np.log(200.0), 50.0, np.log(200.0)])
 
     print("all errors as % of 0.5*||y||^2;  (P0) optimum is exactly 0 by construction")
-    print(f"{'r':>5} {'u_px':>6} {'BLraw':>8} {'BLdebi':>8} {'BLpolish':>9} "
+    print(f"{'r':>5} {'sep_px':>7} {'BLraw':>8} {'BLdebi':>8} {'BLpolish':>9} "
           f"{'P0rstrt':>9} {'certgap':>9} {'K_BL':>5}", flush=True)
     rows = []
     for r in ratios:
-        u = spacing / r
+        spacing = r * u
+        gx = 0.5 + spacing * np.array([-1, 0, 1])
+        cxs, cys = np.meshgrid(gx, gx, indexing="ij")
+        centres = np.stack([cxs.ravel(), cys.ravel()], 1)[:K]
         # ground truth: mild anisotropy + random orientation, unit amplitudes
         th_gt = []
         for (cx, cy) in centres:
@@ -203,12 +210,12 @@ def run(n=96, K=9, spacing=0.15, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
         E_p0 = best
 
         # ---- (P-lambda): bisect lambda to support size K
-        bank = shape_bank(np.log(u * np.array([0.5, 0.8, 1.25, 2.0])),
-                          [0.5, 0.75, 1.0], np.linspace(0, np.pi, 4, endpoint=False))
+        bank = shape_bank(np.log(u * np.array([0.4, 0.6, 0.85, 1.2, 1.7, 2.4])),
+                          [0.4, 0.6, 0.8, 1.0], np.linspace(0, np.pi, 6, endpoint=False))
         sup0, _ = eta_sup(y.reshape(n, n), bank, n, X, Y)
         lo, hi = 1e-4 * sup0, sup0
         chosen = None
-        for _ in range(7):
+        for _ in range(6):
             lam = np.sqrt(lo * hi)
             c, th, cg, primal = blasso_fw(y, n, X, Y, lam, bank, bounds_lo, bounds_hi)
             if chosen is None or abs(c.size - K) < abs(chosen[0].size - K):
@@ -236,9 +243,9 @@ def run(n=96, K=9, spacing=0.15, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
         # 0 at the ground truth. The relaxation gap is therefore E_BL itself --
         # exact, not a bound. E_p0 is kept only as a difficulty diagnostic.
         pc = lambda e: 100 * e / (0.5 * ynorm)
-        print(f"{r:5.2f} {u*n:6.1f} {pc(E_bl):8.2f} {pc(E_db):8.2f} {pc(E_pol):9.3f} "
+        print(f"{r:5.2f} {spacing*n:6.1f} {pc(E_bl):8.2f} {pc(E_db):8.2f} {pc(E_pol):9.3f} "
               f"{pc(E_p0):9.2f} {pc(cg):9.4f} {c.size:5d}", flush=True)
-        rows.append(dict(r=r, u_px=u * n, E_p0=E_p0, E_bl=E_bl, E_db=E_db,
+        rows.append(dict(r=r, sep_px=spacing * n, E_p0=E_p0, E_bl=E_bl, E_db=E_db,
                          E_pol=E_pol, certgap=cg, K_bl=int(c.size), ynorm=ynorm))
     return rows
 
