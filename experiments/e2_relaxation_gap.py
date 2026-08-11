@@ -46,7 +46,15 @@ def atoms(theta, X, Y):
     # M d = (eu*dx + v*dy, ew*dy);  q = 0.5 |M d|^2
     m0 = eu * dx + v * dy
     m1 = ew * dy
-    return np.exp(-0.5 * (m0 * m0 + m1 * m1)), m0, m1, dx, dy
+    # UNIT-NORM dictionary. ||phi_theta||^2 = n^2 * pi * exp(-(u+w)) analytically,
+    # so the theta-dependent part of the norm is exp(-(u+w)/2); the constant
+    # factor is global and folds into lambda. Without this the l1 penalty is not
+    # commensurate across scales: a wide atom has a large norm and so buys more
+    # inner product per unit of penalty, and argmax|eta| drifts to broad atoms
+    # over empty regions. Classical BLASSO never sees this because its dictionary
+    # is translation-only with a fixed kernel, hence of constant norm.
+    z = np.exp(0.5 * (theta[:, 2:3] + theta[:, 4:5]))
+    return z * np.exp(-0.5 * (m0 * m0 + m1 * m1)), m0, m1, dx, dy
 
 
 def render(c, theta, X, Y):
@@ -70,7 +78,9 @@ def loss_grad(z, y, X, Y, lam, eps=1e-6):
     dq_du = m0 * dx * np.exp(theta[:, 2:3])
     dq_dv = m0 * dy
     dq_dw = m1 * dy * np.exp(theta[:, 4:5])
-    gth = np.stack([-(cg * d) @ r for d in (dq_dcx, dq_dcy, dq_du, dq_dv, dq_dw)], axis=1)
+    # normalisation contributes +1/2 on the two log-scale components
+    gth = np.stack([-(cg * d) @ r for d in (dq_dcx, dq_dcy,
+                                            dq_du - 0.5, dq_dv, dq_dw - 0.5)], axis=1)
     if lam > 0:
         s = np.sqrt(c * c + eps * eps)
         f += lam * s.sum()
@@ -147,7 +157,7 @@ def blasso_fw(y, n, X, Y, lam, bank, bounds_lo, bounds_hi, max_atoms=25, tol=1e-
         c = np.concatenate([c, [0.0]])
         th = np.vstack([th, arg])
         c, th, _ = fit_fixed_support(c, th, y, X, Y, lam, bounds_lo, bounds_hi,
-                                    maxiter=150)
+                                    maxiter=500)
         keep = np.abs(c) > 1e-4 * max(1.0, np.abs(c).max())
         c, th = c[keep], th[keep]
         if c.size == 0:
