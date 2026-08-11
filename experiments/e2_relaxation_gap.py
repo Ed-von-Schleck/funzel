@@ -101,7 +101,7 @@ def shape_bank(log_s, aspects, rots):
     return np.array(out)
 
 
-def eta_sup(resid_img, bank, n, X, Y, n_refine=6):
+def eta_sup(resid_img, bank, n, X, Y, n_refine=3, nm_iter=120):
     """max_theta |<phi_theta, resid>| over truncated Theta, grid + local refine."""
     best = []
     for (u, v, w) in bank:
@@ -124,13 +124,13 @@ def eta_sup(resid_img, bank, n, X, Y, n_refine=6):
     for cand in best[:n_refine]:
         p0 = np.array(cand[1:])
         r = minimize(negcorr, p0, method="Nelder-Mead",
-                     options={"maxiter": 300, "xatol": 1e-4, "fatol": 1e-8})
+                     options={"maxiter": nm_iter, "xatol": 1e-4, "fatol": 1e-8})
         if -r.fun > top:
             top, arg = -r.fun, r.x
     return top, arg
 
 
-def blasso_fw(y, n, X, Y, lam, bank, bounds_lo, bounds_hi, max_atoms=40, tol=1e-3):
+def blasso_fw(y, n, X, Y, lam, bank, bounds_lo, bounds_hi, max_atoms=25, tol=1e-3):
     """Sliding Frank-Wolfe. Returns (c, theta, certified duality gap)."""
     c = np.zeros(0)
     th = np.zeros((0, NP_ATOM))
@@ -142,7 +142,8 @@ def blasso_fw(y, n, X, Y, lam, bank, bounds_lo, bounds_hi, max_atoms=40, tol=1e-
             break
         c = np.concatenate([c, [0.0]])
         th = np.vstack([th, arg])
-        c, th, _ = fit_fixed_support(c, th, y, X, Y, lam, bounds_lo, bounds_hi)
+        c, th, _ = fit_fixed_support(c, th, y, X, Y, lam, bounds_lo, bounds_hi,
+                                    maxiter=150)
         keep = np.abs(c) > 1e-4 * max(1.0, np.abs(c).max())
         c, th = c[keep], th[keep]
         if c.size == 0:
@@ -171,7 +172,7 @@ def run(n=96, K=9, spacing=0.15, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
 
     print("all errors as % of 0.5*||y||^2;  (P0) optimum is exactly 0 by construction")
     print(f"{'r':>5} {'u_px':>6} {'BLraw':>8} {'BLdebi':>8} {'BLpolish':>9} "
-          f"{'P0rstrt':>9} {'certgap':>9} {'K_BL':>5}")
+          f"{'P0rstrt':>9} {'certgap':>9} {'K_BL':>5}", flush=True)
     rows = []
     for r in ratios:
         u = spacing / r
@@ -189,7 +190,7 @@ def run(n=96, K=9, spacing=0.15, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
         y = render(c_gt, th_gt, X, Y)
         ynorm = y @ y
 
-        # ---- (P0): best of restarts at exactly K atoms
+        # ---- (P0): best of restarts at exactly K atoms (difficulty diagnostic only)
         best = np.inf
         for _ in range(n_restarts):
             th0 = np.column_stack([
@@ -207,7 +208,7 @@ def run(n=96, K=9, spacing=0.15, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
         sup0, _ = eta_sup(y.reshape(n, n), bank, n, X, Y)
         lo, hi = 1e-4 * sup0, sup0
         chosen = None
-        for _ in range(9):
+        for _ in range(7):
             lam = np.sqrt(lo * hi)
             c, th, cg, primal = blasso_fw(y, n, X, Y, lam, bank, bounds_lo, bounds_hi)
             if chosen is None or abs(c.size - K) < abs(chosen[0].size - K):
@@ -236,7 +237,7 @@ def run(n=96, K=9, spacing=0.15, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
         # exact, not a bound. E_p0 is kept only as a difficulty diagnostic.
         pc = lambda e: 100 * e / (0.5 * ynorm)
         print(f"{r:5.2f} {u*n:6.1f} {pc(E_bl):8.2f} {pc(E_db):8.2f} {pc(E_pol):9.3f} "
-              f"{pc(E_p0):9.2f} {pc(cg):9.4f} {c.size:5d}")
+              f"{pc(E_p0):9.2f} {pc(cg):9.4f} {c.size:5d}", flush=True)
         rows.append(dict(r=r, u_px=u * n, E_p0=E_p0, E_bl=E_bl, E_db=E_db,
                          E_pol=E_pol, certgap=cg, K_bl=int(c.size), ynorm=ynorm))
     return rows
