@@ -1,204 +1,226 @@
 # Optimal encoding of images as 2D Gaussians
 
-Research notes. Goal: given a target image, find the *best possible* representation as a
-set of 2D Gaussians — and know how far from best any given representation is.
+Research notes. Goal: given a target image, find the best possible representation as a set
+of 2D Gaussians, and know how far from best any given representation is.
 
-This is not a compression document. Rate, entropy coding, decode speed and codec
-benchmarks are out of scope except where they bear on encoder quality.
+Not a compression document. Rate, entropy coding and decode speed are out of scope.
 
-Every claim below is tagged with its verification status:
+## Status tags
 
-- **[V]** verified against the primary source in `papers/`
-- **[V*]** verified, with a caveat stated inline
-- **[A]** my analysis — reasoning from verified facts, not itself cited
-- **[U]** unverified; from search summaries only, primary source not read
+- **[V]** verified against a primary source in `papers/`
+- **[V\*]** verified, with a caveat stated inline
+- **[U]** unverified — from search summaries only, primary source not read
+- **[A]** my analysis, reasoning from **[V]** facts
+- **[A←U]** my analysis, resting on at least one **[U]** premise
 
----
-
-## 0. Summary
-
-The single most useful result: **the encoding problem admits a convex reformulation with a
-computable optimality certificate.** You can bound the suboptimality of an encoding without
-exhaustive search. Fixed-$N$ Gaussian splatting as practised has no such object.
-
-Three independently verified strands converge on one algorithm shape:
-
-| Component | Supplied by | Guarantee |
-|---|---|---|
-| Objective + certificate | BLASSO | convex; $\|\eta_\lambda\|_\infty \le 1$ certifies optimality |
-| Where to add atoms | dual certificate $\eta_\lambda$ | exact Frank-Wolfe step |
-| Optimizer | Conic Particle Gradient Descent | global convergence under stated conditions |
-| Initialization | semi-discrete OT + Hessian anisotropy | globally convergent damped Newton |
-| Split rule | SteepGS | provably minimal offspring count |
-| Achievable rate | anisotropic Gaussian approximation theory | curvelet-optimal $N$-term rates |
-
-Nobody has assembled these. That assembly is the project.
+`[A←U]` claims are the fragile ones. Several load-bearing arguments are `[A←U]`, including
+the applicability precondition in §2.1.
 
 ---
 
 ## 1. Problem statement
 
-Three distinct notions of "optimal encoding". They are not equivalent and only one is
-tractable.
+Three notions of "optimal encoding". They are not equivalent.
 
-**(P0) Best $N$-term approximation.** For a target image $I$ and budget $N$:
+**(P0) Best $N$-term approximation.**
 
 $$\min_{\{c_i,\mu_i,\Sigma_i\}_{i=1}^N} \Big\| I - \sum_{i=1}^N c_i\, G(\mu_i,\Sigma_i) \Big\|^2$$
 
-The natural formulation, and the one "optimal encoding" intuitively means. Intractable —
-see §3.
+The formulation "optimal encoding" intuitively means. Intractable (§4).
 
-**(P$\lambda$) Rate-regularized encoding over measures.** Let $\Theta = \mathbb{R}^2 \times \mathrm{SPD}(2)$
-be the atom parameter space, $\varphi_\theta$ the corresponding Gaussian, and $m$ a Radon
-measure on $\Theta$:
+**(P$\lambda$) Rate-regularized encoding over measures.** With $\Theta$ the atom parameter
+space, $\varphi_\theta$ the corresponding Gaussian, $m$ a Radon measure on $\Theta$:
 
 $$\min_{m \in \mathcal{M}(\Theta)} \tfrac12 \|\Phi m - I\|^2 + \lambda |m|(\Theta), \qquad \Phi m = \int_\Theta \varphi_\theta \, dm(\theta)$$
 
-**[V]** — this is the BLASSO, exactly as stated in `papers/1811.06416v1.pdf`. $|m|(\Theta)$
-is the total variation norm, the continuum analogue of $\ell_1$: for $m = \sum_i c_i \delta_{\theta_i}$
-it equals $\sum_i |c_i|$.
+**[V]** This is the BLASSO exactly as stated in `papers/1811.06416v1.pdf`. $|m|(\Theta)$ is
+the total variation norm; for $m = \sum_i c_i\delta_{\theta_i}$ it equals $\sum_i|c_i|$.
 
-**Convex.** Infinite-dimensional, but convex. No spurious local minima. No permutation
-symmetry — a measure has no ordering. $N$ is not a hyperparameter; it emerges from $\lambda$.
+Convex — infinite-dimensional but convex. No spurious local minima, no permutation
+symmetry. $N$ is not a parameter; it emerges from $\lambda$.
 
-**(P∞) Asymptotic achievable rate.** How fast can error decay with $N$ for a given image
-class? Answered in §2.
+**(P∞) Achievable rate.** How fast can error decay with $N$ for a given image class? (§3)
 
-**Relationship.** (P$\lambda$) is a convex relaxation of (P0), the continuum version of the
-$\ell_1$/$\ell_0$ relaxation. Under separation and non-degeneracy conditions it recovers the
-correct support exactly, but in general there is a relaxation gap. **[A]** Adopting (P$\lambda$)
-as the working definition of "optimal encoding" is a real choice, and its justification is
-that it is the only one of the three you can certify.
+### 1.1 The relaxation gap
+
+(P$\lambda$) is the continuum analogue of the $\ell_1$ relaxation of $\ell_0$. Under
+separation and non-degeneracy conditions BLASSO recovers the correct support exactly
+**[V]**, but in general (P$\lambda$) and (P0) have different solutions, and **the size of
+that gap for the Gaussian dictionary on natural images is unknown**.
+
+This matters more than it might appear. Everything tractable in this document is about
+(P$\lambda$). If the gap is large, certifying optimality for (P$\lambda$) says little about
+(P0). Measuring the gap is §10 E2, and it should be done early — it is a precondition for
+the rest of the program being worth pursuing, not a detail.
+
+**Choosing (P$\lambda$) as the working definition** is defensible on the grounds that it is
+the only one of the three that admits a certificate (§5). It is not defensible on the
+grounds that it is equivalent to (P0), because that is unestablished.
 
 ---
 
-## 2. What the optimum looks like
+## 2. Preconditions: does the theory apply at all?
 
-**[V]** `papers/1910.10319v1.pdf` — Erb, Hangelbroek & Ron, *Anisotropic Gaussian
-approximation in $L_2(\mathbb{R}^2)$*.
+Three structural requirements. The first is probably satisfiable, the second is a real
+constraint, the third is unresolved.
+
+### 2.1 Linearity of the forward model — **[A←U]**
+
+The measure formulation requires $\Phi$ linear in the atom coefficients.
+
+**[U]** GaussianImage's rasterizer is reported to replace depth sorting and $\alpha$-blending
+with *accumulated summation*: each pixel is the plain weighted sum of contributing
+Gaussians. **This is from search summaries; the GaussianImage paper is not in `papers/` and
+has not been read.** It is the single most load-bearing unverified fact in this document and
+should be checked first.
+
+**[A←U]** If accurate, then
+
+$$I(p) = \sum_i c_i\, G_{\theta_i}(p) = \Phi m, \qquad m = \sum_i c_i \delta_{\theta_i}$$
+
+is linear in the $c_i$ with atoms indexed by $\theta$, and 2D splatting with accumulated
+summation is a BLASSO forward model.
+
+**[A]** 3D Gaussian splatting is not, regardless: $\alpha$-blending is nonlinear in the
+primitives because of occlusion. So none of this transfers to 3D. That part does not depend
+on the unverified fact.
+
+### 2.2 The loss must be Hilbertian
+
+The certificate is $\eta_\lambda = \Phi^* p_\lambda$ — it requires an adjoint, hence an
+inner-product structure. $L^2$ works. **L1 and SSIM do not.**
+
+**[A]** Consequences:
+
+- A certified encoder must optimize $L^2$. There is no certificate for the L1+SSIM
+  objective that 2D GS encoders actually use.
+- Published 2D GS quality numbers are therefore not directly comparable to anything
+  produced here, and re-running baselines under $L^2$ is necessary for any honest
+  comparison.
+- Whether $L^2$-optimal encodings are *perceptually* acceptable at low atom counts is a
+  separate empirical question this framework cannot answer.
+
+This is a genuine cost of the approach, not a technicality.
+
+### 2.3 Colour — unresolved
+
+The theory is for scalar-valued atoms. The actual problem is three channels sharing one
+geometry.
+
+Two formulations:
+
+1. Three independent BLASSO problems. Loses shared geometry, roughly triples atom count.
+   Almost certainly wrong.
+2. **Group BLASSO**: amplitudes are 3-vectors, penalty $\sum_i \|c_i\|_2$. Preserves shared
+   geometry. **[U]** Group/vector-valued BLASSO exists in the literature; not verified that
+   it covers this case.
+
+**[A←U]** Under (2) the certificate should generalize with $\eta$ vector-valued and the
+optimality condition becoming $\|\eta(\theta)\|_2 \le 1$ — the dual of the group norm. Not
+verified, and the separation/non-degeneracy conditions for the vector-valued case are not
+known to me.
+
+Until resolved, all guarantees below are for the single-channel case.
+
+---
+
+## 3. What the dictionary can achieve
+
+**[V]** `papers/1910.10319v1.pdf` — Erb, Hangelbroek & Ron.
 
 The dictionary studied is exactly the splatting dictionary:
 
 $$\mathcal{D} := \{\varphi \circ M \mid M \in GL(d,\mathbb{R}) \ltimes \mathbb{R}^d\}, \qquad x \mapsto e^{-|A(x-k)|^2}$$
 
-with $A$ any invertible matrix — full anisotropy including rotation, not diagonal.
+$A$ any invertible matrix — full anisotropy including rotation.
 
-Smoothness class $\mathcal{C}^\alpha$ = images whose decreasing-rearranged curvelet
-coefficients satisfy $|\omega_n| = O(n^{-\alpha})$.
+**Theorem 1/2.** For $\alpha > 1/2$ and $f \in \mathcal{C}^\alpha$, there exists an $N$-term
+Gaussian mixture with $\|T_Nf - f\|_2 \le C_f N^{\frac12-\alpha}$. Curvelet $N$-term
+thresholding gives the same bound. Lemma 3: approximating a single curvelet with $M$
+Gaussians has error $C_K M^{-K}$ for every $K$.
 
-**Theorem (Thm 1/2).** For $\alpha > 1/2$ and $f \in \mathcal{C}^\alpha$, there is an $N$-term
-Gaussian mixture $T_N f = \sum_{j=1}^N a_j G_j$, $G_j \in \mathcal{D}$, with
+### 3.1 How much this actually says
 
-$$\|T_N f - f\|_2 \le C_f\, N^{\frac12 - \alpha}$$
+**Two results of different strength, which should not be conflated.**
 
-Curvelet $N$-term thresholding gives the **same** bound $C N^{\frac12-\alpha}$. For the
-Donoho–Candès cartoon class ($f_1 + f_2\chi_\Omega$, both $C^2$, $\partial\Omega$ a $C^2$
-curve), curvelets give $O(N^{-1}(\log N)^{3/2})$ and Gaussian mixtures give
-$O(N^{-1}(\log N)^{3/2})$ — identical, no log penalty. Curvelet rates are optimal
-essentially by definition for this class.
+**The $\mathcal{C}^\alpha$ result is partly circular.** $\mathcal{C}^\alpha$ is *defined* by
+decay of curvelet coefficients ($|\omega_n| = O(n^{-\alpha})$). So it says Gaussians match
+curvelets on the class defined by curvelets working well. Informative about the dictionary's
+richness, but not evidence that real images live in $\mathcal{C}^\alpha$ for useful $\alpha$.
 
-Lemma 3: approximating a single curvelet with $M$ Gaussians has error $C_K M^{-K}$ for
-**every** $K$ — super-algebraic, so the per-curvelet constant is benign.
+**The cartoon-class result is not circular.** **[V]** The Donoho–Candès cartoon class
+($f_1 + f_2\chi_\Omega$, both $C^2$, $\Omega$ compact with $C^2$ boundary) is defined
+*geometrically*, and its curvelet decay $|\omega_n| = O(n^{-3/2}|\log n|^{3/2})$ is a cited
+theorem. Curvelets achieve $O(N^{-1}(\log N)^{3/2})$; Gaussian mixtures achieve the same.
+This is a genuine statement about an independently-defined image class.
 
-**[V*] Important caveat.** The construction routes through the curvelet transform, and
-$m^*$ and the sub-budgets $N(n)$ are *independent of $f$* — only the coefficients $\omega_n$
-are data-dependent. The Gaussian geometry is fixed by the curvelet tiling, not adapted to
-the image. This is an **achievability** result for the dictionary, not a competing encoder.
-An adaptive encoder searches a superset, so the bound stands as a floor on what is possible.
+**Three limits on what follows.**
 
-**[A] What this implies for the project.** The primitive is not the bottleneck. Anisotropic
-2D Gaussians achieve provably optimal rates for edge-dominated images. Any shortfall in a
-real system is an *encoder* failure. It also predicts what a good solution looks like:
-multiscale, edge-aligned, strongly anisotropic, with parabolic scaling (curvelet-like
-tiling) — a concrete, testable structural prediction to check against what an optimizer
-actually produces.
+1. **Asymptotic, with unquantified $C_f$.** At $N=10^3$–$10^5$ — the operating regime —
+   asymptotic rates with unknown constants constrain very little.
+2. **[V\*] Non-adaptive construction.** $m^*$ and the sub-budgets $N(n)$ are *independent of
+   $f$*; the Gaussian geometry is fixed by the curvelet tiling, only coefficients are
+   data-dependent. This is an achievability result for the dictionary, not an encoder.
+3. **[A]** It does **not** support "any shortfall is an encoder failure." An existence result
+   with an unbounded constant cannot attribute a finite-$N$ gap to the optimizer. The
+   defensible statement is: *the dictionary is not asymptotically limiting for cartoon-like
+   images.*
+
+### 3.2 A structural prediction
+
+**[A]** If the theory describes what good solutions look like, an optimizer that reaches
+near-optimality should produce curvelet-like structure: multiscale, edge-aligned, strongly
+anisotropic, with **parabolic scaling** — width $\propto$ length$^2$. Operationalized in §10 E5.
 
 ---
 
-## 3. Why (P0) is hard
+## 4. Why (P0) is hard
 
 - **[U]** Sparse approximation over a general dictionary is NP-hard, and NP-hard to
-  approximate within any factor; specifically hard under **coherent** dictionaries. The
-  Gaussian dictionary is highly coherent — nearby atoms are nearly parallel.
-- The dictionary is **continuous**: positions, scales and rotation are real-valued. Not
-  "choose $N$ of $K$" but an infinite-dimensional non-convex search.
-- **[A] Permutation symmetry**: (P0) has $N!$ equivalent global minima. "The" optimum is an
-  equivalence class, and the landscape carries symmetry-induced saddles.
-- **[U]** SteepGS finds empirically that stuck primitives sit at **saddle points**, not local
-  minima — gradients vanish but loss is still reducible, just not along any direction a
-  single primitive can move.
-- **[V]** Goal-Based Caustics states the practitioner's version plainly: *"while EM is
-  guaranteed to converge, it will generally only find a locally optimal solution. Hence it
-  is important to supply it with a reasonable initial parameter estimate."*
-
----
-
-## 4. The structural fact that makes the theory apply
-
-**[A] This is the load-bearing observation of the whole investigation.**
-
-GaussianImage's rasterizer replaces depth sorting and $\alpha$-blending with **accumulated
-summation** — each pixel is the plain weighted sum of 2D Gaussians. Therefore
-
-$$I(p) = \sum_i c_i\, G_{\theta_i}(p)$$
-
-is **linear in the coefficients** $c_i$, with atoms indexed by $\theta = (\mu,\Sigma)$. That
-is precisely $\Phi m$ for $m = \sum_i c_i \delta_{\theta_i}$. **2D Gaussian splatting with
-accumulated summation is a BLASSO forward model.**
-
-3D Gaussian splatting is not: $\alpha$-blending makes the render nonlinear in the
-primitives (occlusion), so the measure-space convexification does not apply.
-
-**[A]** GaussianImage dropped $\alpha$-blending for decode speed and, apparently without
-noticing, made the problem convexifiable. Everything in this document applies to 2D
-specifically *because* of that choice, and would not transfer to 3D.
-
-Two adaptations needed:
-- RGB is vector-valued → group BLASSO. **[U]** Exists in the literature.
-- Signed colors are fine (TV handles signed measures). Non-negative colors would put us in
-  the **stronger** positive-measure theory. **[V]** SFW has an explicit positive variant: the
-  stopping test becomes $\eta \le 1$ and the LASSO is solved on the positive orthant.
+  approximate within any factor; hardness holds specifically under *coherent* dictionaries.
+  The Gaussian dictionary is highly coherent.
+- The dictionary is continuous — an infinite-dimensional non-convex search, not a subset
+  selection.
+- **[A]** (P0) has $N!$ equivalent global minima; the optimum is an equivalence class and the
+  landscape carries symmetry-induced saddles.
+- **[U]** SteepGS reports that stuck primitives sit at *saddle points*, not local minima —
+  loss is still reducible, but not along any direction a single primitive can move.
 
 ---
 
 ## 5. The optimality certificate
 
-**[V]** From `papers/1811.06416v1.pdf`. Define
+The strongest result available, and the main reason to prefer (P$\lambda$).
 
-$$p_\lambda = \tfrac1\lambda (I - \Phi m_\lambda), \qquad \eta_\lambda = \Phi^* p_\lambda$$
+**[V]** `papers/1811.06416v1.pdf`:
+
+$$p_\lambda = \tfrac1\lambda(I - \Phi m_\lambda), \qquad \eta_\lambda = \Phi^* p_\lambda$$
 
 Optimality is characterized by $\|\eta_\lambda\|_{\infty,\Theta} \le 1$, with
-$\eta_\lambda(\theta_i) = \mathrm{sign}(c_i)$ at support points.
+$\eta_\lambda(\theta_i) = \mathrm{sign}(c_i)$ on the support.
 
-**What $\eta_\lambda$ is:** the residual correlated against **every candidate atom in the
-family**. It is a function over parameter space $(\mu,\Sigma)$, not over pixels. Its
-argmax says *place a Gaussian here, with this covariance*.
+$\eta_\lambda$ is the residual correlated against **every candidate atom in the family** — a
+function over parameter space $(\mu,\Sigma)$, not over pixels. Its argmax specifies both a
+position and a covariance.
 
-**Two things this buys, both central to the project goal:**
+**What this provides:**
 
-1. **A stopping test.** $\|\eta_\lambda\|_\infty \le 1$ certifies global optimality of the
-   (P$\lambda$) solution. Computable.
-2. **A suboptimality bound.** **[V]** SFW inherits the Frank-Wolfe rate
-   $T_\lambda(m^{[k]}) - T_\lambda(m^\star) \le C_1/k$, and FW duality gaps bound the
-   distance to optimum at every iteration. **[A]** So you can state "this encoding is within
-   $\varepsilon$ of optimal" without ever finding the optimum — far stronger than estimating
-   a lower envelope by random restarts.
+1. **A global optimality test for (P$\lambda$)**, computable.
+2. **A suboptimality bound at every iteration.** **[V]** SFW inherits the Frank-Wolfe rate
+   $T_\lambda(m^{[k]}) - T_\lambda(m^\star) \le C_1/k$; FW duality gaps bound distance to
+   optimum without finding it.
 
-**[A] Contrast with current practice.** Densification heuristics in 2D GS — Image-GS samples
-proportional to *pixel-space* error, GaussianImage++ uses distortion-driven growth, 3DGS
-uses positional-gradient magnitude — are all surrogates for $\eta_\lambda$, and none of them
-see the covariance dimension. They choose *where*, then let SGD find the shape. The dual
-certificate chooses where **and what shape** in one argmax, and it is the provably correct
-object.
+**[A] Scope.** Both are statements about (P$\lambda$) under $L^2$ loss for scalar atoms.
+Neither certifies (P0) (§1.1), and neither survives a change of loss (§2.2).
 
-**[V*] Representer theorem.** TV regularization yields solutions supported on at most
-(number of measurements) atoms. For images, measurements = pixels, so the bound is
-$N \le \#\mathrm{pixels}$ — vacuous. It becomes meaningful only under sketching or
-band-limiting of the measurements. Do not expect sparsity for free from this.
+**[A] Relation to current practice.** Densification heuristics — pixel-space error sampling,
+distortion-driven growth, positional-gradient magnitude — are surrogates for $\eta_\lambda$,
+and none of them search the covariance dimension. They choose *where* and let SGD find the
+shape. The certificate chooses both in one argmax.
 
 ---
 
-## 6. Algorithms with guarantees
+## 6. Algorithms, and what each guarantee actually covers
 
 ### 6.1 Sliding Frank-Wolfe
 
@@ -206,295 +228,321 @@ band-limiting of the measurements. Do not expect sparsity for free from this.
 
 | Step | Operation | Nature |
 |---|---|---|
-| 3 | $\theta_* = \arg\max_\theta \lvert\eta^{[k]}(\theta)\rvert$ | add one atom |
+| 3 | $\theta_* = \arg\max_\theta\lvert\eta^{[k]}(\theta)\rvert$ | add one atom |
 | 7 | LASSO on amplitudes, positions frozen | convex (FISTA) |
 | 8 | joint solve over amplitudes **and** positions | non-convex (bounded BFGS) |
-| 9 | *"remove zero amplitudes Dirac masses"* | prune |
+| 9 | remove zero-amplitude atoms | prune |
 
-Stopping: $|\eta^{[k]}(\theta_*)| \le 1$. Step 3 is implemented as grid search + Newton.
+Stopping: $|\eta^{[k]}(\theta_*)| \le 1$. Step 3 is grid search + Newton.
 
-**Theorem 3 (finite termination).** If $m_{a,x}$ is the *unique* solution of (P$\lambda$) and
-$\eta_\lambda$ is nondegenerate —
+**Theorem 3.** If $m_{a,x}$ is the *unique* solution and $\eta_\lambda$ is nondegenerate —
+$|\eta_\lambda(\theta)|<1$ off support, $\eta_\lambda''(\theta_i)\neq0$ on it — the algorithm
+terminates finitely. The paper is explicit that *joint* optimization in step 8 is what buys
+this.
 
-$$\forall \theta \notin \mathrm{supp}, \ |\eta_\lambda(\theta)| < 1 \qquad\text{and}\qquad \forall i, \ \eta_\lambda''(\theta_i) \neq 0$$
+**[V\*]** Proved for $d=1$; the multidimensional extension is asserted, not shown.
 
-— then the algorithm recovers $m_{a,x}$ in a **finite** number of steps.
+**Covers:** exact solution of (P$\lambda$), 1D, scalar, $L^2$.
+**Does not cover:** scale. One atom per iteration with a full BFGS re-solve. **[A]** The
+transferable element is the certificate as densification criterion — batched, adding many
+atoms per round at local maxima of $|\eta|$ — not the iteration schedule.
 
-The paper is explicit that joint (not alternating) optimization in step 8 is what buys
-finite termination.
+### 6.2 Conic Particle Gradient Descent
 
-**[V*] Caveat:** *"we state and prove this Theorem in the case of $d=1$ but the changes for
-$d \in \mathbb{N}^*$ can be easily done."* Asserted, not shown, for our setting.
+**[V]** `papers/1907.10300v2.pdf` — Chizat. Discretize the measure into particles, run
+non-convex gradient descent on positions and weights:
 
-**[A] Why SFW is not the algorithm.** One atom per iteration, each followed by a full BFGS
-re-solve over all parameters. At $10^4$–$10^5$ atoms that is hopeless. **The transferable
-idea is the dual certificate as densification criterion**, batched — add many atoms per
-round at local maxima of $|\eta|$ — not the iteration schedule.
+$$(r_i,\theta_i) \leftarrow \mathrm{Ret}_{(r_i,\theta_i)}\big(-2\alpha r_i J'_\nu(\theta_i),\ -\beta\nabla J'_\nu(\theta_i)\big)$$
 
-**[A] Note the structural identity anyway:** add / fit / slide / prune *is* densify → optimize
-→ prune. Current GS reinvented the Frank-Wolfe schedule without the certificate that says
-where, or the theorem that says when to stop.
+$\alpha$ = weight step-size, $\beta$ = position step-size. For $\alpha,\beta>0$ this is
+gradient flow in the **Wasserstein–Fisher–Rao** metric; under the mirror retraction the
+weight update is $r\exp(\delta r/r)$ — multiplicative — with additive position updates.
 
-### 6.2 Conic Particle Gradient Descent — the answer to "are we stuck in local optima?"
+**Theorem 4.2.** Under (A1–5), with $\rho$ absolutely continuous with smooth positive
+density and $\log\rho$ Lipschitz, if $W_\infty(\nu_0,\rho)\le(J_0-J^\star)/C$,
+$\alpha\le(J_0-J^\star)^{1+\epsilon/2}/C$ and $\beta\le(J_0-J^\star)\alpha^2/C'$, then
+projected gradient descent converges to the **global** optimum, linearly after $k_0$.
+Complexity $\log(1/\epsilon)$ rather than $\epsilon^{-d}$.
 
-**[V]** `papers/1907.10300v2.pdf` — Chizat. Problem form:
+**[V\*]** $\nu_0$ is an $m$-sample approximation of $\rho$ with $W_\infty$ rate
+$\tilde O(m^{-1/d})$; the paper states this exponential dependence on $d$ is **unavoidable**.
+$m>m^\star$ is required, and $J_0-J^\star$ shrinks as problems get harder, forcing $m$ up.
 
-$$J(\nu) = R\Big(\int_\Theta \varphi(\theta)\,d\nu(\theta)\Big) + \lambda\,\nu(\Theta)$$
+**Covers:** global convergence of particle gradient descent, for objectives of the stated
+form, under (A1–5).
+**Does not cover — the critical omission:** **I have not checked that (A1–5) hold for the
+anisotropic Gaussian dictionary on $\Theta = \mathbb{R}^2\times\mathrm{SPD}(2)$.** I read the
+theorem, not the assumptions. Everything in §8 that derives from CPGD is conditional on this.
+$\mathrm{SPD}(2)$ is non-compact, which is an obvious place for an assumption to fail.
 
-Method: **discretize the measure into particles and run non-convex gradient descent on
-positions and weights.** That is exactly what splatting does.
+**[A]** $d = \dim\Theta = 5$ for 2D Gaussians, versus far larger for 3DGS, so the
+exponential is at least plausibly survivable here.
 
-Update, with $\alpha$ the **weight** step-size and $\beta$ the **position** step-size:
+### 6.3 Semi-discrete optimal transport
 
-$$(r_i,\theta_i) \leftarrow \mathrm{Ret}_{(r_i,\theta_i)}\big(-2\alpha r_i J'_\nu(\theta_i),\ -\beta \nabla J'_\nu(\theta_i)\big)$$
-
-For $\alpha,\beta>0$ this is the gradient flow of $J$ in the **Wasserstein–Fisher–Rao**
-metric. Under the mirror retraction the weight update is $r\exp(\delta r/r)$ —
-**multiplicative**, i.e. exponentiated gradient — while positions update additively.
-
-**Theorem 4.2 (global convergence of gradient descent).** Under (A1–5), with $\rho$ an
-absolutely continuous reference measure with smooth positive density and $\log\rho$
-Lipschitz, if
-
-$$W_\infty(\nu_0,\rho) \le (J_0-J^\star)/C, \qquad \alpha \le (J_0-J^\star)^{1+\epsilon/2}/C, \qquad \beta \le (J_0-J^\star)\alpha^2/C'$$
-
-then projected gradient descent from $\nu_0$ converges to the **global** optimum $\nu^\star$,
-linearly after $k_0$.
-
-Complexity scales as $\log(1/\epsilon)$ rather than $\epsilon^{-d}$ for grid-based convex
-methods.
-
-**[V*] The cost.** $\nu_0$ is an $m$-sample empirical approximation of $\rho$, and
-$W_\infty$ convergence is $\tilde O(m^{-1/d})$. The paper states this exponential dependence
-on dimension is **unavoidable**. Also $m > m^\star$ is required — genuine overparameterization
-— and $J_0 - J^\star$ shrinks as problems get harder, forcing $m$ up.
-
-**[A] Why this is survivable here.** $d = \dim\Theta = 5$ for 2D Gaussians (2 position + 2
-scale + 1 rotation). For 3DGS $d$ is far larger. Together with the $\alpha$-blending
-nonlinearity, this is the second independent reason the theory fits 2D and not 3D.
-
-### 6.3 Semi-discrete optimal transport — the placement subproblem
-
-**[V]** `papers/ma.pdf` — Kitagawa, Mérigot & Thibert. A damped Newton algorithm for
-semi-discrete OT (absolutely continuous source, finitely supported target) with **global
-linear convergence**, under (a) the Ma–Trudinger–Wang condition on the cost, and (b)
-quantitatively connected support of the source density (a weighted Poincaré–Wirtinger
-inequality). Quadratic cost is covered; some non-convex supports also qualify.
+**[V]** `papers/ma.pdf` — Kitagawa, Mérigot & Thibert: damped Newton for semi-discrete OT
+with **global linear convergence**, under the Ma–Trudinger–Wang condition on the cost and
+quantitatively connected support of the source density. Quadratic cost is covered.
 
 **[V]** `papers/dGBOD12.pdf` — de Goes et al. recast capacity-constrained Voronoi
-tessellation as semi-discrete OT. The optimal partition is a **power diagram** (Laguerre
-cells), not a plain Voronoi diagram, and the paper enforces capacity constraints exactly via
-*"a concave maximization w.r.t. the weights via a step-adaptive Newton method"*, with cost
-of order a single Newton step. Handles arbitrary density $\rho$.
+tessellation as semi-discrete OT. Optimal partitions are **power diagrams** (Laguerre
+cells); capacity constraints are enforced exactly via *"a concave maximization w.r.t. the
+weights via a step-adaptive Newton method"*, at cost of order a single Newton step. Handles
+arbitrary density $\rho$.
 
-**[V]** `papers/Balzer_etal_2009_CCPDAVoLM.pdf` — original CCVT: capacity of a point is the
-area of its Voronoi region weighted by $\rho$; the constraint is that all capacities are
-equal. **[V]** `papers/MSR-TR-2009-174.pdf` — Fast CCVT, orders of magnitude faster,
-scales well in point count.
+**[V]** `papers/Balzer_etal_2009_CCPDAVoLM.pdf`: capacity of a point = area of its Voronoi
+region weighted by $\rho$; the constraint is equal capacity.
+**[V]** `papers/MSR-TR-2009-174.pdf`: fast CCVT, orders of magnitude faster, scales in point
+count.
 
-**[A]** So "place $N$ atoms to match a prescribed density" is a *solved* problem with a
-globally convergent algorithm. This is strictly stronger footing than any densification
-heuristic in the splatting literature.
+**Covers:** placing $N$ points to match a *prescribed density*, optimally and provably.
+**Does not cover — the objective.** Nobody wants to match a density; they want to minimize
+reconstruction error. The density is a surrogate, and it comes from Zador's theorem, which
+is about nearest-neighbour quantization, not kernel approximation (§6.4). **The rigour here
+is real but attached to a proxy whose relationship to the true objective is unestablished.**
+This is a principled *initializer*, not a solved subproblem of (P0).
 
-### 6.4 Covariance from the Hessian
+### 6.4 Covariance and density from local image geometry
 
-**[V]** `papers/BLdG+16.pdf` — Budninskiy et al., *Optimal Voronoi Tessellations with
-Hessian-based Anisotropy*: a variational method generating cell complexes with local
-anisotropy conforming to the Hessian of a given function, **for any given local mesh
-density**. Built on approximation theory, an anisotropic extension of CVT, dual to Optimal
-Delaunay Triangulation. Uses **first-type Bregman diagrams** — power diagrams whose sites
-carry a scalar weight *and* a vector-valued shift.
+**[V]** `papers/BLdG+16.pdf` — Budninskiy et al.: cell complexes with local anisotropy
+conforming to the Hessian of a given function, **for any given local mesh density**, built
+on approximation theory as an anisotropic extension of CVT. Uses first-type Bregman diagrams
+— power diagrams whose sites carry a scalar weight *and* a vector-valued shift.
 
-**[V*] Caveat:** the method is stated for the Hessian of a **convex** function. Image
-Hessians are indefinite. **[A]** Standard fix from anisotropic mesh adaptation: use $|H|$
-(eigenvalue absolute values) or the structure tensor, both PSD.
+**[V\*]** Stated for the Hessian of a **convex** function. Image Hessians are indefinite.
+**[A]** Standard fix from anisotropic mesh adaptation: use $|H|$ (eigenvalue absolute
+values) or the structure tensor, both PSD. Whether the guarantees survive that substitution
+is not established.
 
-**[U]** Anisotropic mesh adaptation theory: for minimizing interpolation error the optimal
-metric is defined by the (modified) Hessian; the tessellation is locally aligned with the
-**eigenvectors** of the Hessian and the anisotropic quotients equal those of the Hessian.
+**[U]** Anisotropic mesh adaptation: the optimal metric for interpolation error is defined by
+the modified Hessian; tessellations align with its eigenvectors and anisotropic quotients
+match its eigenvalue ratios.
 
-**[A]** This is the principled answer to *what covariance should each Gaussian have*:
-orientation from Hessian eigenvectors, aspect ratio from the eigenvalue ratio, scale from
-cell size. Note that Structure-Guided Allocation's regularizer aligns Gaussians to local
-**gradient** directions — a first-order approximation of a rule the theory says is
-second-order. **[U]** That paper already reported large gains with the weaker version.
+**[U]** Zador: the $N$-point optimal quantizer's empirical distribution converges to density
+$\propto\varphi^{d/(d+s)}$; for $d=2$, $s=2$, $\propto\sqrt\varphi$.
+**[A]** For nearest-neighbour quantization, not Gaussian-kernel approximation. A design
+heuristic to validate empirically, not a theorem about splatting.
 
-**[U] Density law.** Zador's theorem: the empirical distribution of the $N$-point optimal
-quantizer converges to density $\propto \varphi^{d/(d+s)}$; for $d=2,s=2$ that is
-$\propto\sqrt{\varphi}$. **[A] Caveat:** Zador is nearest-neighbour *quantization*
-(piecewise-constant), not Gaussian-kernel approximation. Treat as a design principle to
-validate empirically, not a theorem about splatting.
-
-### 6.5 EM, and the one empirical precedent
+### 6.5 EM, and the one direct precedent
 
 **[V]** `papers/gbc.pdf` — Papas et al., *Goal-based Caustics* (2011). Non-negative image
-decomposition into overlapping **anisotropic Gaussian kernels**:
+decomposition into overlapping anisotropic Gaussian kernels:
 
-1. sample the image intensity densely ($n = 4{,}000{,}000$ points)
-2. compute a **CCVT**; take each Voronoi centroid as a Gaussian center
-3. initialize isotropic $\Sigma_i = \mathrm{diag}(\sigma^2,\sigma^2)$, $\sigma$ = radius of a
-   $k$-NN query with $k$ = the region's capacity
-4. refine with a **sparse EM**
+1. sample image intensity densely ($n = 4{,}000{,}000$ points)
+2. compute a **CCVT**; take Voronoi centroids as Gaussian centres
+3. initialize $\Sigma_i = \mathrm{diag}(\sigma^2,\sigma^2)$ with $\sigma$ = radius of a $k$-NN
+   query, $k$ = the region's capacity
+4. refine with sparse **EM**
 
-Reported at ~**1024 Gaussians** per image. They always use anisotropic Gaussians, citing
-"significant qualitative improvement" over isotropic.
+Reported at ~**1024 Gaussians** per image; always anisotropic ("significant qualitative
+improvement" over isotropic).
 
-**[V] The relevant sentence:** they experimented with several initialization strategies and
-*"obtained the most reliable results using regular point sets that adapt to the image
-intensity"* — i.e. CCVT won an empirical initialization bake-off, in 2011, for exactly this
-problem. This is the closest existing precedent to the proposed program.
+**[V]** They experimented with several initialization strategies and *"obtained the most
+reliable results using regular point sets that adapt to the image intensity"* — CCVT won an
+empirical initialization comparison for this exact problem.
+
+**Covers:** an existence proof that the CCVT + EM pipeline works at ~10³ atoms.
+**Does not cover:** any optimality claim. EM converges monotonically to a local optimum only,
+which the paper states directly.
 
 ### 6.6 Saddle-escape splitting
 
-**[U]** SteepGS derives, from optimization theory: necessary conditions for densification to
-reduce loss; the **minimal number of offspring is exactly 2**; the optimal displacement
-direction is the minimal eigenvector of a per-primitive *splitting matrix*, triggered when
-its eigenvalue is negative; and an analytic offspring-weight normalization. Reported ~50%
-fewer primitives at equal quality. Derivation is primitive-local — **[A]** should port to 2D
-almost mechanically. Primary source not read.
+**[U]** SteepGS: necessary conditions for densification to reduce loss; **minimal offspring
+count is exactly 2**; optimal displacement along the minimal eigenvector of a per-primitive
+splitting matrix when its eigenvalue is negative; analytic offspring-weight normalization.
+Reported ~50% fewer primitives at equal quality.
+
+**[A]** Derived for the 3DGS objective *with* $\alpha$-blending — i.e. for the case §2.1
+argues the measure theory does not cover. The derivation is primitive-local so it plausibly
+transfers, but it is not a result about (P$\lambda$).
 
 ---
 
-## 7. Design rules the theory implies
+## 7. The guarantees do not compose
 
-**[A] throughout, derived from the verified results above.**
+§6 lists five results with convergence or optimality guarantees. They are guarantees **for
+five different problems**, and there is no argument here that they compose:
 
-**R1 — Initialization must have full support.** CPGD's global convergence requires $\nu_0$
-to be $W_\infty$-close to a reference $\rho$ with *smooth positive density* over all of
-$\Theta$, densely sampled, with $m > m^\star$.
+| Result | Guarantees what | For which problem |
+|---|---|---|
+| BLASSO certificate | global optimality test | (P$\lambda$), $L^2$, scalar atoms |
+| SFW Theorem 3 | finite termination | (P$\lambda$), **$d=1$** |
+| CPGD Theorem 4.2 | global convergence | objectives satisfying **(A1–5), unchecked here** |
+| KMT damped Newton | global linear convergence | density matching, **not** (P0) |
+| SteepGS split rule | optimal offspring count | 3DGS objective **with** $\alpha$-blending |
 
-This **inverts** the usual initialization intuition. GaussianImage's "unsophisticated"
-uniform-random initialization over positions *and* covariances is precisely what the theorem
-asks for. Image-GS's gradient/saliency-concentrated initialization **violates** the
-full-support condition — it buys convergence speed by giving up the guarantee.
+Assembling them yields a pipeline with good pedigree, not a guaranteed algorithm.
 
-But $\rho$ is explicitly the *prior on the solution*, and smaller $\bar H(\nu^\star,\rho)$
-improves the bounds. **The correct design is a Hessian/density-law-informed $\rho$ that
-remains strictly positive everywhere** — neither uniform nor concentrated. Neither existing
-encoder does this.
+**What would be needed to make the composition real**, roughly in order of tractability:
 
-**R2 — Weight updates should be multiplicative.** The WFR/Fisher-Rao component acts
-multiplicatively on mass ($r\exp(\delta r/r)$). Current encoders use additive Adam on
-colors. Testable divergence.
+1. Verify (A1–5) hold for the anisotropic Gaussian dictionary on $\Theta$ (§6.2). Without
+   this, §8 is decorative.
+2. Establish that CPGD's objective form covers (P$\lambda$) with this $\Phi$.
+3. Bound the relaxation gap between (P$\lambda$) and (P0), at least empirically (§10 E2).
+4. Extend the SFW termination argument beyond $d=1$, or accept it as heuristic.
+5. Relate the density-matching objective in §6.3 to reconstruction error, or demote it
+   permanently to initialization.
+6. Establish the vector-valued (colour) case (§2.3).
 
-**R3 — Positions must move slower than weights.** Global convergence needs $\beta/\alpha$
-small. Current GS practice already uses position LR $\ll$ color LR, so this is accidental
-compliance; it should be made deliberate and tuned against the condition.
-
-**R4 — Densify at $\arg\max_\theta|\eta(\theta)|$, not at pixel-error maxima.** And search
-over covariance as well as position.
-
-**R5 — Densification is not a hack.** WFR flow has a transport term (moves mass) and a
-Fisher-Rao term (creates/destroys it). Adam on positions discretizes the first; clone/split
-and prune discretize the second. Densification is the half of the correct flow that plain
-SGD cannot express.
-
-**R6 — Split into exactly 2, along the minimal eigenvector**, when the splitting matrix has
-a negative eigenvalue (§6.6).
-
-**R7 — Consider a quasi-Newton slide.** SFW uses bounded BFGS for the joint
-amplitude+position step, not SGD. **[U]** Second-order splatting optimizers report large
-gains when primitive count is low — which is the 2D regime.
+Items 1 and 3 are the ones that decide whether this is a research programme or a
+well-referenced heuristic.
 
 ---
 
-## 8. Gaps
+## 8. Implications, conditional on §7
 
-Ordered by how much they threaten the program.
+All of the following inherit the unverified (A1–5) dependency. Confidence stated per item.
 
-1. **SFW finite termination is proved in $d=1$ only.** Extension asserted, not shown.
-2. **BLASSO for Gaussians with unknown covariance covers diagonal only.** **[V]**
-   `papers/2509.12889v5.pdf` extends BLASSO to GMMs with component-specific unknown
-   **diagonal** covariances, with non-asymptotic recovery for means, covariances and weights
-   via a Fisher-Rao semi-distance and an explicit separation condition. **Rotation is not
-   covered**, and splatting uses rotation + two scales. Narrow, real, and the obvious
-   theoretical target.
-3. **That result is density estimation from i.i.d. samples, not $L^2$ signal approximation.**
-   Different noise model. A single-channel non-negative image is closer than it looks, but
-   it is not the same theorem.
-4. **Exponential-in-$d$ particle count** for CPGD's global guarantee. $d=5$ makes it
-   plausible but not free.
-5. **Zador is not a splatting theorem.**
-6. **$\ell_1$/$\ell_0$ relaxation gap** between (P$\lambda$) and (P0) is uncharacterized here.
-7. **No published measurement of how suboptimal existing encoders are.**
+**I1 — Initialization should have full support. *(moderate)*** CPGD requires $\nu_0$
+$W_\infty$-close to a reference $\rho$ with smooth positive density over $\Theta$, densely
+sampled, with $m>m^\star$.
+
+This cuts against content-adaptive initialization: concentrating atoms where image gradients
+are large gives up the full-support condition. But $\rho$ is the *prior on the solution* and
+smaller $\bar H(\nu^\star,\rho)$ improves the bounds, so the indicated design is a
+geometry-informed $\rho$ that remains **strictly positive everywhere** — neither uniform nor
+concentrated.
+
+**[A] Caveat against overreading this.** Uniform-random initialization over positions and
+covariances is *not* the reference measure the theorem asks for either: $\mathrm{SPD}(2)$ is
+non-compact and a bounded uniform sample over scale parameters is not a dense sample of
+$\Theta$. Existing initializations are all some distance from the hypothesis; none of them
+satisfies it.
+
+**I2 — Weight updates should be multiplicative. *(moderate)*** The Fisher-Rao component acts
+multiplicatively on mass. Additive Adam on amplitudes does not implement this. Directly
+testable.
+
+**I3 — Positions should move slower than weights. *(moderate)*** Global convergence requires
+$\beta/\alpha$ small. Existing practice already uses position LR $\ll$ colour LR, so this
+predicts a known-good behaviour, which is weak evidence but not nothing.
+
+**I4 — Densify at $\arg\max_\theta|\eta(\theta)|$, searching covariance as well as position.
+*(high — this follows from §5 directly, not from CPGD)***
+
+**I5 — Split into exactly 2 along the minimal eigenvector. *(low)*** Rests on **[U]** and on
+a derivation for a different objective (§6.6).
+
+**I6 — Consider quasi-Newton for the joint update. *(low)*** SFW uses bounded BFGS rather
+than SGD for step 8. Suggestive only.
+
+**A note on framing densification.** WFR flow has a transport component (moving mass) and a
+Fisher-Rao component (creating and destroying it), and it is tempting to read clone/split
+and prune as a discretization of the latter. **[A] This is probably only partly right.**
+Fisher-Rao alters mass at fixed support, whereas clone/split alters the *support* by
+duplication with perturbation. MCMC-style relocation is structurally closer to the
+Fisher-Rao operation than clone/split is. Treat the analogy as motivation for looking at
+relocation schemes, not as an explanation of why densification works.
 
 ---
 
-## 9. Program
+## 9. Open questions requiring measurement
 
-**E1 — Measure the gap.** The founding experiment. On small images and small $N$, compute
-(a) the BLASSO optimum with certificate, and (b) what GaussianImage / Image-GS / EM actually
-achieve. Report the certified distance to optimal. Nobody has published this, and §5 makes
-it computable rather than merely estimable.
+None of these have numbers yet, and several gate the programme.
 
-**E2 — Certificate-driven densification.** Replace error-magnitude sampling with batched
-$\arg\max_\theta|\eta(\theta)|$ over a coarse covariance grid. Directly testable against
-existing densifiers at equal $N$.
+- **Cost of the certificate.** Each densification round needs $\arg\max_\theta|\eta(\theta)|$
+  over a 5-dimensional $\Theta$. SFW does grid search + Newton with grid size tied to the
+  operator's bandwidth. Unmeasured here, and it determines whether I4 is practical.
+- **Cost of OT initialization** at $N = 10^4$–$10^5$ on 2D images. Fast CCVT is reported to
+  scale well **[V]** but no timings were extracted.
+- **$\lambda \to N$.** To hit a target atom count you sweep $\lambda$. The stability and cost
+  of that path, and whether warm-started homotopy works here, is unknown.
+- **Size of the relaxation gap** (§1.1).
+- **Whether (A1–5) hold** (§7 item 1).
+- **Perceptual acceptability of $L^2$-optimal encodings** at low atom counts (§2.2).
 
-**E3 — OT initialization.** Structure tensor / $|H|$ field → density law → semi-discrete OT
-placement (globally convergent damped Newton) → Hessian-derived covariances → strictly
-positive $\rho$ per R1. Drop in as an additional init mode alongside `gradient`, `saliency`,
-`random` and compare at equal $N$ and equal iteration budget.
+---
 
-**E4 — CPGD-conformant optimizer.** Multiplicative weight updates, tuned $\beta/\alpha$,
-overparameterized start, per R1–R3.
+## 10. Programme
 
-**E5 — Port SteepGS's split rule to 2D.**
+Ordered so that the results that could invalidate the rest come first.
 
-**E6 — Check the structural prediction.** Does a well-optimized solution actually exhibit
-curvelet-like tiling — multiscale, edge-aligned, parabolic scaling (§2)? If not, either the
-optimizer is failing or the image class assumption is wrong. Cheap diagnostic, informative
-either way.
+**E0 — Verify §2.1.** Read the GaussianImage paper; confirm the forward model is genuinely
+linear with no hidden nonlinearity (clamping, normalization, tone mapping). One afternoon.
+If it fails, most of this document does not apply.
 
-**Baselines with published numbers.** **[V]** `papers/tip2006.pdf` — Figueras i Ventura,
-Vandergheynst & Frossard (2006) — is the only principled-encoder baseline found. Matching
-pursuit over a dictionary of translated, rotated, anisotropically-scaled atoms. **[V*] Note
-the dictionary is *richer* than the splatting one**: the primary atom is a Gaussian along one
-axis × **second derivative of a Gaussian** in the orthogonal axis, with a separate pure-Gaussian
-sub-dictionary for low frequencies. Erb–Hangelbroek–Ron explicitly place such modulated atoms
-*outside* dictionary $\mathcal{D}$.
+**E1 — Certified suboptimality under (P$\lambda$).** Fix $L^2$, single channel. Run a BLASSO
+solver to a certified duality gap. Separately, evaluate existing encoders' outputs *under the
+same (P$\lambda$) objective*. Report the certified distance to optimum for each. Well-posed
+because everything is scored on one objective; note that existing encoders are not trying to
+minimize it, so this measures representational distance, not encoder failure.
 
-Its reported results (PSNR, dB):
+**E2 — The relaxation gap.** On instances small enough for near-exhaustive search over (P0)
+— tiny images, $N$ of order 10 — compare the best (P0) solution found to the (P$\lambda$)
+solution at matched support size. Isolates the $\ell_1/\ell_0$ gap from encoder
+suboptimality, which E1 cannot. Small, and it decides how much E1 is worth.
 
-| Image | Rate | MP | JPEG2000 | SPIHT |
-|---|---|---|---|---|
-| Lena 256² | 0.35 bpp | 30.36 | **30.79** | **31.35** |
-| Lena 512² | 0.16 bpp | 31.06 | **31.93** | — |
-| Goldhill 256² | 0.23 bpp | 27.49 | **28.18** | — |
-| Barbara 256² | 0.12 bpp | **21.35** | 21.23 | 21.29 |
+**E3 — Certificate-driven densification.** Batched $\arg\max_\theta|\eta(\theta)|$ over a
+coarse covariance grid, replacing error-magnitude sampling. Compare at equal $N$ and equal
+compute against existing densifiers. Tests I4, the highest-confidence implication.
 
-**[A]** Reported on a bits axis rather than an atom-count axis, so it does not transfer
-directly to (P0). It is included because a *greedy, principled* encoder over a *richer*
-dictionary is a meaningful reference point for encoder quality, and because it is the only
-one that exists.
+**E4 — Geometry-informed initialization.** Structure tensor or $|H|$ field → density law →
+semi-discrete OT placement → Hessian-derived covariances, kept strictly positive everywhere
+per I1. Compare against uniform-random and gradient-guided initialization at equal $N$ and
+equal iteration budget.
+
+**E5 — Test the structural prediction (§3.2).** For atoms near edges, regress
+$\log(\text{minor axis})$ on $\log(\text{major axis})$. Parabolic scaling predicts slope $2$.
+Falsification: slope significantly different from 2 in a well-converged solution means either
+the optimizer is not reaching the regime the theory describes, or the images are not
+cartoon-like. Either answer is informative and the test is cheap.
+
+**E6 — CPGD-conformant optimizer.** Multiplicative weight updates, tuned $\beta/\alpha$,
+overparameterized start. Only worth building after §7 item 1 is settled.
+
+### Reference points
+
+**[V]** `papers/tip2006.pdf` — Figueras i Ventura, Vandergheynst & Frossard (2006): matching
+pursuit over translated, rotated, anisotropically-scaled atoms, reported as comparable to
+JPEG2000 and SPIHT at low rates.
+
+**[V\*]** Its dictionary is *richer* than the splatting one: the primary atom is a Gaussian
+along one axis × second derivative of a Gaussian in the orthogonal axis, with a separate
+pure-Gaussian sub-dictionary. Erb–Hangelbroek–Ron explicitly place such modulated atoms
+outside $\mathcal{D}$.
+
+**[A]** Its results are reported on a bits axis, not an atom-count axis, so they do not
+transfer to (P0) without atom counts that the paper does not appear to report. Useful as
+evidence that greedy certificate-like encoders over this atom family were competitive in
+2006; not usable as a numerical baseline here.
+
+**[V]** `papers/gbc.pdf` gives the one atom-axis data point available: ~1024 anisotropic
+Gaussians for a recognizable natural image under a non-negative, single-channel objective.
 
 ---
 
 ## Appendix: sources
 
-All PDFs in `papers/`; see `papers/README.md` for full citations.
+PDFs in `papers/`; citations in `papers/README.md`.
 
 | Tag | File | Used for |
 |---|---|---|
-| **[V]** | `1910.10319v1.pdf` | dictionary definition, $N$-term rates, curvelet optimality |
-| **[V]** | `1811.06416v1.pdf` | BLASSO, dual certificate, SFW algorithm, finite termination |
-| **[V]** | `1907.10300v2.pdf` | CPGD, WFR flow, global convergence conditions, $\alpha/\beta$ |
-| **[V]** | `1805.09545v2.pdf` | mean-field / OT framework underlying the above |
-| **[V]** | `2509.12889v5.pdf` | BLASSO for GMM with unknown diagonal covariances |
+| **[V]** | `1910.10319v1.pdf` | dictionary definition, $N$-term rates, cartoon class |
+| **[V]** | `1811.06416v1.pdf` | BLASSO, dual certificate, SFW, finite termination |
+| **[V]** | `1907.10300v2.pdf` | CPGD, WFR flow, Theorem 4.2, $\alpha/\beta$ |
+| **[V]** | `1805.09545v2.pdf` | mean-field / OT framework |
+| **[V]** | `2509.12889v5.pdf` | BLASSO for GMM, unknown **diagonal** covariances only |
 | **[V]** | `ma.pdf` | semi-discrete OT, damped Newton, global linear convergence |
-| **[V]** | `dGBOD12.pdf` | CCVT as OT, power diagrams, concave maximization + Newton |
+| **[V]** | `dGBOD12.pdf` | CCVT as OT, power diagrams, concave maximization |
 | **[V]** | `Balzer_etal_2009_CCPDAVoLM.pdf` | CCVT definition |
-| **[V]** | `MSR-TR-2009-174.pdf` | fast CCVT, scalability |
+| **[V]** | `MSR-TR-2009-174.pdf` | fast CCVT |
 | **[V]** | `BLdG+16.pdf` | Hessian-based anisotropy, Bregman diagrams |
-| **[V]** | `gbc.pdf` | CCVT + sparse EM precedent, ~1024 kernels, init bake-off |
-| **[V]** | `tip2006.pdf` | matching pursuit baseline, atom definition, PSNR table |
+| **[V]** | `gbc.pdf` | CCVT + EM precedent, ~1024 kernels, initialization comparison |
+| **[V]** | `tip2006.pdf` | matching pursuit reference, atom definition |
 
-**[U]** items rest on search summaries only: SteepGS, Zador's theorem, anisotropic mesh
-adaptation, sparse-approximation hardness, group BLASSO, Structure-Guided Allocation.
-Obtain primaries before relying on them.
+**Not read.** GaussianImage (§2.1, the key applicability premise); SteepGS; Zador /
+quantization theory; anisotropic mesh adaptation; sparse-approximation hardness; group
+BLASSO; Structure-Guided Allocation. All **[U]**.
 
-### Note on literature search
+**Closest theoretical result to the target problem.** **[V]**
+`papers/2509.12889v5.pdf` extends BLASSO to Gaussian mixtures with component-specific unknown
+**diagonal** covariances, with non-asymptotic recovery for means, covariances and weights via
+a Fisher-Rao semi-distance and an explicit separation condition. Two gaps: rotation is not
+covered, and the setting is density estimation from i.i.d. samples rather than $L^2$
+approximation of a signal.
 
-"2D Gaussian Splatting" is ambiguous. Most results — including nearly all robotics,
-satellite and medical work — refer to 2D Gaussian *surfels embedded in 3D* (Huang et al.,
-SIGGRAPH 2024), which is a different problem. Filter accordingly.
+### Literature search note
+
+"2D Gaussian Splatting" is ambiguous. Most results — including nearly all robotics, satellite
+and medical work — refer to 2D Gaussian *surfels embedded in 3D* (Huang et al., SIGGRAPH
+2024), a different problem.
