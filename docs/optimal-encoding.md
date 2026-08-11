@@ -15,9 +15,11 @@ Not a compression document. Rate, entropy coding and decode speed are out of sco
 
 `[A←U]` claims are the fragile ones. The main one remaining is colour (§2.3).
 
-The load-bearing conclusion is §7: the BLASSO recovery theory is built for sparse,
-well-separated atoms, and image encoding is a dense, overlapping regime it does not cover.
-The optimality certificate (§5) survives that; almost nothing else does.
+§7 establishes that the BLASSO recovery theory is built for sparse, well-separated atoms and
+does not formally cover image densities. §7.1 measures what that costs: the relaxation gap is
+non-monotone in separation, peaks around 4 widths, and is ~0.4% at the 1–2 widths of a dense
+tiling. So the guarantees are genuinely lost, and losing them turns out to matter little for
+approximation.
 
 ---
 
@@ -59,8 +61,12 @@ that gap for the Gaussian dictionary on natural images is unknown**.
 
 This matters more than it might appear. Everything tractable in this document is about
 (P$\lambda$). If the gap is large, certifying optimality for (P$\lambda$) says little about
-(P0). Measuring the gap is §11 E2, and it should be done early — it is a precondition for
-the rest of the program being worth pursuing, not a detail.
+(P0).
+
+**[V] Measured in §12.1**: on synthetic targets the gap is ~0.4% at dense-tiling separation,
+so the certificate does transfer there. It reaches ~22% at intermediate separation, so the
+concern is real but is not worst at image density. Untested for targets outside the model
+class, which is the case that matters for real images.
 
 **Choosing (P$\lambda$) as the working definition** is defensible on the grounds that it is
 the only one of the three that admits a certificate (§5). It is not defensible on the
@@ -557,18 +563,51 @@ leave image encoding well inside the unsupported regime.
   with margin $v^\star$. With densely packed overlapping atoms $J'_{\nu^\star}$ is near zero
   across large regions of $\Theta$, $v^\star\to0$, and $\kappa_0^{-1}$ depends polynomially
   on $1/v^\star$
-- the assumption in §1.1 that the relaxation gap is small — provably zero in the separated
-  regime, **unknown and potentially large here**
-
 **What survives:** the certificate and the duality-gap bound (§5), because they are convex
 duality and need no separation.
 
-**[A] The consequence for framing.** This is not "BLASSO recovers the true Gaussians of an
-image" — images have no true Gaussians, and the recovery theory does not apply at these
-densities anyway. It is: *(P$\lambda$) is a convex objective whose optimum can be certified,
-and which happens to have Gaussians as its atoms.* Optimality of the encoding, not recovery
-of a signal. That is still worth having, and it is a narrower claim than the literature might
-suggest.
+### 7.1 But the practical consequence is small — measured
+
+**[V] §12.1.** The relaxation gap was measured against separation, on targets where the (P0)
+optimum is exactly 0. It is **non-monotone**, and image density sits past the difficult
+region:
+
+| $r$ (widths) | 30 | 15 | 8 | 4 | 2 | 1 |
+|---|---|---|---|---|---|---|
+| gap (% of $\tfrac12\|y\|^2$) | 0.00 | 0.00 | 0.00 | **22** | 4.4 | **0.4** |
+
+Two independent instances per point; certificate confirming convergence throughout; absolute
+error falling monotonically past the peak (35853 → 18677 → 1711), so this is not the
+normalization effect of §12.3.
+
+**[A] Three corrections to this section's original conclusion.**
+
+1. **The threshold is loose.** Recovery is exact at $r=8$, so the sufficient condition
+   overstates the requirement by 4–8×. The constants are proof artefacts, as suspected when
+   they were derived.
+2. **The hard regime is not where image encoding operates.** Difficulty peaks at $r\approx4$.
+   Dense tiling at $r\approx1$–2 gives a gap of 0.4–4%, near the separated-regime value.
+3. **Recovery and approximation have different difficulty profiles.** At wide separation
+   recovery succeeds. At heavy overlap the representation is redundant, so many atom sets
+   reconstruct the signal well and *approximation* is easy precisely *because* recovery is
+   hopeless. In between, neither helps.
+
+So the items listed above genuinely do not hold at image densities — support recovery,
+uniqueness, strict slackness are all lost — but **losing them costs little for the problem
+this document is about.** §1.1 worried that a large relaxation gap would make certifying
+(P$\lambda$) uninformative about (P0); at image density the gap is ~0.4%, so the certificate
+does transfer.
+
+**[A] The caveat that bounds this.** Targets are exact sums of $K$ Gaussians, which is what
+makes (P0)'s optimum exactly 0 and the gap cleanly measurable. Real images are not in the
+model class, where "recovery" has no referent and only approximation exists. Whether the
+hump persists for non-representable targets is untested and is now the most informative
+remaining experiment.
+
+**[A] The consequence for framing.** Not "BLASSO recovers the true Gaussians of an image" —
+images have no true Gaussians. Rather: *(P$\lambda$) is a convex objective whose optimum can
+be certified, whose atoms are Gaussians, and whose distance from the (P0) optimum is small at
+the densities of interest.* Optimality of the encoding, not recovery of a signal.
 
 ## 8. The guarantees do not compose
 
@@ -801,6 +840,7 @@ channel; truncated $\Theta$ (§5.1).
 | 8 | 40 | 0.02 | 0.00 | 0.000 | ~0 | 4 |
 | 4 | 20 | 53.5 / 61.6 | **21.5 / 22.9** | 0.4 / 13.0 | 0.002–0.034 | 4 |
 | 2 | 10 | 8.8 / 8.9 | **4.0 / 4.7** | 0.5 / 1.8 | 0.002–0.017 | 3–4 |
+| 1 | 5 | 1.2 / 4.3 | **0.38 / 0.42** | 0.08 / 0.12 | 0.020–0.039 | 4 |
 
 Percentages of $\tfrac12\|y\|^2$; two independent instances per row. Absolute debiased error
 is 0.000 at $r \ge 8$.
@@ -810,30 +850,20 @@ The gap is **non-monotone**: 0.00 at $r=8$, ~22% at $r=4$, ~4% at $r=2$, each re
 two independent instances. Absolute error falls alongside the percentage from $r=4$ to $r=2$
 (35853 to 18677), so this is not the energy-normalization effect of §12.3.
 
-**[A] Recovery difficulty and approximation difficulty peak at different separations.** The
-natural reading: at wide separation recovery succeeds outright; at heavy overlap the
-representation becomes redundant, so many atom sets reconstruct the signal well and
-approximation is easy *because* recovery is hopeless; in between, recovery has failed and
-redundancy has not yet arrived. If this holds at $r=1$, image encoding sits past the
-difficult region rather than inside it, and §7's conclusion — that operating outside the
-recovery theory matters — is considerably weakened. Note that an earlier version of this
-reading was withdrawn when its supporting evidence proved to be the §6.1.1 artefact; it is
-reinstated here on corrected-solver data where absolute and relative measures agree.
+**[A] Recovery difficulty and approximation difficulty peak at different separations.**
+At wide separation recovery succeeds outright; at heavy overlap the representation becomes
+redundant, so many atom sets reconstruct the signal well and approximation is easy *because*
+recovery is hopeless; in between, recovery has failed and redundancy has not yet arrived.
+Image encoding at 1–2 widths sits past the difficult region, which is why §7.1 concludes that
+operating outside the recovery theory costs little here.
 
-**[A] The theorem's threshold is loose, but a real breakdown exists.** §7 derives ~28–35
-widths from Theorem 5.1. Recovery is exact at $r=8$, so the sufficient condition overstates
-the requirement by roughly 4–8×. But the breakdown is real and lies at ~4–8 widths, still far
-above the 1–2 widths of a dense image tiling. §7's conclusion therefore survives with a
-corrected constant, resting on measurement rather than on the paper's sufficient condition.
+An earlier version of this reading was withdrawn when its supporting evidence proved to be
+the §6.1.1 artefact. It is reinstated on corrected-solver data where absolute and relative
+measures agree and every point is replicated.
 
-**[A] $\ell_1$ bias, not support selection — provisionally.** At $r=4$ the certificate reads
-0.002–0.034%, so BLASSO converged and ~22% is genuine relaxation loss. Local refinement from
-its support reached 0.449% on one instance and 12.954% on the other, so how nearly right the
-selected support is varies substantially. Two instances is not enough to characterize this.
-
-**[A] Certificate-driven placement vs random initialization**, all else equal: greedy at
-$\arg\max_\theta|\eta(\theta)|$ recovers four atoms exactly; best-of-restarts scores
-66–100% error on the same instances. Direct support for I4, independent of §5.
+**[A] Bounded by the target model.** Targets are exact $K$-atom mixtures, so (P0)'s optimum is
+exactly 0. Real images are not in the model class. Whether the hump survives for
+non-representable targets is untested.
 
 ### 12.2 What the certificate did
 
