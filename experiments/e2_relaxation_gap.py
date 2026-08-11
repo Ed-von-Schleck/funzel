@@ -180,8 +180,9 @@ def run(n=96, K=9, u_px=6.0, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
     rows = []
     for r in ratios:
         spacing = r * u
-        gx = 0.5 + spacing * np.array([-1, 0, 1])
-        cxs, cys = np.meshgrid(gx, gx, indexing="ij")
+        g = int(np.ceil(np.sqrt(K)))
+        off = (np.arange(g) - (g - 1) / 2) * spacing
+        cxs, cys = np.meshgrid(0.5 + off, 0.5 + off, indexing="ij")
         centres = np.stack([cxs.ravel(), cys.ravel()], 1)[:K]
         # ground truth: mild anisotropy + random orientation, unit amplitudes
         th_gt = []
