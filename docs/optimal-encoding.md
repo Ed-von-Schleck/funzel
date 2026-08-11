@@ -796,17 +796,27 @@ channel; truncated $\Theta$ (§5.1).
 
 | $r$ | sep (px) | BL raw | BL debiased | BL polished | certgap | $K_{BL}$ |
 |---|---|---|---|---|---|---|
-| 30 | 150 | 0.01 | 0.00 | 0.000 | 0.0017 | 4 |
+| 30 | 150 | 0.01 | 0.00 | 0.000 | 0.002 | 4 |
 | 15 | 75 | 0.01–0.02 | 0.00 | 0.000 | ~0 | 4 |
+| 8 | 40 | 0.02 | 0.00 | 0.000 | ~0 | 4 |
+| 4 | 20 | 53.5 / 61.6 | **21.5 / 22.9** | 0.4 / 13.0 | 0.002–0.034 | 4 |
 
-Percentages of $\tfrac12\|y\|^2$. Absolute debiased error 0.000 in both.
+Percentages of $\tfrac12\|y\|^2$; two independent instances per row. Absolute debiased error
+is 0.000 at $r \ge 8$.
 
-**Exact support recovery above the threshold**, as predicted. r=30 reproduced identically
-across two launches; r=15 holds on two independent random instances.
+**Exact support recovery down to $r=8$**, then a sharp transition. The gap is not a gradual
+degradation: 0.00 at $r=8$, ~22% at $r=4$, replicated across instances.
 
-**[A] The threshold is conservative.** §7 derives ~28–35 widths from Theorem 5.1. Recovery is
-still exact at $r=15$, half of that, consistent with the constants being proof artefacts.
-Where it actually breaks is not yet known.
+**[A] The theorem's threshold is loose, but a real breakdown exists.** §7 derives ~28–35
+widths from Theorem 5.1. Recovery is exact at $r=8$, so the sufficient condition overstates
+the requirement by roughly 4–8×. But the breakdown is real and lies at ~4–8 widths, still far
+above the 1–2 widths of a dense image tiling. §7's conclusion therefore survives with a
+corrected constant, resting on measurement rather than on the paper's sufficient condition.
+
+**[A] $\ell_1$ bias, not support selection — provisionally.** At $r=4$ the certificate reads
+0.002–0.034%, so BLASSO converged and ~22% is genuine relaxation loss. Local refinement from
+its support reached 0.449% on one instance and 12.954% on the other, so how nearly right the
+selected support is varies substantially. Two instances is not enough to characterize this.
 
 **[A] Certificate-driven placement vs random initialization**, all else equal: greedy at
 $\arg\max_\theta|\eta(\theta)|$ recovers four atoms exactly; best-of-restarts scores
