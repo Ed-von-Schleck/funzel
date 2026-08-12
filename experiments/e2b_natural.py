@@ -93,7 +93,7 @@ def restart_p0(y, X, Y, N, rng, n_restarts):
 
 
 # ------------------------------------------------------------------- blasso
-def blasso(y, n, X, Y, lam, bank, max_atoms):
+def blasso(y, n, X, Y, lam, bank, max_atoms, inner_iter=400):
     c = np.zeros(0)
     th = np.zeros((0, NP_ATOM))
     for _ in range(max_atoms):
@@ -104,7 +104,7 @@ def blasso(y, n, X, Y, lam, bank, max_atoms):
         c = np.concatenate([c, [0.0]])
         th = np.vstack([th, arg])
         c, th, _ = fit_fixed_support(c, th, y, X, Y, lam, BOUNDS_LO, BOUNDS_HI,
-                                     maxiter=400)
+                                     maxiter=inner_iter)
         keep = np.abs(c) > 1e-4 * max(1.0, np.abs(c).max())
         c, th = c[keep], th[keep]
         if c.size == 0:
