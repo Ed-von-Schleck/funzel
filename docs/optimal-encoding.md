@@ -29,7 +29,8 @@ for producing the best solution.
 
 | | status |
 |---|---|
-| Certificate-driven placement beats random initialization | **[V]** one instance, §9.5 — large effect, not replicated |
+| Certificate-driven greedy beats random restarts | **[V]** 9/9 rows, §10.1 |
+| Certificate-driven greedy beats BLASSO at matched $N$ | **[V]** 9/9 rows, §10 |
 | The optimality certificate is computable and self-diagnosing | **[V]** §6, §9.4 |
 | TV needs norm-weighting over a scale-varying dictionary | **[V]** §7.1.1 |
 | Forward model linear, loss $L^2$ — preconditions hold | **[V]** §3 |
@@ -444,27 +445,34 @@ BLASSO *after* debiasing and full polish, every time.
 | ascent | 8.301 / 5.792 / 4.154 | 9.585 / 6.673 / 5.129 |
 | face | 5.254 / 3.593 / 2.433 | 5.724 / 4.285 / 2.653 |
 
-**[A] Attribution is incomplete.** $E_{\rm ref}$ is a *minimum over three methods* and the
-run did not log which one attained it. So what is established is that **some uncertified method
-beat BLASSO in every row**, not specifically that greedy did. Distinguishing them is a
-one-line logging change — §11 U13 — and it matters, because the document's practical
-recommendation depends on the answer.
+### 10.1 Attribution — resolved
 
-**[A] The circumstantial case for placement rather than relaxation.** Separately from §9.2,
-the §9.1 diagnostic showed certificate-driven greedy at $\lambda=0$ recovering four atoms
-exactly (0.0000% error) where random restarts scored 100% on the same instance. That is one
-instance, on an in-model target, and it supports greedy over restarts — not greedy over
-BLASSO. Taken with §9.2 it is suggestive that matched-filter placement is the operative
-ingredient, but U13 is what would establish it.
+$E_{\rm ref}$ is a minimum over greedy, random restarts and polished BLASSO, and the original
+run did not log which attained it. Re-running the two reference methods separately settles it:
+
+| target | $N$ | greedy | restarts | winner |
+|---|---|---|---|---|
+| cartoon | 8 / 16 / 32 | **2.096 / 1.148 / 0.570** | 2.521 / 1.757 / 1.109 | greedy |
+| ascent | 8 / 16 / 32 | **8.301 / 5.792 / 4.154** | 9.602 / 7.805 / 5.252 | greedy |
+| face | 8 / 16 / 32 | **5.254 / 3.593 / 2.433** | 7.263 / 4.735 / 3.381 | greedy |
+
+**[V]** Greedy wins all nine, and its value reproduces $E_{\rm ref}$ **exactly** in every row —
+so greedy, not restarts, attained the reference throughout. Combined with §10's table, the
+established chain is: **certificate-driven greedy > polished BLASSO > raw BLASSO**, and
+**greedy > random restarts**, on every target and budget tested.
+
+**[A] So the operative ingredient is placement, not relaxation.** Certificate-driven greedy at
+$\lambda=0$ is matched-filter placement plus local refinement — matching pursuit. Adding
+$\ell_1$ on top degrades quality everywhere tested. §9.1 gives the extreme case: the same
+greedy recovered four atoms exactly (0.0000%) where random restarts scored 100%.
 
 **[A] Consequences for this document's framing.**
 
 - (P$\lambda$) is **not** justified as the working definition of optimal encoding. Demoted to a
   diagnostic instrument.
-- The actionable distillation is *probably* **matching pursuit with continuous refinement over
-  a unit-norm anisotropic Gaussian dictionary** — which **[V]** `papers/tip2006.pdf` did in
-  2006. "Probably" because of the attribution gap above: an uncertified method won every row,
-  and U13 identifies which.
+- The actionable distillation is **matching pursuit with continuous refinement over a
+  unit-norm anisotropic Gaussian dictionary** — which **[V]** `papers/tip2006.pdf` did in 2006.
+  §10.1 establishes the attribution.
 - The certificate's value is in *measurement and debugging* (§9.4), not in producing encodings.
 
 **[A] What would overturn this.** The comparison is at $N\le32$ on small images, one instance
@@ -489,7 +497,7 @@ realistic $N$ could plausibly close or reverse the gap. §11 U7.
 | **U10** | Does matching a Zador-type density actually reduce reconstruction error (§7.2)? | Place $N$ atoms by semi-discrete OT at several candidate density laws; compare resulting $L^2$ error against matched-filter placement at equal $N$. If no law wins, the OT guarantee is rigorous about an irrelevant objective | days |
 | **U11** | Is the §9.1 hump present out-of-model? | §9.2 sweeps budget, not separation, so the two are not comparable. Sweep $r_{\rm ref}$ on a fixed out-of-model target by varying $N$ and image scale together, and check for a peak | days |
 | **U12** | How much of the out-of-model penalty is $\ell_1$ bias vs. no exact representation? | Repeat §9.2 on targets that *are* exact mixtures but at matched $r_{\rm ref}$ and $N$; the difference isolates the model-class effect | days |
-| **U13** | Which uncertified method actually beat BLASSO in §10 — greedy or random restarts? | Log the argmin of the three reference methods per row and re-run §9.2. **The document's practical recommendation depends on this** | hours |
+| ~~U13~~ | ~~Which uncertified method beat BLASSO — greedy or restarts?~~ | **Resolved — §10.1.** Greedy, in all nine rows, matching $E_{\rm ref}$ exactly | done |
 
 **[A] Dependency structure.** U5 gates U7 and U8, and those two decide whether this line of work
 has a future. U1 is cheap and should be first, since §3.1 is a premise for everything. U4 and
@@ -498,9 +506,6 @@ U6 are cheap and independent.
 ---
 
 ## 12. Programme
-
-**P0 — U13.** One-line logging change, then re-run §9.2. The headline recommendation rests on
-an attribution that was never recorded.
 
 **P1 — U1.** Confirm the forward model. Cheapest check on the load-bearing premise.
 
