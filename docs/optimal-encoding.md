@@ -23,6 +23,59 @@ losing them costs a single-digit percentage rather than invalidating the approac
 
 ---
 
+## 0. Methodology
+
+Rules adopted after an audit of this document's own error history. Ten substantive claims in
+it were stated and later reversed; the causes were consistent enough to be worth encoding.
+
+**M1 — Instrument before interpretation.** No result from a tool is interpreted until the
+tool reproduces a case with a known answer. *Violation cost:* a solver bug (§6.1.1)
+invalidated two complete parameter sweeps and three interpretations built on them; the
+one-run sanity check that exposed it was performed last instead of first.
+
+**M2 — One observation is a hypothesis.** A single data point is reported with the test that
+would confirm it, or not reported. *Violation cost:* four reversals, each refuted by the next
+data point.
+
+**M3 — Sufficient is not necessary.** Whenever a theorem is invoked, state which direction it
+runs. Failing a sufficient condition means the guarantee is unavailable, **not** that the
+conclusion is false. *Violation cost:* §7's original conclusion, and the ~30-width threshold
+that measurement placed at 4–8 (§7.1). §3, §6 and §8 were re-audited against this rule; see
+the entries marked *audit* below.
+
+**M4 — Tag conversation as well as prose.** The [V]/[A]/[U] discipline applies to any claim
+made anywhere, not only inside this file.
+
+**M5 — Pre-register what an experiment can and cannot show.** State the direction of any
+bound before running. *Worked:* E2b's docstring fixed the lower-bound asymmetry in advance
+and that claim never needed revision. *Not done:* E2, which needed its design corrected three
+times mid-flight (§12.3).
+
+**M6 — A null search result is not novelty.** Claims that something is unexplored require a
+positive check. *Violation cost:* two bodies of prior art missed (Goal-Based Caustics 2011,
+`papers/tip2006.pdf`), both of which had already solved problems being treated as open.
+
+**M7 — Analyse in batches.** Commenting per-result maximizes the number of premature claims.
+
+### 0.1 Why this document is unusually exposed to M3
+
+The imported theory and the target problem differ on four independent axes:
+
+| | super-resolution theory | image encoding |
+|---|---|---|
+| dictionary | fixed kernel, translation-only | free covariance, 5-D |
+| separation | well-separated | densely overlapping |
+| goal | recovery of true support | approximation; no true support exists |
+| regularizer | plain TV (constant atom norm) | requires norm-weighted TV (§6.1.1) |
+
+Every theorem cited here breaks on at least one axis. That makes "the hypothesis fails"
+extremely common, and M3 the rule most likely to be violated — the temptation is to read each
+failed hypothesis as a negative result about the problem, when it is a statement about the
+reach of a proof. §7.1 is the case where measurement settled it: the guarantee genuinely does
+not apply, and the property it guarantees holds anyway over most of the range.
+
+---
+
 ## 1. Problem statement
 
 Three notions of "optimal encoding". They are not equivalent.
@@ -200,9 +253,18 @@ whereas encoding is on a finite pixel grid.
 
 ### 3.2 A structural prediction
 
-**[A]** If the theory describes what good solutions look like, an optimizer that reaches
-near-optimality should produce curvelet-like structure: multiscale, edge-aligned, strongly
-anisotropic, with **parabolic scaling** — width $\propto$ length$^2$. Operationalized in §11 E5.
+**[A] — audit (M3).** An earlier version of this section predicted that any near-optimal
+optimizer output *should* exhibit curvelet-like structure. That is a converse error. The
+theorem exhibits **one** construction, built from curvelets, that attains the rate; it says
+nothing about what other near-optimal configurations look like, and with a redundant
+dictionary there is no reason to expect uniqueness of structure.
+
+What survives is weaker and worth testing anyway: *if* an optimizer's output does show
+multiscale, edge-aligned, parabolic scaling (width $\propto$ length$^2$), that is evidence it
+has found the curvelet-like family the theorem constructs. Absence of that structure is **not**
+evidence of a failed optimizer — it is equally consistent with a different, equally good
+solution. E5 (§11) should be read as descriptive, not as a falsification test; its original
+framing claimed the latter.
 
 ---
 
@@ -211,6 +273,10 @@ anisotropic, with **parabolic scaling** — width $\propto$ length$^2$. Operatio
 - **[U]** Sparse approximation over a general dictionary is NP-hard, and NP-hard to
   approximate within any factor; hardness holds specifically under *coherent* dictionaries.
   The Gaussian dictionary is highly coherent.
+  **[A] — audit (M3):** worst-case hardness over a problem family says nothing about the
+  instances that arise here. It rules out a general efficient algorithm with a guarantee; it
+  does not imply that image-fitting instances are hard. §12.1 found certificate-driven greedy
+  recovering exactly at wide separation, which is a family of easy instances.
 - The dictionary is continuous — an infinite-dimensional non-convex search, not a subset
   selection.
 - **[A]** (P0) has $N!$ equivalent global minima; the optimum is an equivalence class and the
@@ -400,7 +466,16 @@ exponential is at least plausibly survivable here.
 repair — bound the image domain and the scale range — produces a manifold *with* boundary,
 which (A1) also excludes. Positions can be compactified to a torus (periodic image, standard
 in this literature) and orientation is already $S^1$, but **log-scale has no natural
-boundaryless compactification**. That is the genuine obstruction. The smoothness half of A1
+boundaryless compactification**.
+
+**[A] — audit (M3).** An earlier version called this "the genuine obstruction", which
+overstates it in two ways. First, a failed hypothesis withdraws the guarantee; it does not
+show that CPGD converges badly here, and nothing in this document tests that. Second,
+boundarylessness may be a convenience of the Riemannian gradient-flow argument rather than
+essential: if the optimum's scales lie strictly interior to the truncation, the boundary is
+never active along the flow and a localized analysis could plausibly apply. Whether the
+obstruction is fundamental or technical is **unresolved**, and §8 item 1 should be read as
+"needs settling", not "known to be fatal". The smoothness half of A1
 holds only on a scale range bounded away from singular and from very large — the same range
 $\mathrm{KER}(2)$ needs (§6.1), and the reason GaussianImage's scale lower bound exists.
 
@@ -430,7 +505,7 @@ $\sigma_{\min}(H)$, $\sigma_{\min}(K)$, and the strict-slackness margin $v^\star
 orders of magnitude.
 
 **Covers:** global convergence of particle gradient descent under (A1–5).
-**Does not cover:** this problem, as stated. A1 fails; A4 and A5 are unverifiable and §7
+**Does not cover:** this problem, as stated — A1 fails; A4 and A5 are unverifiable and §7
 argues A5 is implausible at image atom densities.
 
 ### 6.3 Semi-discrete optimal transport
@@ -555,7 +630,9 @@ i.i.d. samples, so the numbers are indicative rather than directly transferable.
 margin is large enough that an order-of-magnitude improvement in the constants would still
 leave image encoding well inside the unsupported regime.
 
-**What this invalidates at image densities:**
+**What is no longer *guaranteed* at image densities** — audit (M3): these are hypotheses of
+theorems, so failing them withdraws the guarantees. It does not establish that the properties
+fail, and §7.1 shows empirically that support recovery persists far below the threshold:
 
 - exact support recovery — the claim that BLASSO finds "the right" atoms
 - SFW finite termination, which needs a unique solution and a nondegenerate certificate
@@ -617,16 +694,21 @@ the densities of interest.* Optimality of the encoding, not recovery of a signal
 §6 lists five results with convergence or optimality guarantees. They are guarantees **for
 five different problems**, and there is no argument here that they compose:
 
-| Result | Guarantees what | For which problem | Applies here? |
+| Result | Guarantees what | For which problem | Guarantee transfers? |
 |---|---|---|---|
 | BLASSO certificate | global optimality test | any bounded linear $\Phi$, $L^2$, scalar | **yes** |
 | FW duality gap | suboptimality bound | any bounded linear $\Phi$ | **yes** |
 | SFW Theorem 3 | finite termination | $d=1$, **fixed kernel, translation-only** | no |
-| CPGD Theorem 4.2 | global convergence | (A1–5) | **no — A1 fails** |
+| CPGD Theorem 4.2 | global convergence | (A1–5) | no — A1 fails as stated |
 | KMT damped Newton | global linear convergence | density matching, not (P0) | different objective |
 | SteepGS split rule | optimal offspring count | 3DGS objective **with** $\alpha$-blending | different objective |
 
-Only the first two apply. The rest are motivation.
+Only the first two transfer. **[A] — audit (M3):** the last column reports whether the
+*guarantee* carries over, not whether the guaranteed property holds. An earlier version was
+headed "Applies here?", which invited the stronger reading. §7.1 is the cautionary case: the
+recovery guarantee does not transfer at image densities, and recovery was nevertheless exact
+far below the threshold. Nothing here establishes that CPGD converges poorly on this problem;
+only that its theorem does not reach it.
 
 **What would be needed to make the composition real**, roughly in order of tractability:
 
