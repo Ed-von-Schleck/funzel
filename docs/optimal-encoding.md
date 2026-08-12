@@ -598,11 +598,13 @@ this document is about.** §1.1 worried that a large relaxation gap would make c
 (P$\lambda$) uninformative about (P0); at image density the gap is ~0.4%, so the certificate
 does transfer.
 
-**[A] The caveat that bounds this.** Targets are exact sums of $K$ Gaussians, which is what
-makes (P0)'s optimum exactly 0 and the gap cleanly measurable. Real images are not in the
-model class, where "recovery" has no referent and only approximation exists. Whether the
-hump persists for non-representable targets is untested and is now the most informative
-remaining experiment.
+**[V] Tested out of model — §12.1b.** On two photographs and a cartoon, where no exact
+representation exists, the penalty is 1.0–4.8% (a *lower* bound, since the optimum is
+unknown) against §12.1's exact 0.4% at $r=1$. Real fits sit at $r_{\rm ref}\approx1.3$–2.9,
+between the easy point and the difficulty peak, and the observed penalties fall inside what
+§12.1 predicts for that range. So the conclusion holds with a caveat: leaving the model class
+costs something, and real targets sit nearer the difficult regime than the synthetic dense
+case suggested — but the penalty stays single-digit.
 
 **[A] The consequence for framing.** Not "BLASSO recovers the true Gaussians of an image" —
 images have no true Gaussians. Rather: *(P$\lambda$) is a convex objective whose optimum can
@@ -864,6 +866,68 @@ measures agree and every point is replicated.
 **[A] Bounded by the target model.** Targets are exact $K$-atom mixtures, so (P0)'s optimum is
 exactly 0. Real images are not in the model class. Whether the hump survives for
 non-representable targets is untested.
+
+### 12.1b E2b: targets outside the model class
+
+§12.1's targets were exact $K$-atom mixtures, so the (P0) optimum was 0 and the gap exact.
+E2b uses targets with **no exact representation**: two photographs (`ascent`, `face`, centre
+crops box-downsampled to 56²) and a Donoho–Candès cartoon — the class §3's rates are stated
+for. Implementation `experiments/e2b_natural.py`.
+
+**[A] The bound reverses direction.** With no known optimum, the reference is the best of
+certificate-driven greedy at $\lambda=0$, random restarts, and the polished BLASSO solution
+(itself a feasible $N$-atom point). Since $E_{\rm ref}\ge E_{\rm opt}$, the reported penalty
+$E_{\rm BL}-E_{\rm ref}$ is a **lower bound** on the relaxation gap — it can show the penalty
+is large, not that it is small. §12.1's numbers were exact, so the two are not directly
+comparable and E2b understates.
+
+| target | $N$ | $E_{\rm ref}$ | BL debiased | **penalty** | certgap | $r_{\rm emp}$ | $r_{\rm ref}$ |
+|---|---|---|---|---|---|---|---|
+| cartoon | 8 | 2.10 | 6.17 | **4.08** | 0.003 | 0.32 | 1.30 |
+| cartoon | 16 | 1.15 | 2.16 | **1.01** | 0.004 | 0.74 | 1.75 |
+| ascent | 8 | 8.30 | 13.14 | **4.83** | 0.024 | 0.94 | 2.52 |
+| ascent | 16 | 5.79 | 9.12 | **3.33** | 0.004 | 0.91 | 2.27 |
+| face | 8 | 5.25 | 7.85 | **2.60** | 0.004 | 2.07 | 1.97 |
+| face | 16 | 3.59 | 5.53 | **1.94** | 0.002 | 2.02 | 2.94 |
+
+Percentages of $\tfrac12\|y\|^2$. $r_{\rm emp}$ / $r_{\rm ref}$ are empirical separation
+ratios (median nearest-neighbour centre distance / median fitted width) for the BLASSO and
+reference solutions. **$N=32$ rows are omitted as uncertified — see below.**
+
+**[A] Findings.**
+
+1. **The penalty is real but moderate: 1.0–4.8%**, falling with budget on every target. As a
+   lower bound, the true gap is at least this.
+2. **Out-of-model costs more than in-model.** §12.1 measured an *exact* 0.4% at $r=1$; here
+   the *lower bound* is 1.0–4.8%. Having no exact representation makes the $\ell_1$ bias worse,
+   which is the case that matters for encoding.
+3. **Real fits land at $r_{\rm ref}\approx1.3$–2.9**, between §12.1's easy point ($r=1$, gap
+   0.4%) and its difficulty peak ($r\approx4$, gap 22%). Interpolating §12.1 across that range
+   predicts gaps of roughly 0.4–10%; the observed 1.0–4.8% sits inside it. The two experiments
+   corroborate.
+4. **The cartoon is the best-behaved target** (1.01% at $N=16$ against 1.94 and 3.33 for the
+   photographs). §3's approximation theory covers the cartoon class, so the favourable theory
+   applies most cleanly to the target *least* like a photograph.
+5. **[A] BLASSO clustering is target-dependent, not universal.** $r_{\rm emp}<r_{\rm ref}$ on
+   cartoon and ascent, but on `face` at $N=8$ they match (2.07 vs 1.97). Where it does not
+   cluster it also pays least. Three targets cannot establish the mechanism.
+
+### 12.1c The certification ceiling is an implementation limit
+
+**[V]** certgap is 0.002–0.024% at $N=8$ and $N=16$ on all three targets, then jumps to
+1.5–6.5% at $N=32$ on all three. Those rows are not converged and are excluded.
+
+**[V] It is not intrinsic.** Holding $\lambda$ fixed at ~35 atoms and varying only the inner
+iteration count gave certgap 0.83% / 1.06% / 7.24% at 400 / 1200 / 3000 iterations — the gap
+gets *worse* with more optimization. **[A]** Better inner solves drive more amplitudes to
+zero, the prune threshold removes them, and Frank-Wolfe churns — adding atoms that are pruned
+on the next pass — exhausting its iteration budget without satisfying $\sup|\eta|\le\lambda$.
+
+**[A] Consequences.** §5 gains **no** scaling limitation from this: the ceiling is in the
+add/prune loop, not in the certificate. But it is a real engineering obstacle for E3 and E4,
+which need $10^4$ atoms while this solver certifies reliably only to ~16. A usable encoder
+needs an add/prune scheme that does not churn — batched addition, a support-size-aware prune
+rule, or a proper LASSO inner solve rather than smoothed $\ell_1$.
 
 ### 12.2 What the certificate did
 
