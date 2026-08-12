@@ -352,8 +352,10 @@ single channel; truncated $\Theta$.
 | BL debiased, run B | 0.00 | 0.00 | 0.00 | 21.52 | 4.01 | 0.42 |
 | absolute error, A | 0 | 0 | 0 | 35853 | 18677 | 1711 |
 
-Percentages of $\tfrac12\|y\|^2$; independent instances per run; certificate confirmed
-convergence throughout ($\le0.04\%$).
+Percentages of $\tfrac12\|y\|^2$; certificate confirmed convergence throughout
+($\le0.04\%$). **[A]** The two runs share a random stream that diverges once the restart counts
+differ, so $r=30$ is the *same* instance computed twice (a reproducibility check) while $r\le15$
+are genuinely independent instances.
 
 **[V] Exact support recovery down to $r=8$**, then a sharp transition, then partial recovery.
 Absolute error falls alongside the percentage from $r=4$ to $r=1$, so this is not the
@@ -388,11 +390,16 @@ distance / median fitted width) for the BLASSO and reference solutions. $N=32$ r
 uncertified (§9.3).
 
 1. **Penalty 1.0–4.8%**, falling with budget, on every target. A lower bound.
-2. **Out-of-model costs more than in-model** — 1.0–4.8% (lower bound) against an exact 0.4% at
-   $r=1$.
+2. **[A] Withdrawn: "out-of-model costs more than in-model" is not supported.** An earlier
+   version compared 1.0–4.8% here against an *exact 0.4%* in-model — but that in-model figure is
+   at $r=1$, whereas these fits sit at $r_{\rm ref}\approx1.3$–2.9. At matched separation
+   ($r\approx2$) §9.1 gives 4.0–4.7%, which **overlaps** the out-of-model range. Comparing
+   against $r=1$ selected §9.1's smallest value. Nothing here separates the model-class effect
+   from the separation effect — that is §11 U12.
 3. **Real fits land at $r_{\rm ref}\approx1.3$–2.9**, between §9.1's easy point and its peak.
-   Interpolating §9.1 predicts 0.4–10%; observed 1.0–4.8% sits inside. **[A]** Weak
-   corroboration — the prediction interval is wide.
+   **[A]** Interpolating §9.1 across that range predicts 0.4–10%, and the observed 1.0–4.8% sits
+   inside — but a 25-fold prediction interval is close to unfalsifiable, so this is consistency,
+   not corroboration.
 4. **[A] Hypothesis (M2).** The cartoon is best-behaved (1.01% at $N=16$ against 1.94 and
    3.33), which would mean §4's theory applies most cleanly to the target least like a
    photograph. Three targets, one instance each.
