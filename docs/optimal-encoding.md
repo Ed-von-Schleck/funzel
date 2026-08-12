@@ -14,11 +14,15 @@ document's error history are in Appendix A.
 
 ## 1. Summary
 
-**The central negative result (§10).** On every target and budget tested, a cheap uncertified
-greedy — matched-filter placement with local refinement, i.e. matching pursuit — produced a
-**better** $N$-atom encoding than the convex BLASSO route, even after debiasing and full
-polish. Nine rows, three targets, no exceptions. Adding an $\ell_1$ term buys a certificate and
-costs reconstruction quality.
+**The central negative result (§10).** On all six certified rows, **greedy** produced a better
+$N$-atom encoding than the convex BLASSO route, even after debiasing and full polish. Adding an
+$\ell_1$ term buys a certificate and costs reconstruction quality.
+
+*Terminology:* "greedy" here means **certificate-driven greedy at $\lambda=0$** — it places each
+new atom at $\arg\max_\theta|\eta(\theta)|$, so it uses the dual certificate as a *placement
+criterion*, but it solves no convex problem and yields **no optimality certificate**. It is also
+roughly an order of magnitude cheaper than the BLASSO route, which repeats a comparable inner
+loop across a $\lambda$ bisection. This is matching pursuit with continuous refinement.
 
 **What that means for the framing.** (P$\lambda$) is *not* justified as the working definition
 of optimal encoding on quality grounds. Its defensible role is narrower: a **diagnostic
@@ -29,8 +33,9 @@ for producing the best solution.
 
 | | status |
 |---|---|
-| Certificate-driven greedy beats random restarts | **[V]** 9/9 rows, §10.1 |
-| Certificate-driven greedy beats BLASSO at matched $N$ | **[V]** 9/9 rows, §10 |
+| Greedy beats random restarts | **[V]** 9/9 rows, §10.1 |
+| Greedy beats BLASSO at matched $N$ | **[V]** 6/6 *certified* rows, §10 (3 more agree but BLASSO did not converge there) |
+| How far greedy is from optimal | **not bounded by anything here** — §11 U14 |
 | The optimality certificate is computable and self-diagnosing | **[V]** §6, §9.4 |
 | TV needs norm-weighting over a scale-varying dictionary | **[V]** §7.1.1 |
 | Forward model linear, loss $L^2$ — preconditions hold | **[V]** §3 |
@@ -410,9 +415,9 @@ $\sup|\eta|\le\lambda$.
 
 Three times, and this is the strongest practical argument for §6:
 
-1. **Separated relaxation loss from solver failure** — a certified gap of $5\times10^{-5}$
-   beside 20% reconstruction error means the $\ell_1$ solution is genuinely far from the
-   $\ell_0$ optimum, not that the optimizer stalled.
+1. **Separated relaxation loss from solver failure** — at §9.1's $r=4$, a certified gap of
+   **0.002%** beside **22.9%** reconstruction error means the $\ell_1$ solution is genuinely far
+   from the $\ell_0$ optimum, not that the optimizer stalled.
 2. **Detected its own invalidity** — a *negative* duality gap is impossible for a valid bound,
    flagging that the grid-based supremum was underestimating $\max|\eta|$. A heuristic stopping
    rule fails silently there.
@@ -435,15 +440,25 @@ Three confounds were invisible in design and obvious only in data:
 
 ## 10. The central negative result
 
-**[V]** In **all nine** §9.2 rows — three targets × three budgets — $E_{\rm ref}<E_{\rm BLpol}$.
-Since $E_{\rm ref}=\min(\text{greedy},\text{restarts},E_{\rm pol})$, greedy or restarts beat
-BLASSO *after* debiasing and full polish, every time.
+**[V] On the certified rows — six of them, $N\in\{8,16\}$ across three targets —
+$E_{\rm ref}<E_{\rm BLpol}$ every time.** §10.1 attributes $E_{\rm ref}$ to greedy in all
+cases, so greedy beat BLASSO *after* debiasing and full polish.
 
-| target ($N$ = 8 / 16 / 32) | best uncertified | BLASSO + polish |
-|---|---|---|
-| cartoon | 2.096 / 1.148 / 0.570 | 2.500 / 1.200 / 0.715 |
-| ascent | 8.301 / 5.792 / 4.154 | 9.585 / 6.673 / 5.129 |
-| face | 5.254 / 3.593 / 2.433 | 5.724 / 4.285 / 2.653 |
+| target | $N$ | greedy | BLASSO + polish | greedy margin |
+|---|---|---|---|---|
+| cartoon | 8 | **2.096** | 2.500 | 16% |
+| cartoon | 16 | **1.148** | 1.200 | 4% |
+| ascent | 8 | **8.301** | 9.585 | 13% |
+| ascent | 16 | **5.792** | 6.673 | 13% |
+| face | 8 | **5.254** | 5.724 | 8% |
+| face | 16 | **3.593** | 4.285 | 16% |
+
+**[A] The $N=32$ rows point the same way but are uninformative about the formulation.** §9.2
+excludes them because BLASSO did not converge there (certgap 1.5–6.5%, §9.3); a non-converged
+solve losing tests the solver, not (P$\lambda$). For the record they were 0.570/4.154/2.433
+against 0.715/5.129/2.653 — margins of 25%, 23%, 9%, consistent with the certified rows.
+Reporting them as part of a "nine of nine" result, as an earlier version did, double-counted
+a solver defect as evidence about the formulation.
 
 ### 10.1 Attribution — resolved
 
@@ -457,9 +472,12 @@ run did not log which attained it. Re-running the two reference methods separate
 | face | 8 / 16 / 32 | **5.254 / 3.593 / 2.433** | 7.263 / 4.735 / 3.381 | greedy |
 
 **[V]** Greedy wins all nine, and its value reproduces $E_{\rm ref}$ **exactly** in every row —
-so greedy, not restarts, attained the reference throughout. Combined with §10's table, the
-established chain is: **certificate-driven greedy > polished BLASSO > raw BLASSO**, and
-**greedy > random restarts**, on every target and budget tested.
+so greedy, not restarts, attained the reference throughout. This comparison does not involve
+BLASSO, so all nine rows are valid here.
+
+**Established chain**, on the six certified rows: **greedy > polished BLASSO > raw BLASSO**
+(polish improves BLASSO in every row, and greedy still beats it). Separately, **greedy >
+random restarts** on all nine.
 
 **[A] So the operative ingredient is placement, not relaxation.** Certificate-driven greedy at
 $\lambda=0$ is matched-filter placement plus local refinement — matching pursuit. Adding
@@ -497,11 +515,17 @@ realistic $N$ could plausibly close or reverse the gap. §11 U7.
 | **U10** | Does matching a Zador-type density actually reduce reconstruction error (§7.2)? | Place $N$ atoms by semi-discrete OT at several candidate density laws; compare resulting $L^2$ error against matched-filter placement at equal $N$. If no law wins, the OT guarantee is rigorous about an irrelevant objective | days |
 | **U11** | Is the §9.1 hump present out-of-model? | §9.2 sweeps budget, not separation, so the two are not comparable. Sweep $r_{\rm ref}$ on a fixed out-of-model target by varying $N$ and image scale together, and check for a peak | days |
 | **U12** | How much of the out-of-model penalty is $\ell_1$ bias vs. no exact representation? | Repeat §9.2 on targets that *are* exact mixtures but at matched $r_{\rm ref}$ and $N$; the difference isolates the model-class effect | days |
+| **U14** | How far is *greedy* from the (P0) optimum out-of-model? **Nothing here bounds this.** §10 is a relative result: greedy beats BLASSO, but both could be far from optimal | At small $N$ on small images, a fine exhaustive grid over $(\mu,\Sigma)$ with least-squares amplitudes gives a genuine lower bound on the (P0) optimum; compare greedy against it. Alternatively run greedy with orders-of-magnitude more restarts and refinement and see whether anything improves — weaker, but cheap | days |
 | ~~U13~~ | ~~Which uncertified method beat BLASSO — greedy or restarts?~~ | **Resolved — §10.1.** Greedy, in all nine rows, matching $E_{\rm ref}$ exactly | done |
 
 **[A] Dependency structure.** U5 gates U7 and U8, and those two decide whether this line of work
-has a future. U1 is cheap and should be first, since §3.1 is a premise for everything. U4 and
-U6 are cheap and independent.
+has a future. U1 is cheap and should be first, since §3.1 is a premise for everything. U4, U6,
+U10 and U14 are cheap and independent.
+
+**[A] U14 is the one that most limits what can currently be claimed.** §10 establishes only a
+*relative* ordering. If greedy is itself far from the (P0) optimum, then "use matching pursuit"
+is a statement about the best of two mediocre options, not a recommendation. No result in this
+document bounds greedy's absolute suboptimality on a target outside the model class.
 
 ---
 
