@@ -1,0 +1,37 @@
+# E9: how strong is the perspective relaxation on the splatting problem?
+
+============================================================================
+# target=cartoon n=48 D=248 N=3 ||y||^2=447.81 (0.5||y||^2=223.90)
+
+  lambda2  exact l0+ridge  relaxation  root gap  ridge/data    l2 err
+        0         17.2232      2.4908    85.54%        0.00   7.6923%
+   0.0001         17.2791      3.0903    82.12%        0.00   7.6923%
+    0.001         17.7800      4.6499    73.85%        0.03   7.6931%
+     0.01         22.6312     10.9635    51.56%        0.30   7.7692%
+      0.1         45.8150     38.8319    15.24%        0.52  13.4817%
+        1        122.9557    122.5458     0.33%        0.65  33.3449%
+       10        203.7801    203.7801    -0.00%        0.10  83.0215%
+
+  root gap 0% would mean branch-and-bound closes without branching;
+  ridge/data is how large the regulariser is relative to the
+  reconstruction error it is supposed to be a mild correction to.
+  'l2 err' is the pure reconstruction error of the ridge solution,
+  as % of 0.5||y||^2, comparable with every other table in the repo.
+
+============================================================================
+# target=ascent n=48 D=248 N=3 ||y||^2=377.44 (0.5||y||^2=188.72)
+
+  lambda2  exact l0+ridge  relaxation  root gap  ridge/data    l2 err
+        0         36.7706      7.5338    79.51%        0.00  19.4843%
+   0.0001         36.8435      9.8257    73.33%        0.00  19.4844%
+    0.001         37.4936     13.4150    64.22%        0.02  19.4877%
+     0.01         42.2153     22.6868    46.26%        0.11  20.1505%
+      0.1         60.0003     51.8439    13.59%        0.30  24.5456%
+        1        122.6535    122.5998     0.04%        0.36  47.6734%
+       10        176.5744    176.5744    -0.00%        0.07  87.7309%
+
+  root gap 0% would mean branch-and-bound closes without branching;
+  ridge/data is how large the regulariser is relative to the
+  reconstruction error it is supposed to be a mild correction to.
+  'l2 err' is the pure reconstruction error of the ridge solution,
+  as % of 0.5||y||^2, comparable with every other table in the repo.

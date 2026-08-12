@@ -62,6 +62,8 @@ unknown where it matters.
 | That ordering is the formulation, not the solver | **[V]** §10.4, both sides solved exactly: $\ell_1$ is 6–409% worse than $\ell_0$ at matched $N$ |
 | Dictionary structure helps on-grid, washes out off-grid | **[V]** §10.5 — ~25% on-grid, a few % refined, reversed at 64 splats |
 | Wavelet placement does not work | **[V]** §10.6 — loses to greedy 12/12, and to *random* 10/12 |
+| **No certified global optimum is reachable by any route tested** | **[V]** §10.8, §10.9 — big-M and perspective relaxations both fail; §2.2 rules out the convex-measure route by proof |
+| But the optimum is often *found* anyway | **[V]** §10.8 — greedy+swap attains the exhaustively verified optimum in 4/8 cells, and at $N{=}4$ matches enumeration over 153.8M supports |
 | How far greedy is from optimal | **[V]** exactly optimal at $N{=}1$; bound vacuous by $N{=}4$–8 — §10.2. **Open at §10's own budgets** |
 | Greedy's placement is itself suboptimal | **[V]** 8.5% at $N{=}2$ on cartoon, 0.5% on face, 0% on two others — §10.3. *Grid* greedy; refinement may repair some of it |
 | The optimality certificate is computable and self-diagnosing | **[V]** §6, §9.4 |
@@ -1005,6 +1007,72 @@ tested here.
 result for *this* bound on *this* dictionary — the perspective/ridge relaxations used by the
 sparse-regression literature are stronger and untested here (§11 U19 restated).
 
+### 10.9 The perspective relaxation closes U19, negatively
+
+`experiments/e9_perspective.py`, raw output `results/e9.txt`.
+
+§10.8 blocked on the big-M bound and left one candidate: the **perspective
+relaxation**, the tool the sparse-regression literature actually uses. This settles it by
+evaluating the relaxation at the **root** — a relaxation weak before the first branch cannot be
+rescued by any search strategy, so a large root gap is decisive against, while a small one would
+have justified building a second solver.
+
+**[A] Derived, not cited.** All three sources (`irit.fr`, `optimization-online`, the arXiv
+mirrors) are blocked by the egress proxy, so nothing here rests on a search summary. Writing the
+cardinality-constrained ridge problem as a mixed-integer program and replacing $c_j^2$ by its
+perspective $c_j^2/z_j$, the inner minimization over $z$ is a water-filling:
+
+$$\Omega(c)=\min\Big\{\textstyle\sum_j c_j^2/z_j \;:\; \sum_j z_j\le N,\ 0\le z_j\le1\Big\} = \sum_{\rm sat} c_j^2 + \Big(\sum_{\rm rest}|c_j|\Big)^2\!\Big/(N-s)$$
+
+**[V] Verified numerically:** $\Omega(c)=\|c\|^2$ *exactly* when $c$ has at most $N$ non-zeros,
+and strictly exceeds it otherwise. So $\min_c \tfrac12\|y-Gc\|^2+\lambda_2\Omega(c)$ is a genuine
+lower bound on the $N$-sparse ridge optimum, tight on every feasible point.
+
+**[A] The ridge is not optional.** As $\lambda_2\to0$ the penalty vanishes and the bound
+degenerates to an unconstrained least-squares fit over the whole dictionary. So this relaxation
+can only certify a problem that *carries* a ridge, and what it certifies is $\ell_0$+ridge, not
+(P0). The question is therefore not whether it works but **how much ridge it needs, and whether
+that much ridge still describes the problem**.
+
+**[V] Both measured, against the exhaustively computed $N$-sparse ridge optimum** ($D=248$,
+$N=3$; `l2 err` is the pure reconstruction error, comparable with every other table here):
+
+| $\lambda_2$ | root gap, cartoon | root gap, ascent | ridge/data | `l2 err` cartoon | `l2 err` ascent |
+|---|---|---|---|---|---|
+| 0 | 85.5% | 79.5% | 0.00 | 7.69% | 19.48% |
+| $10^{-3}$ | 73.9% | 64.2% | 0.03 | 7.69% | 19.49% |
+| $10^{-2}$ | 51.6% | 46.3% | 0.30 | 7.77% | 20.15% |
+| $10^{-1}$ | 15.2% | 13.6% | 0.52 | **13.48%** | 24.55% |
+| $1$ | **0.33%** | **0.04%** | 0.65 | **33.34%** | **47.67%** |
+| $10$ | 0.00% | 0.00% | 0.10 | 83.02% | 87.73% |
+
+**[V] There is no window in which the relaxation is tight and the problem is intact.** Where the
+ridge is negligible ($\lambda_2\le10^{-3}$, reconstruction error unchanged to four decimals) the
+gap is 64–86%. Where the gap closes ($\lambda_2=1$, gap 0.04–0.33% — branch-and-bound would
+terminate at the root) the reconstruction error has risen from 7.7% to 33.3% and from 19.5% to
+47.7%. Buying a certificate costs a 2.4–4.3× worse encoding, and the two requirements move in
+opposite directions monotonically across four orders of magnitude.
+
+**[A] So U19 closes negatively, and for a reason specific to this problem.** §10.8 diagnosed it:
+a single atom's amplitude is the scale of $\|y\|$ itself, so no mass-, norm- or ridge-based
+relaxation has anything to bite on until the regularizer is strong enough to dominate the data
+term. Both the big-M and the perspective route fail the same way, which is evidence the
+obstruction is the splatting dictionary rather than the choice of relaxation.
+
+**[A] Scope, pre-registered.** A root gap is necessary, not sufficient — a *small* root gap would
+not have proven the tree small, and a large one is strong evidence rather than proof. One
+dictionary, two targets, $N=3$, on-grid.
+
+**[A] The instrument caught itself, again.** The first run reported *negative* root gaps — a
+relaxation exceeding the quantity it relaxes, which is impossible. $\Omega$ is convex but
+**nonsmooth**: for an unsaturated coordinate $z_j=|c_j|/\sqrt{\mu}$, so
+$c_j/z_j=\sqrt{\mu}\,\mathrm{sign}(c_j)$ and the gradient jumps at zero exactly as $\ell_1$ does,
+stalling L-BFGS above the true minimum. Repaired by smoothing the magnitudes and warm-starting at
+the exact optimum, both of which can only move the value *downward*; check **C5** now asserts
+relaxation $\le$ optimum and passes on every row. **[A]** Note the direction: the bug made gaps
+look *smaller*, so the negative conclusion was never at risk — but the $\lambda_2\ge1$ rows, which
+are the ones that decide the trade-off, were entirely wrong before the fix.
+
 ## 11. Open questions, and what would settle each
 
 | | question | what would settle it | cost |
@@ -1016,7 +1084,7 @@ sparse-regression literature are stronger and untested here (§11 U19 restated).
 | **U5** | Can the solver certify at realistic $N$ (§9.3)? | Replace add/prune with batched addition and a support-aware prune rule, or an exact LASSO inner solve; target certgap $<0.1\%$ at $N=10^3$ | weeks — **gates U7, U8** |
 | **U6** | Does §4's rate describe real solutions? | Fit a cartoon target at several $N$; regress $\log$(minor axis) on $\log$(major axis) for edge atoms — parabolic scaling predicts slope 2. Descriptive only; absence is not evidence of failure (§4.1) | days |
 | **U7** | Does §10's negative result survive scale and a better solver? | **Half answered — §10.4.** With both sides solved *exactly* at $N\le4$, $\ell_1$ loses to $\ell_0$ by 6–409%, so solver quality is not what §10 measured. Whether it survives *scale* is still open: re-run §10 after U5 at $N\ge10^3$ on $\ge256^2$ images, ≥5 instances per cell with error bars | weeks, after U5 |
-| **U19** | Can exact $\ell_0$ branch-and-bound certify at §10's budgets? | **Attempted and blocked — §10.8.** The big-M node bound is loose by 6–9× at the tightest admissible box, because a single atom's amplitude is the scale of $\|y\|$, so the mass budget never binds. What remains untested is the **perspective/ridge relaxation** the sparse-regression literature actually uses, which is strictly stronger and changes the problem to $\ell_0{+}$ridge. Read that literature (still **[U]**) before implementing again | weeks |
+| ~~U19~~ | ~~Can exact $\ell_0$ branch-and-bound certify at §10's budgets?~~ | **Resolved, negatively — §10.8, §10.9.** Both standard node relaxations fail on this dictionary. The big-M bound is loose by 6–9× at the tightest admissible box; the perspective relaxation is loose by 64–86% wherever the ridge is small enough to leave the problem intact, and only closes at a ridge that makes the encoding 2.4–4.3× worse. The cause is shared: a single atom's amplitude is the scale of $\|y\|$, so no norm-based relaxation binds. **This was the last route §2.2 left open to a certified global optimum** | done |
 | **U20** | Does §10.5's dictionary effect survive real scale? It is measured at $\le64$ splats on $64^2$, and it already inverts at 64 | Re-run §10.5 at $10^3$ splats on $\ge256^2$; needs no solver work, so unlike U7 it does **not** wait on U5 | days |
 | **U21** | Does a frequency-weighted $L^2$ buy perceptual quality while keeping the certificate (§3.2, U9)? A weighted $L^2$ is still Hilbertian, so the adjoint and §6 survive, which SSIM and $L^1$ do not | Fit under a contrast-sensitivity weighting, compare against plain $L^2$ on a perceptual metric at equal $N$ | days; needs the U9 metric decision |
 | **U8** | Do any §9 conclusions survive $10^3$–$10^5$ atoms? | Re-run §9 after U5 | after U5 |
@@ -1064,15 +1132,24 @@ step depends on the numbers being recoverable.
 
 **P1 — U1.** Confirm the forward model. Cheapest check on the load-bearing premise.
 
-**P2 — U19.** Exact $\ell_0$ branch-and-bound on the discrete dictionary. **[A]** This displaces
-U5 as the priority. §2.2 shows U5 leads to the global optimum of the wrong problem, and §10.4
-measures how wrong; U19 leads to the global optimum of (P0) itself, restricted to a grid, at
-budgets §10 already uses. It is also the only route here that produces a *certificate* of global
-optimality rather than a bound.
+**P2 — ~~U19~~, closed.** Exact $\ell_0$ branch-and-bound was the last route §2.2 left open to a
+*certified* global optimum. §10.8 and §10.9 close it: both standard node relaxations fail on this
+dictionary, for the same reason, and the reason is a property of the splatting atoms rather than
+of the method. **[A] There is now no known route to a certificate here.** What remains is to
+*find* good solutions and measure them against exhaustive enumeration wherever that is affordable
+— which §10.8 shows greedy-plus-swap already does well.
 
 **P2b — U5.** Fix the add/prune loop until it certifies at $N\ge10^3$. Still worth doing — it is
-what makes §6 usable as the diagnostic instrument §10 demotes it to — but it is no longer the
-thing standing between this work and an optimal encoding.
+what makes §6 usable as the diagnostic instrument §10 demotes it to — but §2.2 and §10.4 show it
+leads to the global optimum of the wrong problem, so it is not the thing standing between this
+work and an optimal encoding.
+
+**P2c — the honest replacement for both.** Since certification is unavailable, the tractable
+question is how good the *reachable* solutions are. §10.8's greedy-plus-swap attains the
+exhaustively verified optimum in half the cells tested; extending that local search (larger
+neighbourhoods, multiple restarts) and calibrating it against enumeration at every $N$ where
+enumeration is affordable is cheap, needs no solver work, and is the only thing here that
+produces numbers about (P0) itself.
 
 **P3 — U7/U8.** Re-run §10 and §9 at scale with error bars. If greedy still wins, the honest
 conclusion is that the convex route is a diagnostic tool and matching pursuit is the *better*
