@@ -288,8 +288,10 @@ commensurate regularizer is $\sum_i|c_i|\,\|\varphi_{\theta_i}\|$.
 
 **[V] Semi-discrete OT** (`ma.pdf`, `dGBOD12.pdf`): damped Newton with global linear
 convergence for matching a **prescribed density**, via concave maximization over power-diagram
-weights. **[A]** Rigorous, but attached to a surrogate whose relation to reconstruction error
-is unestablished. A principled *initializer*, not a solved subproblem of (P0).
+weights. **[A]** Rigorous about density matching, but the relation of that objective to
+reconstruction error is **unestablished** — so this is a *candidate* initializer of untested
+value, not a principled one and not a solved subproblem of (P0). §11 U10 is the test, and if it
+comes back negative the guarantee is exact about something irrelevant.
 
 **[V] Hessian anisotropy** (`BLdG+16.pdf`): anisotropy conforming to the Hessian of a **convex**
 function, for any prescribed density. **[V\*]** Image Hessians are indefinite; the standard
@@ -308,7 +310,7 @@ not cover.
 
 | result | guarantees | for which problem | guarantee transfers? |
 |---|---|---|---|
-| BLASSO certificate | global optimality test | any bounded linear $\Phi$, $L^2$, scalar | **yes** |
+| BLASSO certificate | global optimality test | any bounded linear $\Phi$, $L^2$, scalar, **$\Theta$ compact** (§6.1) | **yes**, on the truncated $\Theta$ |
 | FW duality gap | suboptimality bound | any bounded linear $\Phi$ | **yes** |
 | SFW Thm 3 | finite termination | $d=1$, fixed kernel, translation-only | no |
 | CPGD Thm 4.2 | global convergence | (A1–5) | no — A1 fails as stated |
@@ -330,9 +332,10 @@ required semi-distance of 18–21, i.e. **centre separation of ~28–35 widths**
 tiling gives 1–2.
 
 **[A] — audit (M3).** This is a *sufficient* condition. Failing it withdraws guarantees; it
-does not establish that recovery fails. §9.1 measured recovery **exact at 8 widths** — the
-condition overstates the requirement by 4–8×, consistent with the constants (11.9, 0.3025)
-being proof artefacts.
+does not establish that recovery fails. §9.1 measured recovery **exact at 8 widths** and broken
+at 4, so the true breakdown lies in $(4,8]$ against a stated 28–35 — an overstatement by a
+factor between **3.5 and 9**, consistent with the constants (11.9, 0.3025) being proof
+artefacts. The breakdown was bracketed, not located.
 
 **No longer guaranteed** at image densities: exact support recovery, SFW finite termination,
 (A4) uniqueness, (A5) strict slackness. **What is measured:** §9.
