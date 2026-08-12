@@ -15,9 +15,21 @@ unverified premise. Methodology rules and this document's error history are in A
 
 ## 1. Summary
 
+**The question.** (P0) is non-convex: it has $N!$ equivalent minima, saddles between them, and
+local optima a descent method can get stuck in. The hope motivating this document is that lifting
+it to a measure — (P$\lambda$) — makes it *convex*, so that any minimum found is the global one
+and the certificate of §6 proves it. The question is whether that hope survives contact with the
+actual problem.
+
+**The answer, in one line.** The lifting is genuinely convex and the certificate genuinely works,
+but the convex problem is not (P0) and **provably cannot be made into it** (§2.2) — so what you
+reach globally is the optimum of the wrong problem, and §10 measures it landing further from (P0)
+than a cheap non-convex method does.
+
 **The central negative result (§10).** On all six certified rows, **greedy** produced a better
 $N$-atom encoding than the convex BLASSO route, even after debiasing and full polish. Adding an
-$\ell_1$ term buys a certificate and costs reconstruction quality.
+$\ell_1$ term buys a certificate and costs reconstruction quality. **[V] §10.4 shows this is the
+formulation and not the solver**, by shrinking the problem until both sides are solved exactly.
 
 *Terminology:* "greedy" here means **certificate-driven greedy at $\lambda=0$** — it places each
 new atom at $\arg\max_\theta|\eta(\theta)|$, so it uses the dual certificate as a *placement
@@ -46,6 +58,10 @@ unknown where it matters.
 |---|---|
 | Greedy beats random restarts | **[V]** 9/9 rows, §10.1 |
 | Greedy beats BLASSO at matched $N$ | **[V]** 6/6 *certified* rows, §10 (3 more agree but BLASSO did not converge there) |
+| **Convexifying over measures cannot encode $N$** | **[A]** proof, §2.2 — the gap is structural and no convex penalty removes it |
+| That ordering is the formulation, not the solver | **[V]** §10.4, both sides solved exactly: $\ell_1$ is 6–409% worse than $\ell_0$ at matched $N$ |
+| Dictionary structure helps on-grid, washes out off-grid | **[V]** §10.5 — ~25% on-grid, a few % refined, reversed at 64 splats |
+| Wavelet placement does not work | **[V]** §10.6 — loses to greedy 12/12, and to *random* 10/12 |
 | How far greedy is from optimal | **[V]** exactly optimal at $N{=}1$; bound vacuous by $N{=}4$–8 — §10.2. **Open at §10's own budgets** |
 | Greedy's placement is itself suboptimal | **[V]** 8.5% at $N{=}2$ on cartoon, 0.5% on face, 0% on two others — §10.3. *Grid* greedy; refinement may repair some of it |
 | The optimality certificate is computable and self-diagnosing | **[V]** §6, §9.4 |
@@ -110,6 +126,42 @@ method with no certificate does better.
 $\lambda$-indexed, and free of any atom count. Its slack is a different quantity from the gaps
 above, measured against a different reference, and the two are not comparable. Nothing here
 relates them; they share only the word.
+
+### 2.2 Why the gap cannot be removed — convexification annihilates $N$
+
+**[A] Elementary, from standard facts, and it decides the framing.** The extreme points of the
+total-variation ball $\{m : |m|(\Theta)\le\tau\}$ are the signed Diracs $\pm\tau\delta_\theta$,
+which are **one**-atom measures. The ball is convex and weak-\* compact, so by Krein–Milman it is
+the closed convex hull of those extreme points. Hence for **every** $N\ge1$:
+
+$$\overline{\operatorname{conv}}\,\{m : m \text{ has} \le N \text{ atoms},\ |m|(\Theta)\le\tau\} \;=\; \{m : |m|(\Theta)\le\tau\}$$
+
+The atom count is annihilated. **No convex program over $\mathcal{M}(\Theta)$ can distinguish
+"$N$ atoms" from "any number of atoms of the same total mass"** — not $\ell_1$, not a reweighted
+or spatially varying penalty, not any convex functional whatever, because they all optimize over
+the same convex set and that set has already forgotten $N$.
+
+**[A] Three consequences.**
+
+1. §2.1's relaxation gap is **structural**, not a defect of the penalty. Choosing a better convex
+   regularizer cannot shrink it. §10.4 measures what it costs with every solver exact.
+2. This is also why §10.2's bound is intrinsically loose: it bounds a mass-constrained
+   relaxation, which is the tightest thing any measure-space convexification can see.
+3. The hope in §1 fails at the formulation, not the implementation. §9.3's certification ceiling
+   and U5 are real engineering problems, but fixing them would deliver the global optimum of
+   (P$\lambda$), which §10.4 shows is the wrong target.
+
+**[A] The positive half, and it points somewhere concrete.** On a **finite** dictionary with
+bounded amplitudes the picture reverses:
+
+$$\operatorname{conv}\{c : \|c\|_0\le N,\ \|c\|_\infty\le M\} \;=\; \{c : \|c\|_1\le NM\}\cap\{c:\|c\|_\infty\le M\}$$
+
+which **does** depend on $N$. That is exactly the structure exact-$\ell_0$ branch-and-bound
+exploits, and why solvers in the sparse-regression literature reach $p\sim10^7$ variables at
+~20 non-zeros. **[A]** So the grid is not merely a computational convenience: by imposing a
+minimum separation it is what makes sparsity convex-representable at all. §8 says the *recovery*
+theory needs separation; this says the *optimization* needs it too, for an unrelated reason.
+**[U]** The branch-and-bound literature is cited from search summaries, not read — §11 U19.
 
 ---
 
@@ -396,10 +448,15 @@ artefacts. The breakdown was bracketed, not located.
 
 ## 9. Experimental results
 
-`experiments/e2_relaxation_gap.py` (in-model targets, exact optimum),
-`experiments/e2b_natural.py` (out-of-model targets, bounded optimum) and
-`experiments/e3_absolute_bound.py` (§10.2, §10.3, §7.1.2 — certified lower bound on the (P0)
-optimum, exhaustive $N{=}2$ myopia, dictionary norm attribution).
+| script | what it measures | sections |
+|---|---|---|
+| `e2_relaxation_gap.py` | in-model targets, exact optimum | §9.1 |
+| `e2b_natural.py` | out-of-model targets, bounded optimum | §9.2–9.5 |
+| `e3_absolute_bound.py` | certified lower bound on the (P0) optimum; exhaustive $N{=}2$ myopia; dictionary norm attribution | §10.2, §10.3, §7.1.2 |
+| `e4_exact_l0.py` | exact $\ell_0$ vs exact $\ell_1$ with **no solver error on either side**; coherence sweep; dictionary design | §10.4, §10.5 |
+| `e5_dictionary_scaling.py` | dictionary comparison budgeted in **splats**, to 64 splats, with off-grid refinement | §10.5 |
+| `e6_wavelet_init.py` | wavelet transform as a replacement for the placement search | §10.6 |
+| `e7_frequency_continuation.py` | Parseval check; frequency continuation vs direct refinement | §10.7 |
 
 **[A] Reproducibility.** Only E3 commits its raw output (`experiments/results/`) and records its
 parameters there. E2 and E2b do not, and their committed defaults do **not** reproduce the tables
@@ -719,6 +776,174 @@ polish step on both candidate pairs.
 interest, and whether myopia grows or washes out with $N$ is untested. Exhaustive best-3 is
 $\binom{D}{3}\approx4\times10^{11}$ and out of reach; §11 U16 gives an affordable substitute.
 
+### 10.4 Formulation, not solver — both sides solved exactly
+
+`experiments/e4_exact_l0.py`, raw output `experiments/results/e4.txt`.
+
+**The confound this removes.** Every comparison in §9 and §10 mixes two explanations for BLASSO
+losing: the $\ell_1$ *formulation* is worse than $\ell_0$, or the *solver* failed. §9.3 shows it
+demonstrably does fail past $N=16$, and §10's own caveat concedes "a better-engineered BLASSO
+could plausibly close or reverse the gap" (U7). Nothing previously separated them.
+
+**Method.** Shrink the problem until every route is solvable to optimality: a finite dictionary
+on a $32^2$ image, $\ell_0$ by **exhaustive enumeration of all $\binom{D}{N}$ supports** (up to
+75 million per row), $\ell_1$ by the **exact LARS path**, which is piecewise linear and therefore
+exact at every breakpoint, then debiased on its own support. Greedy runs on the identical
+dictionary. Whatever separates them is the formulation, because no solver failed.
+
+**[V] Result, four targets, two dictionary panels, every row with $N\ge2$:**
+
+- exact $\ell_1$ is **6–409% worse** than exact $\ell_0$ at matched $N$;
+- greedy is **0–66% worse**, and beats $\ell_1$ in **every single row**;
+- the $\ell_1$ support frequently shares **0 of $N$** atoms with the $\ell_0$-optimal support.
+
+Representative rows (error as % of $\tfrac12\|y\|^2$, $D=768$):
+
+| target | $N$ | $\ell_0$ exact | greedy | $\ell_1$ debiased | greedy excess | $\ell_1$ excess | shared support |
+|---|---|---|---|---|---|---|---|
+| cartoon | 2 | 18.00 | 23.11 | 30.90 | +28% | +72% | 0/2 |
+| cartoon | 3 | 11.86 | 16.07 | 29.06 | +36% | +145% | 1/3 |
+| ascent | 3 | 22.94 | 28.09 | 37.95 | +22% | +65% | 0/3 |
+| face | 3 | 18.13 | 23.53 | 32.84 | +30% | +81% | 0/3 |
+| in-model | 2 | 13.58 | 22.58 | 36.81 | +66% | +171% | 0/2 |
+
+**[V] U7 is resolved in the negative for this regime.** §10's ordering survives when the solver
+is removed as an explanation, and widens. **[A]** It does not follow that a better solver changes
+nothing at $N=8$–$10^3$; it follows that solver quality is not what §10 was measuring.
+
+**[A]** This is what §2.2 predicts. The relaxation cannot see $N$, so it selects a support
+optimized for a different criterion, and debiasing on that support cannot repair a support chosen
+wrongly in the first place.
+
+**[V] It also calibrates §10.2's bound against a known optimum at $N>1$** for the first time. On
+a finite dictionary $s(p)=\max_j|\langle g_j,p\rangle|$ is a maximum over $D$ numbers rather than
+a search, so the bound is a theorem there. It still falls far below the true optimum — 11.01
+against 33.18 at $N{=}1$ on cartoon, and 0.00 against 11.86 at $N{=}3$. **[A]** Confirming §10.2's
+looseness is intrinsic and not a search artefact, exactly as §2.2 implies.
+
+**[A] Scope.** $N\le4$ on a few hundred atoms, one instance per target, entirely on-grid.
+Exhaustive enumeration is $\binom{D}{N}$, so this cannot be pushed to §10's $N=8$ or 16 — that
+needs branch-and-bound (§2.2, §11 U19), which is not demonstrated here.
+
+### 10.5 Dictionary design: a real effect that refinement mostly erases
+
+`experiments/e4_exact_l0.py` (coherence sweep, designed dictionaries) and
+`experiments/e5_dictionary_scaling.py`, raw output `results/e4_coherence.txt`,
+`results/e4_design.txt`, `results/e5.txt`.
+
+**[V] Coherence is extreme and drives the on-grid gaps.** The dictionary's maximum
+$|\langle g_i,g_j\rangle|$ is 0.985 — the regime where every $\ell_1$ recovery condition fails.
+Sweeping it down by target-independent random pruning collapses both gaps: on cartoon at $N{=}3$,
+greedy's excess falls 35.5% → 0% and $\ell_1$'s 145% → 19% as coherence goes 0.985 → 0.75.
+**[A] But it is not a free lunch** — the $\ell_0$ optimum itself worsens 11.86 → 22.20, so random
+pruning trades away more approximation power than it buys.
+
+**[V] A designed dictionary does better than a pruned one.** Building the dictionary the way §4's
+theorem does — parabolic scaling, orientations, a lattice adapted to each atom's own axes — beats
+a dense unstructured sweep at **half the size** on all three targets at $N{=}3$: cartoon's
+$\ell_0$ optimum 9.56 against 11.86, greedy 10.26 against 16.07, $\ell_1$ 12.49 against 29.06.
+**[A] This is §4's first empirical contact of any kind** — U6 records it as never tested.
+
+**[V] Coherence is not the mechanism, though.** A difference-of-Gaussians dictionary has the
+*lowest* coherence tested (0.881 at matched size) and performed **worst** of everything, because
+zero-mean atoms cannot carry an image's mean. **[A]** Which is why `tip2006.pdf` pairs its
+oscillatory sub-dictionary with a pure-Gaussian one — a detail §12 records without noting why it
+matters.
+
+**[V] And the advantage largely evaporates off-grid — this is the important row.** E5 budgets in
+**splats** (a DoG atom is two splats, so E4's matched-atom comparison charged the mixed dictionary
+half price), scales to 64 splats on $64^2$ images, and refines both sides identically:
+
+| | on-grid | after identical off-grid refinement |
+|---|---|---|
+| structured vs unstructured | structured wins ~25%, nearly everywhere | shrinks to a few %, winner erratic |
+| at 64 splats | mixed picture | **unstructured wins outright** — cartoon 0.778 vs 0.887, ascent 4.391 vs 4.734, face 2.367 vs 2.951 |
+
+**[V] Refinement itself cuts error by 50–65%**, far more than any dictionary choice at any budget.
+
+**[A] So the honest claim is narrow:** structure buys a better *starting point* at small budgets,
+not a better answer. An earlier draft of this section claimed a 36–52% improvement from a mixed
+dictionary; that was the splat-accounting error, and with correct accounting mixed and parabolic
+are level and both wash out. Withdrawn — Appendix A.
+
+### 10.6 Wavelet placement does not work
+
+`experiments/e6_wavelet_init.py`, raw output `results/e6.txt`.
+
+**Why it was worth testing.** §10.5 leaves one role where a transform could matter, and it is
+**cost**, not quality. Every method here places atoms by searching the dictionary at every step,
+and that search is what §9.3's ceiling and U5 are blocked on. A wavelet transform yields a
+multiscale, oriented, position-resolved decomposition in $O(n^2)$ with no search. **[A]** This is
+also what §4's theorem does read as an algorithm rather than a proof: threshold the curvelet
+expansion, replace each retained curvelet by Gaussians. §4.1 dismisses it as non-adaptive, but
+what is non-adaptive is the *budgeting* — *which* curvelets get approximated is chosen from the
+data.
+
+**[V] It loses, comprehensively.** Top DWT coefficients mapped to Gaussians, then refined
+identically to §10.5, at matched splat budget, across `haar`, `bior2.2`, `db4`, `sym4`:
+
+- the best wavelet loses to the best greedy in **12 of 12** cells, by **+1.7% to +69%**
+  (median ≈ 31%);
+- wavelet placement also loses to **random** placement in 10 of 12 cells;
+- no family differs meaningfully from any other;
+- placement is 8–215× cheaper, which does not compensate.
+
+**[A] Mechanism.** A wavelet oscillates and one Gaussian cannot represent one wavelet
+coefficient. **[V]** §4's own construction spends **4–11 Gaussians per retained curvelet** (its
+budget sequence for $N=256$ begins 11, 8, 5, 5, 4, …), so a faithful transform-then-fit costs
+several splats per coefficient. The 1:1 mapping tested here is the *optimistic* case and it
+already loses.
+
+**[V] Side finding, from a 5-seed control: greedy placement beats random placement in 12 of 12
+cells by 10–45%.** Placement does matter. **[A]** An earlier single-draw reading suggested
+otherwise and was wrong — Appendix A.
+
+**[A] Scope.** Separable DWTs carry only three orientations per scale, so this is evidence
+against *separable wavelets*, not against oriented systems generally — curvelets and shearlets
+resolve orientation far better and are what §4 actually uses. Pre-registered before the run so a
+null result is not over-read.
+
+### 10.7 The frequency domain: one half is a no-op, the other does not help
+
+`experiments/e7_frequency_continuation.py`, raw output `results/e7.txt`.
+
+**[A] Fitting in the Fourier domain is provably empty.** By Parseval
+$\|\Phi m-y\|^2 = n^{-2}\|\mathcal{F}(\Phi m)-\mathcal{F}(y)\|^2$, so the objective is identical
+up to a constant — verified numerically to ten decimals. The Gaussian dictionary is moreover
+closed under the transform ($\Sigma\mapsto\Sigma^{-1}$), so it maps to a dictionary of the same
+family, and Parseval preserves every inner product, so the Gram matrix, the coherence, the local
+minima and the global optimum are all literally unchanged. Re-deriving any of this in frequency
+cannot alter the landscape. **[A]** Two things do change and both are already in play: the
+transform as a *computational* device (`eta_sup` already correlates by FFT), and a frequency-
+*weighted* $L^2$, which is a different objective but still Hilbertian, hence still certifiable —
+§11 U21, and the only route to U9 that keeps §6.
+
+**[A] Frequency continuation is a different algorithm and could have helped.** Low-pass the
+target hard, fit, sharpen progressively, carry the solution forward. A blurred objective has
+fewer local minima, so tracking the minimiser as the target sharpens is graduated non-convexity —
+a classical route to a better optimum, and roughly what FreGS reports working for 3D splatting.
+**[U]** That comparison is from search summaries, not the paper.
+
+**[V] It does not help here.** Five-stage schedule ($\sigma=8,4,2,1,0$ px), three targets,
+budgets 8–64 splats, greedy and random initialisation:
+
+| allocation | result |
+|---|---|
+| equal total compute | continuation **loses in 22 of 24 cells**, by +1.8% to +27% |
+| continuation handicapped — final stage gets the *full* budget, coarse stages free on top | roughly neutral: **better in 10 of 12 cells from random init** (median ≈ −1.8%), **worse in 9 of 12 from greedy init** (median ≈ +1.8%) |
+
+**[A] The split is the finding.** Continuation is a way to escape a *bad* start: it helps random
+initialisation consistently and hurts greedy initialisation, which is already well placed and
+gets dragged off it by the coarse stages. But the effect is small, and even handicapped,
+continuation beats plain greedy-plus-direct-refinement in only 3 of 12 cells and never by more
+than 6.8%. **[A] So it is not a route to the global optimum** — it is a mild repair for poor
+placement, and §10.6 already shows good placement is cheap.
+
+**[A]** The equal-compute row alone would have been misleading: splitting the budget across five
+stages leaves the final stage — the only one run on the true target — a fifth of the iterations.
+The handicap row exists to remove that confound, and it changes the verdict from "clearly harmful"
+to "neutral".
+
 ---
 
 ## 11. Open questions, and what would settle each
@@ -731,7 +956,10 @@ $\binom{D}{3}\approx4\times10^{11}$ and out of reach; §11 U16 gives an affordab
 | **U4** | Is the recovery/approximation mechanism behind the hump real (§9.1)? | Hold $K_{BL}$ exactly at $K$ with a support-constrained solve and re-sweep separation; if the hump persists, $\lambda$-matching and count drift are excluded | days |
 | **U5** | Can the solver certify at realistic $N$ (§9.3)? | Replace add/prune with batched addition and a support-aware prune rule, or an exact LASSO inner solve; target certgap $<0.1\%$ at $N=10^3$ | weeks — **gates U7, U8** |
 | **U6** | Does §4's rate describe real solutions? | Fit a cartoon target at several $N$; regress $\log$(minor axis) on $\log$(major axis) for edge atoms — parabolic scaling predicts slope 2. Descriptive only; absence is not evidence of failure (§4.1) | days |
-| **U7** | Does §10's negative result survive scale and a better solver? | Re-run §10 after U5 at $N\ge10^3$ on $\ge256^2$ images, ≥5 instances per cell with error bars | weeks, after U5 |
+| **U7** | Does §10's negative result survive scale and a better solver? | **Half answered — §10.4.** With both sides solved *exactly* at $N\le4$, $\ell_1$ loses to $\ell_0$ by 6–409%, so solver quality is not what §10 measured. Whether it survives *scale* is still open: re-run §10 after U5 at $N\ge10^3$ on $\ge256^2$ images, ≥5 instances per cell with error bars | weeks, after U5 |
+| **U19** | Can exact $\ell_0$ branch-and-bound reach §10's budgets (§2.2)? This is the only route to a *certified global* optimum that §2.2 does not rule out | Read the branch-and-bound literature properly (currently **[U]**, from search summaries), then implement the box-constrained node relaxation on the splatting dictionary. Target: certified global optimum at $N=8$–16 on $64^2$, where §10 reports | weeks — **the highest-value open item** |
+| **U20** | Does §10.5's dictionary effect survive real scale? It is measured at $\le64$ splats on $64^2$, and it already inverts at 64 | Re-run §10.5 at $10^3$ splats on $\ge256^2$; needs no solver work, so unlike U7 it does **not** wait on U5 | days |
+| **U21** | Does a frequency-weighted $L^2$ buy perceptual quality while keeping the certificate (§3.2, U9)? A weighted $L^2$ is still Hilbertian, so the adjoint and §6 survive, which SSIM and $L^1$ do not | Fit under a contrast-sensitivity weighting, compare against plain $L^2$ on a perceptual metric at equal $N$ | days; needs the U9 metric decision |
 | **U8** | Do any §9 conclusions survive $10^3$–$10^5$ atoms? | Re-run §9 after U5 | after U5 |
 | **U9** | Is $L^2$-optimal perceptually acceptable (§3.2)? | Compare $L^2$-optimal against SSIM-trained fits at equal $N$, human or perceptual metric | days; needs a metric decision |
 | **U10** | Does matching a Zador-type density actually reduce reconstruction error (§7.2)? | Place $N$ atoms by semi-discrete OT at several candidate density laws; compare resulting $L^2$ error against matched-filter placement at equal $N$. If no law wins, the OT guarantee is rigorous about an irrelevant objective | days |
@@ -748,7 +976,14 @@ $\binom{D}{3}\approx4\times10^{11}$ and out of reach; §11 U16 gives an affordab
 has a future. U1 is cheap and should be first, since §3.1 is a premise for everything. U4, U6,
 U10, U15, U16 and U17 are cheap and independent.
 
-**[A] U15 and U16 are now what most limit what can be claimed.** §10.2 supplies an absolute
+**[A] U19 is now the highest-value item.** §2.2 rules out measure-space convexification as a
+route to (P0)'s optimum, and §10.4 confirms the cost empirically with solvers removed as an
+excuse. What §2.2 does *not* rule out is the discrete route: on a finite dictionary with bounded
+amplitudes the convex hull does depend on $N$, which is what exact branch-and-bound uses. That is
+the only remaining path to a *certified global* optimum at the budgets §10 actually reports, and
+nobody here has tried it.
+
+**[A] U15 and U16 remain what most limit the bound-based route.** §10.2 supplies an absolute
 bound but loses it exactly where §10 makes its case, and §10.3 shows greedy's placement is not
 optimal even where the optimum is computable.
 
@@ -770,8 +1005,15 @@ step depends on the numbers being recoverable.
 
 **P1 — U1.** Confirm the forward model. Cheapest check on the load-bearing premise.
 
-**P2 — U5.** Fix the add/prune loop until it certifies at $N\ge10^3$. Nothing at realistic
-scale is measurable until this works.
+**P2 — U19.** Exact $\ell_0$ branch-and-bound on the discrete dictionary. **[A]** This displaces
+U5 as the priority. §2.2 shows U5 leads to the global optimum of the wrong problem, and §10.4
+measures how wrong; U19 leads to the global optimum of (P0) itself, restricted to a grid, at
+budgets §10 already uses. It is also the only route here that produces a *certificate* of global
+optimality rather than a bound.
+
+**P2b — U5.** Fix the add/prune loop until it certifies at $N\ge10^3$. Still worth doing — it is
+what makes §6 usable as the diagnostic instrument §10 demotes it to — but it is no longer the
+thing standing between this work and an optimal encoding.
 
 **P3 — U7/U8.** Re-run §10 and §9 at scale with error bars. If greedy still wins, the honest
 conclusion is that the convex route is a diagnostic tool and matching pursuit is the *better*
@@ -799,9 +1041,17 @@ for a recognizable natural image.
 
 ## Appendix A: methodology and error history
 
-Rules adopted after auditing this document's own reversals. Eleven substantive claims were stated
-here and later withdrawn. Two further errors (M8's second half, M9) were caught before reaching
-the document and are logged anyway, since neither would have been caught by prose review.
+Rules adopted after auditing this document's own reversals. Thirteen substantive claims were
+stated here and later withdrawn. Two further errors (M8's second half, M9) were caught before
+reaching the document and are logged anyway, since neither would have been caught by prose
+review.
+
+The twelfth and thirteenth are recent and both ran in the same direction — overstating a new
+result. A mixed Gaussian/DoG dictionary was reported as improving on the unstructured one by
+36–52%; the comparison was budgeted in dictionary *atoms*, but a DoG atom is two splats, so the
+mixed dictionary was charged half price (§10.5). And random placement was reported as competitive
+with greedy on the strength of a *single* random draw; five draws reverse it in 12 of 12 cells
+(§10.6).
 
 **M1 — Instrument before interpretation.** *Cost of violating:* a solver bug (§7.1.1)
 invalidated two complete sweeps and three interpretations; the one-run sanity check that
@@ -822,6 +1072,13 @@ as this document's most limiting open question, with a proposed method — exhau
 — that returns a feasible point and therefore bounds the optimum from *above*. It could never
 have answered the question it was written for, and the error survived several audits because
 "exhaustive search" reads as authoritative regardless of direction. Corrected in §10.2.
+**M10 — Budget in the unit the system actually pays.** A comparison is only matched if it is
+matched in the resource being spent. *Cost:* §10.5's dictionary result was stated at 36–52%
+improvement and is worth roughly nothing once the comparison is budgeted in splats rather than in
+dictionary atoms. The error was invisible in the table, because both columns said "N".
+**M11 — Compare a deterministic method against a distribution, not a draw.** *Cost:* a single
+random initialisation appeared to beat greedy placement; the median of five loses to it in every
+cell. Any control with a random seed needs several.
 **M9 — Attribute a spread by conditioning, not by eyeballing a summary statistic.** *Cost:* the
 §7.1.2 norm defect was first attributed to shear on the strength of two quartile medians, which
 can only speak to the bulk and not the tail. Conditioning gave $\rho=-0.082$ for shear against

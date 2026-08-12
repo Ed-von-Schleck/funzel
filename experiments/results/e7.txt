@@ -1,0 +1,60 @@
+# E7: frequency continuation vs direct refinement, equal compute.
+# Plain Fourier-domain fitting is omitted: by Parseval it is the same
+# problem, so there is nothing to measure.
+
+======================================================================
+# target=cartoon n=64 0.5||y||^2=397.813
+# schedule sigma(px) = [8.0, 4.0, 2.0, 1.0, 0.0]; every method gets 900 L-BFGS iterations total
+
+ budget     init    direct  cont(equal)   change  cont(handicap)   change
+      8   greedy    2.4114       2.8739  +19.18%          2.6064   +8.09%
+      8   random    2.4559       2.4994   +1.77%          2.3934   -2.55%
+     16   greedy    1.6553       1.9473  +17.64%          1.8102   +9.36%
+     16   random    1.7284       2.1547  +24.67%          1.7260   -0.14%
+     32   greedy    1.1971       1.2573   +5.04%          1.2033   +0.52%
+     32   random    1.4025       1.5222   +8.53%          1.3440   -4.17%
+     64   greedy    0.7776       0.9293  +19.52%          0.7701   -0.96%
+     64   random    1.1321       1.3702  +21.04%          1.1054   -2.35%
+
+  change < 0 means continuation reached a better optimum. 'equal' splits
+  the iteration budget across stages; 'handicap' gives the final stage
+  the FULL budget and the coarse stages on top, so continuation is
+  strictly advantaged and a loss there cannot be a compute artifact.
+
+======================================================================
+# target=ascent n=64 0.5||y||^2=338.302
+# schedule sigma(px) = [8.0, 4.0, 2.0, 1.0, 0.0]; every method gets 900 L-BFGS iterations total
+
+ budget     init    direct  cont(equal)   change  cont(handicap)   change
+      8   greedy   11.0917      11.0076   -0.76%         10.3405   -6.77%
+      8   random   11.3836      10.9011   -4.24%         10.7825   -5.28%
+     16   greedy    7.5116       8.9549  +19.21%          7.6039   +1.23%
+     16   random    8.3203       8.7711   +5.42%          8.2455   -0.90%
+     32   greedy    5.8424       6.8374  +17.03%          6.4502  +10.40%
+     32   random    6.3550       6.6298   +4.32%          6.2276   -2.00%
+     64   greedy    4.3910       5.1112  +16.40%          4.5277   +3.11%
+     64   random    5.3280       5.8165   +9.17%          5.2273   -1.89%
+
+  change < 0 means continuation reached a better optimum. 'equal' splits
+  the iteration budget across stages; 'handicap' gives the final stage
+  the FULL budget and the coarse stages on top, so continuation is
+  strictly advantaged and a loss there cannot be a compute artifact.
+
+======================================================================
+# target=face n=64 0.5||y||^2=533.127
+# schedule sigma(px) = [8.0, 4.0, 2.0, 1.0, 0.0]; every method gets 900 L-BFGS iterations total
+
+ budget     init    direct  cont(equal)   change  cont(handicap)   change
+      8   greedy    7.5396       9.6010  +27.34%          7.5547   +0.20%
+      8   random    7.9718       8.2589   +3.60%          8.3530   +4.78%
+     16   greedy    5.1863       5.8533  +12.86%          5.5259   +6.55%
+     16   random    5.8552       6.6067  +12.83%          5.8861   +0.53%
+     32   greedy    3.5246       4.0362  +14.52%          3.5640   +1.12%
+     32   random    4.0818       4.4361   +8.68%          3.9741   -2.64%
+     64   greedy    2.3672       2.7891  +17.82%          2.4243   +2.41%
+     64   random    3.3858       3.7686  +11.31%          3.3274   -1.72%
+
+  change < 0 means continuation reached a better optimum. 'equal' splits
+  the iteration budget across stages; 'handicap' gives the final stage
+  the FULL budget and the coarse stages on top, so continuation is
+  strictly advantaged and a loss there cannot be a compute artifact.
