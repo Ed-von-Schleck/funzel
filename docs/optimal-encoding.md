@@ -18,8 +18,8 @@ Not a compression document. Rate, entropy coding and decode speed are out of sco
 §7 establishes that the BLASSO recovery theory is built for sparse, well-separated atoms and
 does not formally cover image densities. §7.1 measures what that costs: the relaxation gap is
 non-monotone in separation, peaks around 4 widths, and is ~0.4% at the 1–2 widths of a dense
-tiling. So the guarantees are genuinely lost, and losing them turns out to matter little for
-approximation.
+tiling. On real targets it is 1.0–4.8% (§12.1b). So the guarantees are genuinely lost, and
+losing them costs a single-digit percentage rather than invalidating the approach.
 
 ---
 
@@ -63,10 +63,11 @@ This matters more than it might appear. Everything tractable in this document is
 (P$\lambda$). If the gap is large, certifying optimality for (P$\lambda$) says little about
 (P0).
 
-**[V] Measured in §12.1**: on synthetic targets the gap is ~0.4% at dense-tiling separation,
-so the certificate does transfer there. It reaches ~22% at intermediate separation, so the
-concern is real but is not worst at image density. Untested for targets outside the model
-class, which is the case that matters for real images.
+**[V] Measured.** On synthetic in-model targets (§12.1) the gap is ~0.4% at dense-tiling
+separation and ~22% at intermediate separation, so the concern is real but not worst at image
+density. On out-of-model targets — two photographs and a cartoon (§12.1b) — the penalty is
+1.0–4.8%, and that is a *lower* bound since the optimum is unknown. So the certificate does
+transfer, at a single-digit cost that grows when the target has no exact representation.
 
 **Choosing (P$\lambda$) as the working definition** is defensible on the grounds that it is
 the only one of the three that admits a certificate (§5). It is not defensible on the
