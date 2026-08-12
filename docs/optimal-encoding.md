@@ -170,8 +170,8 @@ images.* Nothing stronger. **No empirical contact** — §11 U6 gives the test.
   within any factor, including under *coherent* dictionaries; the Gaussian dictionary is highly
   coherent.
   **[A] — audit (M3):** worst-case hardness over a family says nothing about the instances
-  arising here. §9.1 found certificate-driven greedy recovering *exactly* at wide separation —
-  a family of easy instances.
+  arising here. The §9.5 diagnostic found greedy recovering an in-model target *exactly*
+  (0.0000%) at wide separation — a family of easy instances.
 - The dictionary is continuous: an infinite-dimensional non-convex search.
 - **[A]** (P0) has $N!$ equivalent global minima and symmetry-induced saddles.
 - **[U]** SteepGS reports stuck primitives sit at *saddle points*, not local minima.
@@ -185,6 +185,11 @@ optimality is characterized by $\|\eta_\lambda\|_{\infty,\Theta}\le1$.
 
 $\eta_\lambda$ is the residual correlated against **every candidate atom** — a function over
 $(\mu,\Sigma)$, not over pixels, so its argmax specifies a position *and* a shape.
+
+**[A]** Over a scale-varying dictionary this must be the correlation against **unit-norm**
+atoms; using the raw inner product makes the argmax prefer wide atoms and is what §7.1.1
+measures. The two coincide only when all atoms share a norm, which is the classical
+translation-only setting.
 
 **Two properties, both from convex duality**, needing no separation, kernel condition or
 non-degeneracy:
@@ -206,11 +211,15 @@ non-degeneracy:
 So the certificate certifies (P$\lambda$) **restricted to the truncated $\Theta$**. Any
 reported gap must state the truncation.
 
-**[V] It does not scale in the current implementation** — §9.3. Reliable to $N\approx16$.
+**[V] It does not scale in the current implementation** — §9.3. Certified at $N\le16$ and
+uncertified at $N=32$ on all three targets; **[A]** the boundary between was not located, and
+nothing was tested above 32.
 
-**[A] Relation to practice.** Densification heuristics — pixel-space error sampling,
-distortion-driven growth, positional-gradient magnitude — are surrogates for $\eta_\lambda$ and
-none search the covariance dimension. **[V]** GaussianImage has no densification at all.
+**[A←U] Relation to practice.** Densification heuristics reported for other methods —
+pixel-space error sampling, distortion-driven growth, positional-gradient magnitude — look like
+surrogates for $\eta_\lambda$ that do not search the covariance dimension. The descriptions come
+from search summaries, not from the papers or code, so this is suggestive only. **[V]**
+GaussianImage itself has no densification at all.
 
 ---
 
