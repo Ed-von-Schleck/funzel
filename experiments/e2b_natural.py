@@ -138,7 +138,8 @@ def run(name="ascent", n=64, budgets=(8, 16, 32), n_restarts=2, seed=0):
                       [0.35, 0.55, 0.8, 1.0], np.linspace(0, np.pi, 6, endpoint=False))
     print(f"# target={name} n={n} 0.5||y||^2={half:.3f}")
     print(f"{'N':>4} {'E_ref':>8} {'E_BLraw':>9} {'E_BLdb':>8} {'E_BLpol':>8} "
-          f"{'penalty':>8} {'certgap':>8} {'N_BL':>5} {'r_emp':>6}", flush=True)
+          f"{'penalty':>8} {'certgap':>8} {'N_BL':>5} {'r_emp':>6} {'r_ref':>7}",
+          flush=True)
     rows = []
     for N in budgets:
         cg_, thg, f_g = greedy_p0(y, n, X, Y, bank, N)
@@ -165,14 +166,19 @@ def run(name="ascent", n=64, budgets=(8, 16, 32), n_restarts=2, seed=0):
         G = atoms(th, X, Y)[0]
         c_db = np.linalg.lstsq(G.T, y, rcond=None)[0]
         E_db = 0.5 * np.sum((y - c_db @ G) ** 2)
-        _, th_pol, E_pol = fit_fixed_support(c_db, th, y, X, Y, 0.0,
-                                             BOUNDS_LO, BOUNDS_HI, maxiter=900)
+        c_pol, th_pol, E_pol = fit_fixed_support(c_db, th, y, X, Y, 0.0,
+                                                 BOUNDS_LO, BOUNDS_HI, maxiter=900)
+        # A polished BLASSO solution is itself a feasible N-atom point, so it
+        # upper-bounds the (P0) optimum and belongs in the reference. Excluding it
+        # would understate the penalty.
+        E_ref = min(E_ref, E_pol)
         pc = lambda e: 100 * e / half
         print(f"{N:4d} {pc(E_ref):8.3f} {pc(E_bl):9.3f} {pc(E_db):8.3f} {pc(E_pol):8.3f} "
               f"{pc(E_db - E_ref):8.3f} {pc(gap):8.4f} {c.size:5d} "
-              f"{sep_ratio(th, n):6.2f}", flush=True)
+              f"{sep_ratio(th, n):6.2f} {sep_ratio(thg, n):7.2f}", flush=True)
         rows.append(dict(N=N, E_ref=E_ref, E_bl=E_bl, E_db=E_db, E_pol=E_pol,
-                         gap=gap, N_bl=int(c.size), r_emp=sep_ratio(th, n), half=half))
+                         gap=gap, N_bl=int(c.size), r_emp=sep_ratio(th, n),
+                         r_emp_ref=sep_ratio(thg, n), half=half))
     return rows
 
 
