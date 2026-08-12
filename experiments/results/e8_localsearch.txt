@@ -1,0 +1,13 @@
+# E8 addendum: does LOCAL SEARCH reach the exhaustively-verified optimum?
+# E4 found plain greedy 0-66% short of the exhaustive global optimum.
+# This adds exhaustive single-atom swaps and re-checks against the same
+# enumeration. Dictionary = E4 panel A (n=32, D=768, coherence 0.985).
+   target  N l0 exhaustive    greedy  greedy+swap  still short by
+  inmodel  2       13.5777   22.5804      13.5777          -0.00%
+  inmodel  3        0.0000   10.4652       0.0000         -99.00%
+  cartoon  2       18.0009   23.1056      19.2715           7.06%
+  cartoon  3       11.8558   16.0699      15.3242          29.25%
+   ascent  2       38.0253   38.0253      38.0253          -0.00%
+   ascent  3       22.9376   28.0915      22.9376          -0.00%
+     face  2       32.0867   35.7704      32.4508           1.13%
+     face  3       18.1306   23.5250      19.7692           9.04%

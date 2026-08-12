@@ -946,6 +946,65 @@ to "neutral".
 
 ---
 
+### 10.8 Branch-and-bound: the search works, the certificate does not
+
+`experiments/e8_branch_and_bound.py`, raw output `results/e8_localsearch.txt`.
+
+§2.2's positive half said exact $\ell_0$ branch-and-bound was the one route to a *certified*
+global optimum it did not rule out, and §11 U19 made it the highest-value item. It is implemented
+here. **[V] The certification half fails, for a structural reason that can be quantified.**
+
+**Implementation.** Big-M formulation ($\|c\|_0\le N$, $\|c\|_\infty\le M$), best-first search so
+the queue front is the global lower bound at every instant, node bound (\*) from §10.2
+specialised to a node, and an incumbent from greedy plus exhaustive single-atom swaps. After
+setup everything runs on the Gram matrix and $b=Gy$ — never on pixels — so a node costs
+$O(D|I|)$.
+
+**[V] The bound is vacuous, and not by a margin tuning can close.** Bound (\*) is non-trivial only
+when $M\sigma/R<1$. Measured on cartoon, $D=248$, at the *tightest admissible* box — $M$ equal to
+the incumbent's own largest amplitude, below which the incumbent itself becomes infeasible:
+
+| | $N{=}4$ | $N{=}6$ |
+|---|---|---|
+| $M\sigma/R$ at $M=1.0\times\lvert c\rvert_{\max}$ | **5.7** | **8.9** |
+| at $2.0\times$ | 11.4 | 17.8 |
+
+Off by a factor of 6–9 where it needs to be under 1. 200 000 nodes returned a 100% gap.
+
+**[A] Why, and it is §2.2 again.** The incumbent's largest amplitude is 24.0 against
+$\|y\|=21.2$: a single atom's amplitude is the scale of the *whole signal*. So the mass budget
+$NM\approx4\|y\|$, and a measure of that mass over a 248-atom dictionary fits $y$ easily. The
+relaxation cannot see $N$ (§2.2), and when amplitudes sit at signal scale the mass constraint
+does not bite either — so the only handle the convex hull leaves is one this problem does not
+supply. **[A]** This is a property of the splatting dictionary, not of the implementation: no
+choice of $M$, node ordering or search strategy repairs a relaxation that is loose by 6× before
+the search starts.
+
+**[V] The search half works, though.** Exhaustive enumeration of all **153 829 130** supports on
+the parabolic dictionary at $N{=}4$ returns exactly the greedy-plus-swap solution (6.6895% both).
+On the harder unstructured dictionary ($D=768$, coherence 0.985), adding swaps to greedy closes
+most of §10.4's shortfall:
+
+| target | $N$ | exhaustive | greedy | greedy + swap | still short |
+|---|---|---|---|---|---|
+| in-model | 2 | 13.58 | 22.58 | **13.58** | 0% |
+| in-model | 3 | 0.00 | 10.47 | **0.00** | 0% |
+| ascent | 3 | 22.94 | 28.09 | **22.94** | 0% |
+| face | 2 | 32.09 | 35.77 | 32.45 | 1.1% |
+| face | 3 | 18.13 | 23.53 | 19.77 | 9.0% |
+| cartoon | 2 | 18.00 | 23.11 | 19.27 | 7.1% |
+| cartoon | 3 | 11.86 | 16.07 | 15.32 | 29.3% |
+
+**[V] Local search reaches the exact global optimum in 4 of 8 cells** and cuts greedy's shortfall
+from 0–66% to 0–29% in the rest. **[A]** So at these budgets the optimum is often *reachable*
+cheaply; what is unavailable is a *proof* that it was reached. That is the honest state of the
+central question: we can frequently find the global optimum, and cannot certify it by any route
+tested here.
+
+**[A] Scope.** $N\le6$, $D\le768$, on-grid, one instance per target. A negative certification
+result for *this* bound on *this* dictionary — the perspective/ridge relaxations used by the
+sparse-regression literature are stronger and untested here (§11 U19 restated).
+
 ## 11. Open questions, and what would settle each
 
 | | question | what would settle it | cost |
@@ -957,7 +1016,7 @@ to "neutral".
 | **U5** | Can the solver certify at realistic $N$ (§9.3)? | Replace add/prune with batched addition and a support-aware prune rule, or an exact LASSO inner solve; target certgap $<0.1\%$ at $N=10^3$ | weeks — **gates U7, U8** |
 | **U6** | Does §4's rate describe real solutions? | Fit a cartoon target at several $N$; regress $\log$(minor axis) on $\log$(major axis) for edge atoms — parabolic scaling predicts slope 2. Descriptive only; absence is not evidence of failure (§4.1) | days |
 | **U7** | Does §10's negative result survive scale and a better solver? | **Half answered — §10.4.** With both sides solved *exactly* at $N\le4$, $\ell_1$ loses to $\ell_0$ by 6–409%, so solver quality is not what §10 measured. Whether it survives *scale* is still open: re-run §10 after U5 at $N\ge10^3$ on $\ge256^2$ images, ≥5 instances per cell with error bars | weeks, after U5 |
-| **U19** | Can exact $\ell_0$ branch-and-bound reach §10's budgets (§2.2)? This is the only route to a *certified global* optimum that §2.2 does not rule out | Read the branch-and-bound literature properly (currently **[U]**, from search summaries), then implement the box-constrained node relaxation on the splatting dictionary. Target: certified global optimum at $N=8$–16 on $64^2$, where §10 reports | weeks — **the highest-value open item** |
+| **U19** | Can exact $\ell_0$ branch-and-bound certify at §10's budgets? | **Attempted and blocked — §10.8.** The big-M node bound is loose by 6–9× at the tightest admissible box, because a single atom's amplitude is the scale of $\|y\|$, so the mass budget never binds. What remains untested is the **perspective/ridge relaxation** the sparse-regression literature actually uses, which is strictly stronger and changes the problem to $\ell_0{+}$ridge. Read that literature (still **[U]**) before implementing again | weeks |
 | **U20** | Does §10.5's dictionary effect survive real scale? It is measured at $\le64$ splats on $64^2$, and it already inverts at 64 | Re-run §10.5 at $10^3$ splats on $\ge256^2$; needs no solver work, so unlike U7 it does **not** wait on U5 | days |
 | **U21** | Does a frequency-weighted $L^2$ buy perceptual quality while keeping the certificate (§3.2, U9)? A weighted $L^2$ is still Hilbertian, so the adjoint and §6 survive, which SSIM and $L^1$ do not | Fit under a contrast-sensitivity weighting, compare against plain $L^2$ on a perceptual metric at equal $N$ | days; needs the U9 metric decision |
 | **U8** | Do any §9 conclusions survive $10^3$–$10^5$ atoms? | Re-run §9 after U5 | after U5 |
