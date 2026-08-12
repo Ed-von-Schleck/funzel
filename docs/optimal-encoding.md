@@ -5,10 +5,11 @@ from best any given representation is.
 
 Not a compression document — rate, entropy coding and decode speed are out of scope.
 
-**Status tags.** **[V]** verified against a primary source in `papers/` · **[V\*]** verified
-with an inline caveat · **[U]** unverified, search summaries only · **[A]** analysis from
-**[V]** facts · **[A←U]** analysis resting on an unverified premise. Methodology rules and this
-document's error history are in Appendix A.
+**Status tags.** **[V]** verified — either against a primary source in `papers/` or measured by
+an experiment in `experiments/`; the two are distinguished in the text, and a **[V]** never
+means "seems right" · **[V\*]** verified with an inline caveat · **[U]** unverified, search
+summaries only · **[A]** analysis from **[V]** facts · **[A←U]** analysis resting on an
+unverified premise. Methodology rules and this document's error history are in Appendix A.
 
 ---
 
@@ -29,23 +30,41 @@ of optimal encoding on quality grounds. Its defensible role is narrower: a **dia
 instrument** telling you where a solution sits relative to a computable optimum, not a method
 for producing the best solution.
 
+**The second negative result (§10.2, §10.3).** Greedy is not thereby shown to be good. A
+certified lower bound on the (P0) optimum — the first absolute measurement here on targets
+outside the model class — goes **vacuous by $N=4$–8**, at or below the budgets §10 itself
+reports. Where it does bite, at $N=1$, greedy turns out to be *exactly* optimal, and the bound's
+inability to see that (it certifies only 24–34%) is the honest measure of how blunt the
+instrument is. Separately, on a dictionary small enough to enumerate exhaustively, greedy's
+placement is **provably suboptimal by 8.5%** at $N=2$ on the cartoon target. So §10 remains a
+statement about the better of two methods, and how good either is in absolute terms is still
+unknown where it matters.
+
 **What survived scrutiny:**
 
 | | status |
 |---|---|
 | Greedy beats random restarts | **[V]** 9/9 rows, §10.1 |
 | Greedy beats BLASSO at matched $N$ | **[V]** 6/6 *certified* rows, §10 (3 more agree but BLASSO did not converge there) |
-| How far greedy is from optimal | **not bounded by anything here** — §11 U14 |
+| How far greedy is from optimal | **[V]** exactly optimal at $N{=}1$; bound vacuous by $N{=}4$–8 — §10.2. **Open at §10's own budgets** |
+| Greedy's placement is itself suboptimal | **[V]** 8.5% at $N{=}2$ on cartoon, 0.5% on face, 0% on two others — §10.3. *Grid* greedy; refinement may repair some of it |
 | The optimality certificate is computable and self-diagnosing | **[V]** §6, §9.4 |
 | TV needs norm-weighting over a scale-varying dictionary | **[V]** §7.1.1 |
+| The analytic norm is exact in the interior, 3.3× off at the frame | **[V]** §7.1.2 |
 | Forward model linear, loss $L^2$ — preconditions hold | **[V]** §3 |
 | Relaxation gap non-monotone in separation | **[V]** §9.1; mechanism untested |
 | Curvelet-optimal rates are *achievable* by the dictionary (existence) | **[V]** §4; **never tested empirically** |
 
-**What is not established.** Everything measured is at $N\le16$ atoms on $56^2$–$192^2$ images.
+**What is not established.** Everything measured is at $N\le16$ atoms on $48^2$–$192^2$ images.
 Real encoding is $10^3$–$10^5$ atoms on $10^6$ pixels — three to four orders of magnitude away.
 No conclusion below is known to survive that gap, and §9.3 shows the solver cannot currently
 reach it. §11 lists every open question with the experiment that would settle it.
+
+**[A] One methodological gain.** §10.2's bound is valid for *any* dual point, so it needs no
+solver to converge. It is the only instrument here that **bounds the optimum** without one —
+§10.1 and §10.3 also run free of §9.3's ceiling, but they compare methods rather than bound
+anything — and so the only route to an absolute statement at realistic $N$ that does not wait
+on U5.
 
 ---
 
@@ -86,6 +105,11 @@ established for real images. §11 U7.
 
 **[A]** And §10 shows the cost is not worth paying if the goal is the best encoding, because a
 method with no certificate does better.
+
+**[A] A second, unrelated relaxation appears in §10.2** — mass-constrained rather than
+$\lambda$-indexed, and free of any atom count. Its slack is a different quantity from the gaps
+above, measured against a different reference, and the two are not comparable. Nothing here
+relates them; they share only the word.
 
 ---
 
@@ -284,6 +308,34 @@ standard convention throughout sparse approximation (MP, OMP, LASSO all assume i
 statement: *a standard convention was violated here, and this is the measured cost.* The
 commensurate regularizer is $\sum_i|c_i|\,\|\varphi_{\theta_i}\|$.
 
+#### 7.1.2 The analytic norm is exact in the interior and wrong at the frame
+
+**[V] Measured** (`experiments/results/e3_norm.txt`, 6000 draws from E3's truncated $\Theta$ at
+$n=64$). The implementation divides out the *continuum* norm $\|\varphi_\theta\|^2=n^2\pi
+e^{-(u+w)}$. Against that analytic value of 113.4, the actual discrete grid norms run
+min 34.3, median 112.6, max 113.4 — a **3.30× spread**. Rank correlations of the norm ratio
+against candidate causes:
+
+| edge distance | major axis | minor axis | shear $\lvert v\rvert$ |
+|---|---|---|---|
+| $+0.684$ | $-0.587$ | $-0.395$ | $-0.082$ |
+
+Conditioning on atoms whose support clears the image edge ($\text{edge}>2\times$ major axis)
+collapses the spread to **1.00×**. Conditioning on a resolved minor axis alone does not (3.30×).
+(`e3.txt` reports 3.15× for the same quantity — a different random sample of $\Theta$, not a
+different result.)
+
+**[A]** So the analytic norm is *exact* on the pixel grid wherever the atom is not clipped, and
+the entire deviation is boundary truncation of wide atoms near the frame, which are
+under-weighted by up to 3×. Note $\det M$ is independent of $v$, so shear cannot enter the
+analytic norm at all — and indeed does not enter the measured one. The commensurate regularizer
+of §7.1.1 is therefore right in the interior and wrong at the border.
+
+**[A]** It does not follow that this costs anything. §10.2 found greedy attaining the *exact*
+$N=1$ optimum on all four targets despite the spread, so the non-uniformity does not bite at the
+argmax there. Whether it bites anywhere else is untested — §11 U17. The fix, if one is needed,
+is to divide by the measured discrete norm rather than the analytic one.
+
 ### 7.2 Other results
 
 **[V] Semi-discrete OT** (`ma.pdf`, `dGBOD12.pdf`): damped Newton with global linear
@@ -344,8 +396,17 @@ artefacts. The breakdown was bracketed, not located.
 
 ## 9. Experimental results
 
-`experiments/e2_relaxation_gap.py` (in-model targets, exact optimum) and
-`experiments/e2b_natural.py` (out-of-model targets, bounded optimum).
+`experiments/e2_relaxation_gap.py` (in-model targets, exact optimum),
+`experiments/e2b_natural.py` (out-of-model targets, bounded optimum) and
+`experiments/e3_absolute_bound.py` (§10.2, §10.3, §7.1.2 — certified lower bound on the (P0)
+optimum, exhaustive $N{=}2$ myopia, dictionary norm attribution).
+
+**[A] Reproducibility.** Only E3 commits its raw output (`experiments/results/`) and records its
+parameters there. E2 and E2b do not, and their committed defaults do **not** reproduce the tables
+below: `run()` in E2 defaults to $K=9$ and $r\in\{6,4,3,2,1.5,1\}$, whereas §9.1 reports $K=4$ and
+$r\in\{30,15,8,4,2,1\}$; §7.1.1 cites a 192px image and neither script defaults to that (E2: 96,
+E2b: 64), so it is not even recorded which of the two produced it. The §9 numbers therefore
+cannot currently be regenerated from the repository without guessing. §11 U18.
 
 **Scale caveat, applying to everything below.** Certified rows are $N\le16$ atoms on
 $56^2$–$192^2$ images (§9.3 is why). Real encoding is $10^3$–$10^5$ atoms on $10^6$ pixels. No
@@ -512,9 +573,151 @@ greedy recovered four atoms exactly (0.0000%) where random restarts scored 100%.
   §10.1 establishes the attribution.
 - The certificate's value is in *measurement and debugging* (§9.4), not in producing encodings.
 
+**[A] But "matching pursuit is the encoder" is a comparative claim, not an endorsement.** §10.2
+cannot certify greedy at the budgets used here, and §10.3 exhibits a target where greedy's
+placement is suboptimal by 8.5% at $N=2$ on a dictionary where the optimum is computable. Both
+are consistent with greedy being the best available method *and* being well short of optimal.
+Nothing in this document distinguishes those two readings at $N\ge8$.
+
 **[A] What would overturn this.** The comparison is at $N\le32$ on small images, one instance
 per cell, with a BLASSO solver having known defects (§9.3). A better-engineered BLASSO at
 realistic $N$ could plausibly close or reverse the gap. §11 U7.
+
+### 10.2 How far greedy is from optimal — bounded at small $N$, open at §10's own budgets
+
+`experiments/e3_absolute_bound.py` Leg A; raw output `experiments/results/e3.txt`.
+
+§10 is a *relative* result. This is the first absolute one **outside the model class** — §9.1 is
+already absolute, but only because an exact $K$-atom target has a known optimum of 0, which no
+photograph does.
+
+**The instrument.** For any $p\in H$ and any $m$ with $|m|(\Theta)\le M$, two elementary
+inequalities — $\tfrac12\|r\|^2\ge\langle p,r\rangle-\tfrac12\|p\|^2$ (which is just
+$\tfrac12\|r-p\|^2\ge0$) and Hölder on $\langle\Phi^*p,m\rangle$ — compose to
+
+$$\tfrac12\|y-\Phi m\|^2 \;\ge\; \langle p,y\rangle-\tfrac12\|p\|^2-M\,s(p), \qquad s(p)=\sup_{\theta\in\Theta}|\langle\varphi_\theta,p\rangle|$$
+
+Along a ray $p=tq$ this is a concave quadratic in $t$, maximized in closed form at
+$L(q;M)=\big(\langle q,y\rangle-M\,s(q)\big)_+^2/\big(2\|q\|^2\big)$. Each candidate direction
+therefore costs three scalars, one of them the $\eta$ supremum already implemented for §6.
+
+**[A] Three properties, all from the derivation.** It holds for *every* $p$, so no solver need
+converge — this is why §9.3's ceiling does not gate it. The maximum over any family of
+directions is still a valid bound, so directions can only help. And $L$ is concave in $p$, so
+searching for a good direction is itself a concave maximization rather than a heuristic.
+
+**What it bounds, exactly.** $L(M)\le E_{\rm relax}(M)\le E_{N\text{-atom}}(M)$, where
+$E_{\rm relax}(M)$ ranges over measures of mass $\le M$ with **any** number of atoms. The
+constraint is on total mass, not on atom count, so this bounds a *relaxation* of (P0) and its
+slack is at least $E_{N\text{-atom}}(M)-E_{\rm relax}(M)$.
+
+**[A] That is not §2.1's relaxation gap and the two must not be compared.** §2.1 measures
+BLASSO at matched $N$ against the (P0) optimum, a $\lambda$-indexed object. This one is
+mass-constrained and atom-count-free. They are different quantities with different units of
+comparison, and no result here relates them.
+
+It is a lower bound, so a large gap below greedy is **inconclusive** — it may be slack rather
+than suboptimality. That asymmetry is why the next paragraph exists.
+
+**[V] The slack is measured, not assumed.** At $N=1$ the (P0) optimum is computable outright as
+$\max_\theta\langle\varphi_\theta,y\rangle^2/\|\varphi_\theta\|^2$, and greedy attained it
+**exactly** on all four targets ($+0.0000$pp) — so matched-filter placement is optimal at
+$N=1$ despite §7.1.2's norm defect. The bound nonetheless reports 23.7–33.9% suboptimality
+there. That figure is therefore *pure slack*, measured against a known answer.
+
+**[A] It does not follow that the slack elsewhere is 24–34%.** Slack varies with $M$ and with
+$N$, and nothing here measures it at $N>1$, where no known optimum exists to measure against.
+The $N=1$ column establishes that this instrument is blunt, not how blunt it is further down the
+table. Read every row below as an upper bound on suboptimality that is loose by an unmeasured
+amount.
+
+Certified suboptimality bound, as % of greedy's own error (— = vacuous):
+
+| target | $N{=}1$ | 2 | 3 | 4 | 6 | 8, 12, 16 |
+|---|---|---|---|---|---|---|
+| cartoon | 33.9 | 71.3 | 89.7 | — | — | — |
+| face | 23.8 | 42.2 | 93.3 | 91.8 | — | — |
+| ascent | 23.7 | 59.4 | 83.8 | 91.4 | 98.3 | — |
+| in-model | 26.0 | 52.0 | 78.0 | *exact* | *exact* | *exact* |
+
+In-model rows from $N=4$: greedy recovers the 4-atom target exactly, so $E_{\rm opt}=0=L$ and
+the bound is tight there rather than vacuous.
+
+**[V] The bound goes vacuous at $N=4$ (cartoon), 6 (face), 8 (ascent)** — at or below the
+$N\in\{8,16\}$ at which §10 reports. **[A] So U14 is answered only at budgets smaller than the
+ones the central result uses.** Nothing here bounds greedy at §10's budgets, and nothing
+approaches $10^3$–$10^5$.
+
+**[V] Whether the looseness is intrinsic is target-dependent.** Supergradient ascent on $p$
+(18 steps per budget, every iterate certified separately) improved the bound by 0.0% on the
+in-model target and on cartoon, but by 2.5–58.5% on ascent and 6.9–1339% on face. **[A]** On the
+first two the direction family was already at this instrument's ceiling, so what remains is
+relaxation slack; on the other two the search was *not* saturated and no such attribution is
+available. An unconditional version of this claim was emitted by the experiment's own log and
+is withdrawn — see Appendix A.
+
+**[A] The result is conditional on the mass budget.** The bound covers encodings of total mass
+$\le M$, evaluated at $M=M_g$, greedy's own. A better $N$-atom solution spending more mass is not
+excluded, and the mass sweep shows the bound is already vacuous at $1.5\,M_g$ for $N\ge2$ on
+cartoon and $N\ge3$ on ascent. Every figure above must be quoted with that condition. §11 U15.
+
+**Validity.** The one failure mode that would *invalidate* rather than weaken is an
+underestimated $s(q)$ — the same failure §9.4 caught as a negative duality gap. Guards:
+positions searched exactly by FFT, a 320-shape bank, a uniform random probe of $\Theta$,
+projected Nelder–Mead refinement, an inflation sweep, and two hard checks.
+
+- **C1** — $L(M_g)\le E_{\rm greedy}$ is forced, since greedy's own solution has mass $M_g$.
+  Passed on all 32 rows.
+- **C2** — in-model, ground truth attains error 0 at mass $M_{\rm true}$, so $L(M_{\rm true})\le0$
+  is forced. Near-equal amplitudes make this *nearly tight* rather than slack, since
+  $\|y\|^2\le M_{\rm true}s(y)$ becomes an equality at orthogonality with equal amplitudes.
+  Passed exactly.
+
+**[A]** Under a 25% inflation of $s$ the bound stays positive only at $N\le2$ (cartoon, face) and
+$N\le3$ (ascent, in-model). So the conclusions tolerate a modest supremum error, not a large one.
+
+### 10.3 Greedy's placement is measurably myopic
+
+`experiments/e3_absolute_bound.py` Leg B.
+
+On a dictionary small enough to enumerate — 13 824 atoms (24 shapes × 576 positions, $48^2$
+image) — best-2 has a closed form for every pair, so **all 95 544 576 pairs** were evaluated
+exactly. Greedy-on-grid fixes $\arg\max|\langle\varphi,y\rangle|$ and then takes its best
+partner. The dictionary is identical and there is no continuous refinement, so the difference
+isolates the cost of committing to the first atom by matched filter.
+
+| target | greedy best-2 | exhaustive, mass-matched | myopia cost |
+|---|---|---|---|
+| in-model | 53.161 | 53.161 | **0.000%** |
+| ascent | 56.620 | 56.620 | **0.000%** |
+| face | 55.505 | 55.243 | **0.476%** |
+| cartoon | 42.982 | 39.613 | **8.504%** |
+
+Errors as % of $\tfrac12\|y\|^2$; cost as % of the exhaustive optimum.
+
+**[A] Not an artifact.** Two near-duplicate atoms with large opposing amplitudes reduce error
+arbitrarily as their coherence $\to1$ — real arithmetic, useless as an encoding, and enough to
+let "exhaustive" win on a technicality. The search was therefore run three ways: unconstrained,
+coherence-capped at 0.9, and mass-matched to greedy's own pair. The tabulated column is the
+mass-matched one, and the winning pairs sit at coherence 0.00–0.24, so the effect survives
+precisely the constraint that would kill an artifact.
+
+**[V] Greedy's placement is provably suboptimal on the cartoon**, by 8.5% at $N=2$. **[A]** This
+is the first direct evidence here that greedy leaves anything on the table; §10 established only
+that it leaves less than BLASSO does. It appears on the target §4's theory should fit best and
+that §9.2 found best-behaved — which is suggestive and nothing more, at one instance per target.
+
+**[A] The measured method is not quite §10's method, and this cuts against the finding.**
+Removing continuous refinement is what isolates myopia, but it also removes the step that might
+repair it: §10's greedy slides both atoms after placing them, and a refined pair starting from
+greedy's grid choice could recover part or all of the 8.5%. So this bounds the myopia of
+*grid* greedy, and transfers to §10's greedy only as an upper bound on what refinement has to
+fix. Whether it does is untested and cheap to test — it needs only the same enumeration with a
+polish step on both candidate pairs.
+
+**[A] Two further limits.** $N=2$ on a discrete grid at $48^2$ is far from the regime of
+interest, and whether myopia grows or washes out with $N$ is untested. Exhaustive best-3 is
+$\binom{D}{3}\approx4\times10^{11}$ and out of reach; §11 U16 gives an affordable substitute.
 
 ---
 
@@ -534,21 +737,36 @@ realistic $N$ could plausibly close or reverse the gap. §11 U7.
 | **U10** | Does matching a Zador-type density actually reduce reconstruction error (§7.2)? | Place $N$ atoms by semi-discrete OT at several candidate density laws; compare resulting $L^2$ error against matched-filter placement at equal $N$. If no law wins, the OT guarantee is rigorous about an irrelevant objective | days |
 | **U11** | Is the §9.1 hump present out-of-model? | §9.2 sweeps budget, not separation, so the two are not comparable. Sweep $r_{\rm ref}$ on a fixed out-of-model target by varying $N$ and image scale together, and check for a peak | days |
 | **U12** | How much of the out-of-model penalty is $\ell_1$ bias vs. no exact representation? | Repeat §9.2 on targets that *are* exact mixtures but at matched $r_{\rm ref}$ and $N$; the difference isolates the model-class effect | days |
-| **U14** | How far is *greedy* from the (P0) optimum out-of-model? **Nothing here bounds this.** §10 is a relative result: greedy beats BLASSO, but both could be far from optimal | At small $N$ on small images, a fine exhaustive grid over $(\mu,\Sigma)$ with least-squares amplitudes gives a genuine lower bound on the (P0) optimum; compare greedy against it. Alternatively run greedy with orders-of-magnitude more restarts and refinement and see whether anything improves — weaker, but cheap | days |
+| **U15** | Is §10.2's decay in $N$ real, or is it slack? The bound covers encodings of mass $\le M_g$ with *any* atom count, and is already vacuous at $1.5M_g$ | **No clean route is known** — cardinality does not dualize, so the relaxation cannot simply be tightened away. What is affordable: re-run greedy under an explicit mass cap so method and bound are matched at the same $M$, and check whether greedy's error rises to meet the bound (decay is real) or does not (decay is slack) | days |
+| **U16** | Does greedy's $N{=}2$ myopia (§10.3) grow or wash out with $N$? | Exhaustive best-3 is $\approx4\times10^{11}$ subsets, so instead sweep the first atom over the top-$K$ grid candidates, run full continuous greedy from each, and compare against standard greedy at $N=8,16$ | days |
+| **U17** | Does the boundary norm defect (§7.1.2) change any result? | Renormalize the dictionary by the *measured* discrete norm rather than the analytic one, re-run §9.1 and §10. §10.2 found no cost at $N{=}1$; this tests everywhere else | days |
+| **U18** | Are §9 and §10 reproducible from the repository? Their committed defaults do not match the reported tables and no raw output is stored (§9 preamble) | Re-run E2 and E2b at the parameters the tables actually used, commit the output alongside as E3 does, and reconcile any row that moves | hours — **do before U7/U8, which re-run both** |
 | ~~U13~~ | ~~Which uncertified method beat BLASSO — greedy or restarts?~~ | **Resolved — §10.1.** Greedy, in all nine rows, matching $E_{\rm ref}$ exactly | done |
+| ~~U14~~ | ~~How far is *greedy* from the (P0) optimum out-of-model?~~ | **Partly resolved — §10.2.** Greedy is *exactly* optimal at $N{=}1$ on all four targets; the bound itself certifies only 24–34% there and goes vacuous by $N=4$–8. **Still open at $N\ge8$**, i.e. at §10's own budgets, and the residue is U15. The method originally proposed here was wrong twice over: an exhaustive grid with least-squares amplitudes returns a *feasible point*, hence an **upper** bound on $E_{\rm opt}$, which cannot bound greedy's distance from it; and $\binom{10^5}{8}\approx10^{36}$ is not enumerable. See Appendix A, M8 | partly done |
 
 **[A] Dependency structure.** U5 gates U7 and U8, and those two decide whether this line of work
 has a future. U1 is cheap and should be first, since §3.1 is a premise for everything. U4, U6,
-U10 and U14 are cheap and independent.
+U10, U15, U16 and U17 are cheap and independent.
 
-**[A] U14 is the one that most limits what can currently be claimed.** §10 establishes only a
-*relative* ordering. If greedy is itself far from the (P0) optimum, then "use matching pursuit"
-is a statement about the best of two mediocre options, not a recommendation. No result in this
-document bounds greedy's absolute suboptimality on a target outside the model class.
+**[A] U15 and U16 are now what most limit what can be claimed.** §10.2 supplies an absolute
+bound but loses it exactly where §10 makes its case, and §10.3 shows greedy's placement is not
+optimal even where the optimum is computable.
+
+**[A] Be precise about how little §10.2 excludes.** The reading "greedy is the best of two
+mediocre options" is ruled out only at $N=1$, where greedy is exactly optimal. At $N=2$–6 the
+bound permits suboptimality of 42–98%, which excludes almost nothing, and at $N\ge8$ it permits
+everything. One instance per target, four targets.
+
+**[A]** U15 is the only open question that could yield an *absolute* statement at realistic $N$
+without first solving U5 — several others (U1, U6, U10, U16, U17, U18) are also independent of
+U5, but none of them bounds the optimum.
 
 ---
 
 ## 12. Programme
+
+**P0 — U18.** Make §9 and §10 reproducible before anything re-runs them. Hours, and every later
+step depends on the numbers being recoverable.
 
 **P1 — U1.** Confirm the forward model. Cheapest check on the load-bearing premise.
 
@@ -556,10 +774,13 @@ document bounds greedy's absolute suboptimality on a target outside the model cl
 scale is measurable until this works.
 
 **P3 — U7/U8.** Re-run §10 and §9 at scale with error bars. If greedy still wins, the honest
-conclusion is that the convex route is a diagnostic tool and matching pursuit is the encoder.
+conclusion is that the convex route is a diagnostic tool and matching pursuit is the *better*
+encoder — which §10.2 and §10.3 show is not the same as the *good* one.
 
-**P4 — U4, U6.** Cheap, independent, and they test the two interpretive claims currently
-resting on hypothesis.
+**P4 — U4, U6, U15, U16.** Cheap, independent, and they test the interpretive claims currently
+resting on hypothesis. **[A]** U15 deserves priority among them: it is the only route to an
+absolute statement at realistic $N$ that does not wait on U5, because §10.2's bound is valid
+whether or not any solver converged.
 
 **P5 — geometry-informed initialization.** Structure tensor or $|H|$ → density law →
 semi-discrete OT placement → Hessian-derived covariances. **[A]** Motivated by §7.2, not implied
@@ -578,8 +799,9 @@ for a recognizable natural image.
 
 ## Appendix A: methodology and error history
 
-Rules adopted after auditing this document's own reversals. Ten substantive claims were stated
-and later withdrawn.
+Rules adopted after auditing this document's own reversals. Eleven substantive claims were stated
+here and later withdrawn. Two further errors (M8's second half, M9) were caught before reaching
+the document and are logged anyway, since neither would have been caught by prose review.
 
 **M1 — Instrument before interpretation.** *Cost of violating:* a solver bug (§7.1.1)
 invalidated two complete sweeps and three interpretations; the one-run sanity check that
@@ -595,6 +817,16 @@ asymmetry never needed revision. *Not done:* E2, corrected three times mid-fligh
 **M6 — A null search result is not novelty.** *Cost:* two bodies of prior art missed
 (Goal-Based Caustics 2011, `tip2006.pdf`), both having already solved problems treated as open.
 **M7 — Analyse in batches.**
+**M8 — State which side a bound falls on, and check it before proposing it.** *Cost:* U14 stood
+as this document's most limiting open question, with a proposed method — exhaustive grid search
+— that returns a feasible point and therefore bounds the optimum from *above*. It could never
+have answered the question it was written for, and the error survived several audits because
+"exhaustive search" reads as authoritative regardless of direction. Corrected in §10.2.
+**M9 — Attribute a spread by conditioning, not by eyeballing a summary statistic.** *Cost:* the
+§7.1.2 norm defect was first attributed to shear on the strength of two quartile medians, which
+can only speak to the bulk and not the tail. Conditioning gave $\rho=-0.082$ for shear against
+$+0.684$ for edge distance — the opposite conclusion. Caught before it entered this document,
+and logged because the same reasoning would not have been caught in prose.
 
 **Why this document is exposed to M3.** The imported theory and the target problem differ on
 four independent axes — fixed vs free kernel, separated vs dense, recovery vs approximation,

@@ -180,6 +180,50 @@ def norm_spread(n, X, Y, lo, hi, rng, n_samples=4000):
             float(np.median(nr[wid <= qlo])), float(np.median(nr[wid >= qhi])))
 
 
+def norm_attribution(n=64, n_samples=6000, seed=1, log=print):
+    """Why the 'unit-norm' dictionary is not unit-norm on a pixel grid.
+
+    norm_spread() reports THAT the analytic convention is off; this reports
+    WHY, which needs an attribution rather than an eyeballed quartile split.
+    Candidate causes -- sub-pixel minor axis, wide-atom boundary clipping, and
+    shear -- are separated by rank correlation and by conditioning on each."""
+    from scipy.stats import spearmanr
+    X, Y = _grid(n)
+    lo, hi = theta_box(n)
+    rng = np.random.default_rng(seed)
+    th = np.column_stack([rng.uniform(lo[k], hi[k], n_samples)
+                          for k in range(NP_ATOM)])
+    nr = []
+    for i in range(0, n_samples, 500):
+        G = atoms(th[i:i + 500], X, Y)[0]
+        nr.append(np.sqrt((G * G).sum(axis=1)))
+    nr = np.concatenate(nr)
+    ana = n * np.sqrt(np.pi)                       # the analytic convention
+    sv = np.array([np.linalg.svd(np.array([[np.exp(t[2]), t[3]],
+                                           [0.0, np.exp(t[4])]]),
+                                 compute_uv=False) for t in th])
+    minor, major = n / sv[:, 0], n / sv[:, 1]      # px
+    edge = np.minimum.reduce([th[:, 0], 1 - th[:, 0],
+                              th[:, 1], 1 - th[:, 1]]) * n
+    deficit = nr / ana
+
+    log(f"# analytic norm {ana:.1f}; measured min {nr.min():.1f} "
+        f"med {np.median(nr):.1f} max {nr.max():.1f} "
+        f"(spread {nr.max()/nr.min():.2f}x over {n_samples} draws)")
+    log("# rank correlation of norm/analytic with each candidate cause:")
+    for nm, v in (("minor axis px", minor), ("major axis px", major),
+                  ("edge distance px", edge), ("|v| shear", np.abs(th[:, 3]))):
+        log(f"#   {nm:18s} rho = {spearmanr(deficit, v).statistic:+.3f}")
+    far, res = edge > 2 * major, minor >= 1.0
+    for nm, m in (("minor axis >= 1px", res),
+                  ("support clears the edge (edge > 2*major)", far),
+                  ("both", far & res)):
+        log(f"#   conditioning on {nm}: {int(m.sum())} atoms, "
+            f"spread {nr[m].max()/nr[m].min():.2f}x")
+    return dict(spread=float(nr.max() / nr.min()),
+                spread_interior=float(nr[far].max() / nr[far].min()))
+
+
 # ------------------------------------------------------- supremum of |<phi,q>|
 def sup_corr(q, n, X, Y, bank, lo, hi, rng, n_refine=24, nm_iter=400,
              n_random=24000, chunk=1500, normalize=False):
