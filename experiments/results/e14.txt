@@ -6,7 +6,7 @@
 # GRID LEGS: the optimum is known exactly, by enumeration.
   40 images (28 photo crops, 12 cartoons), 1 rejected as too flat (std < 0.08)
   dictionary D=248, N=3, all C(D,3)=2,511,496 supports enumerated per image
-  16084 solutions over 40 images [136s]
+  16084 solutions over 40 images [116s]
   1-swap local optima per image: median 2, range 1-5; descent from 100 random starts reached the true optimum on 40/40 images
   optimum error across images: 6.32%..29.41% -- the spread the pooled test has to see through
   the 200th-best support is 32.4% worse than the optimum (median over images)
@@ -57,10 +57,13 @@
       population       feature  precision        flagged  base rate
             rand   swap_margin      1.000        40/8040      0.005
             rand      cos_next      0.138       290/8040      0.005
+            rand        err_pc      0.256       156/8040      0.005
            local   swap_margin      0.494          81/84      0.476
            local      cos_next      0.482          83/84      0.476
+           local        err_pc      0.494          81/84      0.476
              top   swap_margin      0.494        81/8040      0.005
              top      cos_next      0.005      7434/8040      0.005
+             top        err_pc      0.005      7840/8040      0.005
 
   READ THE 'vs top' COLUMN WITH CARE. Most of the 200 lowest-error
   supports are not even 1-swap locally optimal, so swap_margin scores
@@ -76,86 +79,88 @@
   12 images (8 photo crops, 4 cartoons), 0 rejected as too flat (std < 0.08)
   60 continuous restarts on each of 12 images. Every solution here is a genuine local optimum of the real problem,
   which is what the grid could not supply. The reference is the best restart, NOT a proven optimum -- section 10.12 showed it is not one.
-      ascentx1  best  4.7864%, reached by  5/60 restarts, median restart  5.2670%
-      facex1    best  6.3647%, reached by  1/60 restarts, median restart  6.5892%
-      ascentx2  best  2.1531%, reached by  2/60 restarts, median restart  2.3828%
-      facex2    best 14.9630%, reached by  3/60 restarts, median restart 16.1081%
-      ascentx1  best  2.7128%, reached by  1/60 restarts, median restart  2.9343%
-      facex1    best  3.4197%, reached by  1/60 restarts, median restart  3.5801%
-      ascentx2  best  4.0038%, reached by  6/60 restarts, median restart  4.4368%
-      facex2    best  6.7653%, reached by  4/60 restarts, median restart  7.3443%
-      cartoon   best  6.6257%, reached by  2/60 restarts, median restart  7.8424%
-      cartoon   best  2.3137%, reached by 29/60 restarts, median restart  2.3137%
-      cartoon   best  4.2053%, reached by  2/60 restarts, median restart  4.5560%
-      cartoon   best  3.4128%, reached by  7/60 restarts, median restart  3.7900%
-  [1173s]
+      ascentx1  best  4.7864%, reached by  5/60 restarts, median restart  5.2670%, 12 distinct optima
+      facex1    best  6.3647%, reached by  1/60 restarts, median restart  6.5892%, 19 distinct optima
+      ascentx2  best  2.1531%, reached by  2/60 restarts, median restart  2.3828%, 11 distinct optima
+      facex2    best 14.9630%, reached by  3/60 restarts, median restart 16.1081%, 18 distinct optima
+      ascentx1  best  2.7128%, reached by  1/60 restarts, median restart  2.9343%, 18 distinct optima
+      facex1    best  3.4197%, reached by  1/60 restarts, median restart  3.5801%,  8 distinct optima
+      ascentx2  best  4.0038%, reached by  6/60 restarts, median restart  4.4368%, 11 distinct optima
+      facex2    best  6.7653%, reached by  4/60 restarts, median restart  7.3443%, 22 distinct optima
+      cartoon   best  6.6257%, reached by  2/60 restarts, median restart  7.8424%, 15 distinct optima
+      cartoon   best  2.3137%, reached by 29/60 restarts, median restart  2.3137%,  8 distinct optima
+      cartoon   best  4.2053%, reached by  2/60 restarts, median restart  4.5560%, 18 distinct optima
+      cartoon   best  3.4128%, reached by  7/60 restarts, median restart  3.7900%, 18 distinct optima
+  [1130s]
 
   ## A. Can any feature separate the optimum from each population,
   ##    ACROSS images, on raw values? (>0.5 = lower on the optimum)
             feature  vs restart    restart: 95% CI restart: within
-           cos_next       0.449      [0.259,0.678]          0.604
-        swap_margin       0.310      [0.209,0.548]          0.455
-                coh       0.642      [0.269,0.824]          0.374
-           log_cond       0.654      [0.299,0.826]          0.397
-          amp_ratio       0.604      [0.482,0.734]          0.657
-              eff_n       0.700      [0.485,0.809]          0.644
-         resid_peak       0.393      [0.243,0.572]          0.457
-        resid_rough       0.305      [0.154,0.442]          0.104
-       scale_spread       0.288      [0.147,0.482]          0.355
-            min_sep       0.641      [0.512,0.788]          0.693
-           neg_frac       0.407      [0.119,0.591]          0.223
-               rand       0.565      [0.477,0.626]          0.489  <- NULL control, must be ~0.50
-             err_pc       0.752      [0.511,0.897]          1.000  <- the error itself: the baseline
+           cos_next       0.560      [0.467,0.666]          0.640
+        swap_margin       0.451      [0.346,0.582]          0.471
+                coh       0.537      [0.351,0.704]          0.552
+           log_cond       0.532      [0.344,0.696]          0.545
+          amp_ratio       0.553      [0.390,0.723]          0.533
+              eff_n       0.645      [0.469,0.778]          0.590
+         resid_peak       0.439      [0.336,0.570]          0.461
+        resid_rough       0.367      [0.221,0.449]          0.092
+       scale_spread       0.322      [0.236,0.418]          0.348
+            min_sep       0.546      [0.352,0.697]          0.524
+           neg_frac       0.351      [0.188,0.544]          0.365
+               rand       0.363      [0.234,0.523]          0.374  <- NULL control, must be ~0.50
+             err_pc       0.648      [0.626,0.751]          1.000  <- the error itself: the baseline
                 gap       1.000      [1.000,1.000]          1.000  <- CHEATING control, must be 1.00
 
   ## A2. Is any of it a composition artefact? The 'restart' test rerun
   ##     within one image kind, so photo-vs-cartoon cannot contribute.
             feature       ascent      cartoon         face
-           cos_next        0.699        0.406        0.367
-        swap_margin        0.404        0.235        0.506
-                coh        0.188        0.908        0.466
-           log_cond        0.227        0.879        0.491
-          amp_ratio        0.589        0.588        0.570
-              eff_n        0.496        0.856        0.583
-         resid_peak        0.512        0.333        0.348
-        resid_rough        0.396        0.165        0.216
-       scale_spread        0.429        0.283        0.160
-            min_sep        0.840        0.395        0.579
-           neg_frac        0.154        0.559        0.294
-               rand        0.662        0.581        0.433
+           cos_next        0.609        0.573        0.571
+        swap_margin        0.365        0.550        0.504
+                coh        0.417        0.782        0.516
+           log_cond        0.406        0.741        0.516
+          amp_ratio        0.594        0.495        0.579
+              eff_n        0.516        0.841        0.567
+         resid_peak        0.490        0.364        0.492
+        resid_rough        0.438        0.145        0.373
+       scale_spread        0.349        0.405        0.234
+            min_sep        0.688        0.323        0.548
+           neg_frac        0.346        0.311        0.405
+               rand        0.203        0.523        0.381
 
   ## B. Held out on the 'restart' population: choose the
   ##    feature on half the images, score it on the other half.
-      best on the fit half: neg_frac (AUC 0.867, orientation high=optimal)
-      the same feature on the held-out half: AUC 0.482
-      logistic regression over all 12 features, held out: AUC 0.728
-      its largest weights: neg_frac +2.13, scale_spread +1.92, cos_next -1.86
+      best on the fit half: neg_frac (AUC 0.772, orientation high=optimal)
+      the same feature on the held-out half: AUC 0.533
+      logistic regression over all 12 features, held out: AUC 0.751
+      its largest weights: neg_frac +1.26, scale_spread +1.09, cos_next -1.06
 
   ## C. The certificate-shaped question: a threshold that flags EVERY
   ##    optimum -- what fraction of what it flags is actually optimal?
       population       feature  precision        flagged  base rate
-         restart      neg_frac      0.087        720/720      0.087
-         restart      cos_next      0.091        695/720      0.087
-         restart   swap_margin      0.096        656/720      0.087
+         restart      neg_frac      0.067        178/178      0.067
+         restart      cos_next      0.077        155/178      0.067
+         restart   swap_margin      0.076        157/178      0.067
+         restart        err_pc      0.075        161/178      0.067
 
 ==============================================================================
-# E. CONFIRMATION on a fresh image set, because 'neg_frac' reached
-#    AUC 0.482 held out. Same feature, same orientation,
-#    images the choice never saw.
+# E. CONFIRMATION on a fresh image set. 'neg_frac' won the fit
+#    half and scored 0.533 held out; the pre-registered
+#    trigger was 0.9, so this leg is a second reading rather than the
+#    check on a positive. Same feature, same orientation, new images.
   9 images (6 photo crops, 3 cartoons), 1 rejected as too flat (std < 0.08)
   60 continuous restarts on each of 9 images. Every solution here is a genuine local optimum of the real problem,
   which is what the grid could not supply. The reference is the best restart, NOT a proven optimum -- section 10.12 showed it is not one.
-      ascentx1  best  6.8170%, reached by  1/60 restarts, median restart 14.4143%
-      facex1    best  0.6207%, reached by  1/60 restarts, median restart  0.8634%
-      ascentx2  best  9.3894%, reached by  1/60 restarts, median restart 10.6004%
-      facex2    best  5.0381%, reached by  8/60 restarts, median restart  5.1956%
-      ascentx1  best  4.5305%, reached by  2/60 restarts, median restart  4.6936%
-      facex1    best  3.2376%, reached by  1/60 restarts, median restart  3.4472%
-      cartoon   best  5.9836%, reached by  4/60 restarts, median restart  8.2758%
-      cartoon   best  3.6818%, reached by  2/60 restarts, median restart  3.7490%
-      cartoon   best 11.5586%, reached by  2/60 restarts, median restart 12.3823%
-  [884s]
-      neg_frac on the confirmation set: AUC 0.704 (was 0.482)
-      flagging every optimum there: precision 0.041 on 540/540 flagged, against a base rate of 0.041
+      ascentx1  best  6.8170%, reached by  1/60 restarts, median restart 14.4143%, 12 distinct optima
+      facex1    best  0.6207%, reached by  1/60 restarts, median restart  0.8634%, 20 distinct optima
+      ascentx2  best  9.3894%, reached by  1/60 restarts, median restart 10.6004%, 13 distinct optima
+      facex2    best  5.0381%, reached by  8/60 restarts, median restart  5.1956%, 16 distinct optima
+      ascentx1  best  4.5305%, reached by  2/60 restarts, median restart  4.6936%, 18 distinct optima
+      facex1    best  3.2376%, reached by  1/60 restarts, median restart  3.4472%, 15 distinct optima
+      cartoon   best  5.9836%, reached by  4/60 restarts, median restart  8.2758%, 21 distinct optima
+      cartoon   best  3.6818%, reached by  2/60 restarts, median restart  3.7490%, 10 distinct optima
+      cartoon   best 11.5586%, reached by  2/60 restarts, median restart 12.3823%, 21 distinct optima
+  [847s]
+      neg_frac on the confirmation set: AUC 0.710 (was 0.533)
+      flagging every optimum there: precision 0.062 on 146/146 flagged, against a base rate of 0.062
 
 # checks failed: none

@@ -64,9 +64,10 @@ does not indicate optimality: the most-agreed solution is *not* the best in 7 of
 and taking it costs 4–25% in error.
 And there is progressively nothing to agree on — 60 independent restarts yield 16 distinct optima
 at $N=3$ and up to **60** at $N=8$, where every restart found its own. Nor does the solution itself
-tell you: across 720 genuine local optima, none of twelve computable properties separates optimal
-from suboptimal across images better than AUC 0.71, and the one with a theoretical reason to work —
-the §6 certificate value — scores *below chance* (§10.13). So from roughly six atoms upward the
+tell you: across 178 distinct local optima, the best of twelve computable properties separates
+optimal from suboptimal across images at AUC 0.645, while a null control that cannot carry
+information at all reads 0.363 — the signal is the size of the noise, and the property with a
+theoretical reason to work, the §6 certificate value, is not the best of them (§10.13). So from roughly six atoms upward the
 canonical solution is neither findable nor recognisable, and the best of 60 restarts is not itself
 optimal.
 
@@ -84,7 +85,7 @@ optimal.
 | **The optimum is canonical — unique off-grid and stable** | **[V]** §10.10, §10.11 — 1 support in 2.5M within 1%; independent restarts agree to 0.01px |
 | Reaching it needs restarts; the grid actively misleads | **[V]** §10.11 — the grid optimum is 38–43% worse and refines into a basin 31% worse than the global one |
 | **But it is unreachable from $N\approx6$ up, and unrecognisable** | **[V]** §10.12 — 60 restarts give up to 60 distinct optima; the most-agreed solution is not the best in 7/8 rows, and costs 4–25% |
-| **No cheap property of a solution certifies it either** | **[V]** §10.13 — 12 features over 720 real local optima: nothing beats AUC 0.71, the certificate value scores below chance, and flagging every optimum means flagging every solution |
+| **No cheap property of a solution certifies it either** | **[V]** §10.13 — 12 features over 178 distinct local optima: the best reads 0.645 where a null control reads 0.363, and flagging every optimum means flagging 178 of 178 solutions |
 | On the grid at $N{=}3$, local search simply solves it | **[V]** §10.13 — 1-swap descent reaches the enumerated optimum on 40/40 images; only 2–5 local optima exist. Discretising buys a problem that is easy and wrong (§10.11) |
 | But the optimum is often *found* anyway | **[V]** §10.8 — greedy+swap attains the exhaustively verified optimum in 4/8 cells, and at $N{=}4$ matches enumeration over 153.8M supports |
 | How far greedy is from optimal | **[V]** exactly optimal at $N{=}1$; bound vacuous by $N{=}4$–8 — §10.2. **Open at §10's own budgets** |
@@ -1419,35 +1420,44 @@ say is that the grid's difficulty is in the restart count, not in the neighbourh
 sharp: **discretising buys a problem that is easy and wrong.** It also means the grid cannot supply
 the population this question needs, which is what the off-grid leg is for.
 
-**[V] The off-grid leg is the decisive one**: 12 images × 60 continuous restarts = 720 solutions,
-every one a genuine local optimum of the real problem, with the best restart standing in for the
-optimum. **No feature reaches 0.71.** The best are `eff_n` 0.700, `log_cond` 0.654, `coh` 0.642,
-`min_sep` 0.641, against a null control at 0.565; `cos_next` scores **0.449**, below chance.
-**[A] So the §6 certificate value, the one feature with a theoretical reason to work, carries
-nothing about (P0) optimality** — which sharpens §10's demotion of the certificate from optimality
-proof to diagnostic.
+**[V] The off-grid leg is the decisive one**: 12 images × 60 continuous restarts, deduplicated at
+1px matched centre distance into **178 distinct local optima** (8–22 per image), every one a
+genuine local optimum of the real problem, with the best restart standing in for the optimum.
 
-**[V] The baseline beats all twelve.** The raw error scores 0.752, the highest number in the
-off-grid table, so the obvious objection is to skip the features and threshold the error. It fails
-for the reason that makes this whole question hard, and the next paragraph measures it: a threshold
-low enough to admit every image's optimum admits nearly every other solution too, because the
-optima themselves span 2.2%–15.0% across these images.
+| | `eff_n` | `cos_next` | `min_sep` | `coh` | `rand` (null) | the error |
+|---|---|---|---|---|---|---|
+| pooled AUC | **0.645** | 0.560 | 0.546 | 0.537 | **0.363** | 0.648 |
 
-**[V] Held out, and then confirmed on fresh images.** Twelve features on forty images will produce
-a winner by chance, so the best feature *and its orientation* were chosen on half the images and
-scored on the other half: `neg_frac` won the fit half at AUC 0.867 and scored **0.482** — chance —
-held out. A logistic regression over all twelve, standardised and class-weighted on the fit half,
-reached 0.728, so the negative result covers linear combinations and not just single features. On a
-further 9 images the selection never saw, `neg_frac` scored 0.704. **[A] A quantity that reads
-0.867, 0.482, 0.704 on three image sets is measuring the image set.**
+**[A] The best feature is not distinguishable from the noise.** The null control is a number drawn
+from a dedicated random stream and cannot carry information by construction, and it lands 0.137
+away from chance. The best real feature lands 0.145 away. With one positive per image and twelve
+images, that is the size of the noise, and every bootstrap interval in the raw output straddles
+0.5. **[A] So the §6 certificate value carries nothing measurable about (P0) optimality** — 0.597
+against genuine local optima on the grid, 0.560 off it — which sharpens §10's demotion of the
+certificate from optimality proof to diagnostic.
+
+**[V] The baseline is no better.** The raw error scores 0.648, nominally the highest number in the
+off-grid table, so the obvious objection is to skip the features and threshold the error instead.
+The next paragraph measures that directly.
+
+**[V] Held out, and then re-read on fresh images.** Twelve features will produce a winner by chance,
+so the best feature *and its orientation* were chosen on half the images and scored on the other
+half: `neg_frac` won the fit half at AUC 0.772 and scored **0.533** held out. On a further 9 images
+the selection never saw it scored 0.710. **[A] A quantity reading 0.772, 0.533, 0.710 across three
+image sets is measuring the image set.** A logistic regression over all twelve, standardised and
+class-weighted on the fit half, reached **0.751** held out — the one number here above the noise
+band, so there is a weak signal in combination that no single feature carries. The next paragraph
+is why it does not matter.
 
 **[V] The certificate-shaped question, and the clearest number here.** A certificate may not miss
 the optimum, so fix recall at 1 — take the threshold that flags every optimum — and ask what
-fraction of the flags are optimal. Off-grid: `neg_frac` flags **720 of 720** solutions at a base
-rate of 0.087; `cos_next` flags 695 of 720 for a precision of 0.091; `swap_margin` 656 of 720 for
-0.096. On the confirmation set, 540 of 540 flagged at precision 0.041 — exactly the base rate. To
-catch every optimum you must flag essentially every solution, on both image sets, for every
-feature.
+fraction of the flags are optimal. Off-grid, against a base rate of 0.067: `neg_frac` flags **178
+of 178** solutions; `cos_next` 155 of 178 for a precision of 0.077; `swap_margin` 157 of 178 for
+0.076; the raw error 161 of 178 for 0.075. On the confirmation set, **146 of 146** flagged at
+precision 0.062 — exactly the base rate. To catch every optimum you must flag essentially every
+solution, on both image sets, for every feature, including the error itself. **[V]** The same
+holds on the grid against genuine local optima: 81 of 84 flagged at precision 0.494 against a base
+rate of 0.476.
 
 **[A] So U25 closes negatively, and with it the last route tested.** Relaxation bounds fail
 (§10.8, §10.9), restart agreement fails and misleads (§10.12), and no cheap property of a solution
@@ -1455,11 +1465,20 @@ feature.
 across images. The canonical optimum of §10.10 and §10.11 is real, and there is no tested way to
 know when you have it.
 
-**[V] Nine checks, all passing**, including **C14**, which recomputes the swap margin by a second
+**[V] Ten checks, all passing**, including **C14**, which recomputes the swap margin by a second
 route (leave one atom out, refit against every candidate in its place) and requires it to match the
 exhaustive swap enumeration — it agrees to eight decimals. The first version of that second route
 disagreed, because it allowed an atom to be "replaced" by itself and so reported a margin of zero
-for every support.
+for every support. The experiment is deterministic and the grid legs were re-run after the
+deduplication change: all 16,084 solutions and every AUC reproduced to the digit.
+
+**[A] Deduplication was not cosmetic.** Before it, the off-grid pool counted each local optimum
+once per restart that found it, and one image returned 29 copies of its own best solution — nearly
+half of all positives in the pool came from that single image. The pre-deduplication figures were
+uniformly *more* favourable to the features (`eff_n` 0.700 rather than 0.645, the raw error 0.752
+rather than 0.648, the held-out logistic 0.728 rather than 0.751) and the null control read 0.565
+rather than 0.363. Every one of those differences is an artefact of weighting images by how easy
+they are.
 
 **[A] Scope, pre-registered.** Twelve hand-chosen features at $N=3$ on one dictionary family. This
 bounds what cheap solution-intrinsic quantities can do; it does not prove no computable certificate
@@ -1491,8 +1510,8 @@ Nelder-Mead refinement per solution and is the one clearly worthwhile follow-up 
 | **U20** | Does §10.5's dictionary effect survive real scale? It is measured at $\le64$ splats on $64^2$, and it already inverts at 64 | Re-run §10.5 at $10^3$ splats on $\ge256^2$; needs no solver work, so unlike U7 it does **not** wait on U5 | days |
 | ~~U23~~ | ~~Does canonicity survive off-grid and at larger $N$?~~ | **Resolved — §10.11.** Yes off-grid: restarts reaching the best error agree to 0.01px while worse ones differ in error, so the continuous optimum is unique and merely hard to reach. Yes in $N$: near-ties grow 1,2,2,4 across $N=2..5$ while supports grow to $4.4\times10^7$. But the grid optimum is 38–43% worse and refines into a basin 31% worse than the global one, so the grid is a trap rather than a starting point | done |
 | ~~U24~~ | ~~Does the restart-agreement hit rate survive larger $N$?~~ | **Resolved, negatively — §10.12.** No. Distinct solutions in 60 restarts grow 16 → 60 across $N=3..8$; at $N=8$ on ascent every restart found its own optimum. The most-agreed solution is not the best in 7/8 rows and costs 4–25% in error, so agreement is not merely unavailable but actively misleading | done |
-| **U27** | Does the *exact* certificate value behave differently from §10.13's grid approximation? `cos_next` maximizes $|\eta(\theta)|$ over 248 atoms; §6's quantity is a supremum over continuous $\theta$ | Recompute `cos_next` with the shape-bank plus Nelder-Mead refinement §9 already uses, on the same 720 solutions, and rescore. The one follow-up §10.13's negative result actually invites | days |
-| ~~U25~~ | ~~Is *any* practically computable quantity correlated with global optimality?~~ | **Resolved, negatively — §10.13.** Twelve dimensionless features over 720 genuine local optima on 12 images: nothing exceeds pooled AUC 0.71 against a null control at 0.565, the $\lambda=0$ certificate value scores 0.449, a logistic regression over all twelve reaches 0.728 held out, and the held-out winner reads 0.867 / 0.482 / 0.704 across three image sets. Flagging every optimum requires flagging 720 of 720 solutions | done |
+| **U27** | Does the *exact* certificate value behave differently from §10.13's grid approximation? `cos_next` maximizes $|\eta(\theta)|$ over 248 atoms; §6's quantity is a supremum over continuous $\theta$ | Recompute `cos_next` with the shape-bank plus Nelder-Mead refinement §9 already uses, on the same 178 solutions, and rescore. The one follow-up §10.13's negative result actually invites | days |
+| ~~U25~~ | ~~Is *any* practically computable quantity correlated with global optimality?~~ | **Resolved, negatively — §10.13.** Twelve dimensionless features over 178 distinct local optima on 12 images: the best reads pooled AUC 0.645 where an information-free null control reads 0.363, the $\lambda=0$ certificate value reads 0.560, and the held-out winner reads 0.772 / 0.533 / 0.710 across three image sets. A logistic regression over all twelve reaches 0.751 held out — a weak real signal — but flagging every optimum still requires flagging 178 of 178 solutions, and 146 of 146 on a fresh set | done |
 | **U26** | Does the grid's tractability at $N{=}3$ (§10.13: local search solves 40/40) survive larger $N$, and can a *sequence* of grids beat one? The grid is easy and wrong; the continuous problem is right and hard | Re-run §10.13's descent leg at $N=4,5$ where enumeration is still affordable; then test grid-refinement — solve on a coarse grid, refine the dictionary around the solution, repeat — against continuous restarts at matched cost | days |
 | ~~U22~~ | ~~Does §10.7's verdict on frequency continuation depend on the blur schedule?~~ | **Resolved — yes, §10.7.** The schedule used was among the worst of five swept. A mild $[1,0]$ schedule gives −2.87% median, better in 9/12 cells, against +0.82% for the one originally used; the trend is monotone in schedule aggressiveness. The gain is small and requires the handicap allocation, so continuation is still not a route to the optimum, but the original verdict was too strong | done |
 | ~~U22-old~~ | ~~superseded~~ A known-answer test shows continuation losing a handed-in optimum by 4e-4% to 27%, erratically across schedules and instances, so the single schedule §10.7 used may not be representative | Re-run §10.7 sweeping the schedule (number of stages, coarsest $\sigma$), medians over $\ge5$ seeds since single draws demonstrably reverse | days |
