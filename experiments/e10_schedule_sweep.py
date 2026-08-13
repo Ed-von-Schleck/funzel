@@ -37,7 +37,7 @@ import time
 
 import numpy as np
 
-from e2_relaxation_gap import _grid
+from e2_relaxation_gap import _grid, atoms
 import e2b_natural as e2b
 import e5_dictionary_scaling as e5
 import e7_frequency_continuation as e7
@@ -65,8 +65,6 @@ def one_cell(y, X, Y, n, B, dicts, init, seed, total_iter=900):
             rng.uniform(0.05, 0.95, B), rng.uniform(0.05, 0.95, B),
             np.log(rng.uniform(2.0, 20.0, B)), np.zeros(B),
             np.log(rng.uniform(2.0, 20.0, B))])
-        Gr = np.array([])
-        from e2_relaxation_gap import atoms
         Gr = atoms(th, X, Y)[0]
         amp = np.linalg.lstsq(Gr.T, y, rcond=None)[0]
     out = {}

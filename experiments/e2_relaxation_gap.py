@@ -195,6 +195,18 @@ def run(n=96, K=9, u_px=6.0, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
         off = (np.arange(g) - (g - 1) / 2) * spacing
         cxs, cys = np.meshgrid(0.5 + off, 0.5 + off, indexing="ij")
         centres = np.stack([cxs.ravel(), cys.ravel()], 1)[:K]
+        # The centre lattice grows with r, so a large separation can push the
+        # ground-truth atoms OUTSIDE the image, leaving a near-empty target on
+        # which every method scores ~0 and "exact recovery" is vacuous. This was
+        # unchecked, and section 9.1's three zero rows sit exactly where it is
+        # most likely to have happened. Fail loudly rather than report a zero.
+        if centres.min() < 0.0 or centres.max() > 1.0:
+            raise ValueError(
+                f"r={r}: ground-truth centres span [{centres.min():.3f},"
+                f"{centres.max():.3f}] outside the unit square. Need "
+                f"(ceil(sqrt(K))-1)*r*u_px <= n; here K={K}, u_px={u_px}, n={n}."
+                " Any error reported for this row would be measured on a target"
+                " whose atoms are off-image.")
         # ground truth: mild anisotropy + random orientation, unit amplitudes
         th_gt = []
         for (cx, cy) in centres:
@@ -249,7 +261,14 @@ def run(n=96, K=9, u_px=6.0, ratios=(6.0, 4.0, 3.0, 2.0, 1.5, 1.0),
         r_db = y - c_db @ G
         E_db = 0.5 * r_db @ r_db
         # polish: BLASSO support as an initializer, full local refit
-        _, _, E_pol = fit_fixed_support(c_db, th, y, X, Y, 0.0, bounds_lo, bounds_hi)
+        if c_db.size:
+            _, _, E_pol = fit_fixed_support(c_db, th, y, X, Y, 0.0,
+                                            bounds_lo, bounds_hi)
+        else:
+            # An empty BLASSO support crashed fit_fixed_support with an
+            # unhelpful unpacking error from scipy. Report it as the trivial
+            # all-zero fit instead, which is what an empty support means.
+            E_pol = 0.5 * float(y @ y)
 
         # The target IS a sum of K Gaussians, so (P0) at N=K attains error exactly
         # 0 at the ground truth. The relaxation gap is therefore E_BL itself --

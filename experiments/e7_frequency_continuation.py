@@ -45,7 +45,6 @@ N<=4). Three targets, 64^2, one continuation schedule.
 """
 
 import sys
-import time
 
 import numpy as np
 

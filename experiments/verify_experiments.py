@@ -112,7 +112,6 @@ def e6_wavelet_mapping():
     Its energy centroid is where that coefficient LIVES, so the position
     wavelet_atoms assigns must land there. A transposed index would show up as
     the x and y errors swapping, which is why both are reported separately."""
-    import e6_wavelet_init as e6
     # haar, whose basis functions have EXACT dyadic block support. A longer
     # filter (db4) under periodization wraps around the frame, which drags the
     # energy centroid toward the image middle and makes the comparison

@@ -65,7 +65,7 @@ import time
 
 import numpy as np
 
-from e2_relaxation_gap import _grid, atoms
+from e2_relaxation_gap import _grid
 import e2b_natural as e2b
 import e4_exact_l0 as e4
 
@@ -117,7 +117,6 @@ def greedy_then_swap(Gram, b, N, M, max_rounds=40):
     for _ in range(max_rounds):
         improved = False
         for pos in range(N):
-            cur = S[pos]
             for cand in range(D):
                 if cand in S:
                     continue
@@ -153,7 +152,6 @@ def bnb(Gram, b, yy, N, M, incumbent_S, incumbent_expl, max_nodes=400_000,
         R = max(R, 0.0)
         return R, rc
 
-    root_R, root_rc = node_bound([])
     heap = [(0.0, 0, [], set())]                 # (lb, tiebreak, I, excluded)
     counter = 1
     nodes = 0

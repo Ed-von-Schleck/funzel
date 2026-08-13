@@ -71,7 +71,7 @@ from sklearn.linear_model import lars_path
 # output); it does not affect the breakpoints actually used.
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
-from e2_relaxation_gap import _grid, atoms, shape_bank, NP_ATOM
+from e2_relaxation_gap import _grid, atoms, shape_bank
 import e2b_natural as e2b
 
 
@@ -209,7 +209,6 @@ def dual_bound(G, y, M, n_dir=400):
     is measurable at every N."""
     best = 0.0
     dirs = [y]
-    rng = np.random.default_rng(0)
     S = []
     for _ in range(min(n_dir, 12)):            # greedy residuals as directions
         r = y - (np.linalg.lstsq(G[S].T, y, rcond=None)[0] @ G[S] if S else 0.0)
@@ -323,7 +322,7 @@ def coherence_sweep(name, n=32, N=3, mus=(0.99, 0.9, 0.75, 0.6, 0.45),
     a thinner dictionary genuinely approximates less well. The hypothesis is
     about the RELATIVE columns -- whether greedy and l1 close on the optimum."""
     rng = np.random.default_rng(seed)
-    th, Gfull, _, _ = build_dict(n, 4, (2.0, 3.5, 6.0), (0.5, 1.0), 3)
+    _, Gfull, _, _ = build_dict(n, 4, (2.0, 3.5, 6.0), (0.5, 1.0), 3)
     y, _ = make_target(name, n, Gfull, rng, K=3)
     half = 0.5 * float(y @ y)
     pc = lambda e: 100.0 * e / half
@@ -411,12 +410,7 @@ def build_dog(n, specs, alpha=2.5, k=1.6):
     So this changes the dictionary's geometry without leaving the model class,
     and tests whether the obstruction is the span or the parameterisation."""
     X, Y = _grid(n)
-    rows = []
-    for (L, W, n_rot) in specs:
-        for t in np.linspace(0, np.pi, n_rot, endpoint=False):
-            for scale, sgn in ((1.0, 1.0), (k, -1.0)):
-                pass
-        # build centres exactly as build_parabolic does, then form differences
+    # same lattice as build_parabolic; each centre becomes a concentric pair
     th_all, _ = build_parabolic(n, specs, alpha)
     G = []
     for t in th_all:

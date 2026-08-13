@@ -55,7 +55,7 @@ import time
 import numpy as np
 import pywt
 
-from e2_relaxation_gap import _grid, atoms, render, fit_fixed_support, NP_ATOM
+from e2_relaxation_gap import _grid, atoms, fit_fixed_support
 import e2b_natural as e2b
 import e5_dictionary_scaling as e5
 

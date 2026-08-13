@@ -81,7 +81,7 @@ def t_gradient_finite_difference():
 
     THE load-bearing test: every refinement result in E5/E6/E7 depends on this
     gradient being right, and a wrong one degrades results silently."""
-    from e2_relaxation_gap import _grid, atoms, loss_grad, NP_ATOM
+    from e2_relaxation_gap import _grid, loss_grad
     n = 16
     X, Y = _grid(n)
     rng = np.random.default_rng(1)
@@ -149,7 +149,6 @@ def t_extend_combinations():
 
 def t_explained_energy():
     """exact_l0's Gram-domain explained energy vs an explicit lstsq fit."""
-    import e4_exact_l0 as e4
     rng = np.random.default_rng(3)
     P, D = 60, 14
     G = rng.normal(0, 1, (D, P))
@@ -274,7 +273,6 @@ def t_splat_accounting():
 
 
 def t_parseval():
-    from e2_relaxation_gap import _grid
     import e7_frequency_continuation as e7
     import e2b_natural as e2b
     n = 64

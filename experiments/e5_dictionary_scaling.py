@@ -45,7 +45,7 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import lars_path
 import warnings
 
-from e2_relaxation_gap import _grid, atoms, fit_fixed_support, shape_bank, NP_ATOM
+from e2_relaxation_gap import _grid, atoms, fit_fixed_support
 import e2b_natural as e2b
 import e4_exact_l0 as e4
 

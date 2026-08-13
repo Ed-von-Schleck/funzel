@@ -1,0 +1,33 @@
+# U18: E2 and E2b re-run at documented parameters.
+# The original section 9 tables are NOT reproducible -- parameters were
+# never recorded, and n_restarts perturbs the targets through a shared
+# rng, so this is a fresh instance rather than a replication.
+# E2  params: {'n': 96, 'K': 4, 'u_px': 6.0, 'ratios': (30.0, 15.0, 8.0, 4.0, 2.0, 1.0), 'n_restarts': 2, 'seed': 0}
+# E2b params: {'n': 64, 'budgets': (8, 16, 32), 'n_restarts': 2, 'seed': 0} targets=('cartoon', 'ascent', 'face')
+
+==============================================================================
+# E2 (section 9.1): in-model targets, separation sweep
+# NOTE the BLpolish column, which section 9.1's table omitted.
+#   Traceback (most recent call last):
+#     File "/home/user/funzel/experiments/u18_rerun.py", line 72, in main
+#       rows = e2.run(**E2_PARAMS)
+#              ^^^^^^^^^^^^^^^^^^^
+#     File "/home/user/funzel/experiments/e2_relaxation_gap.py", line 252, in run
+#       _, _, E_pol = fit_fixed_support(c_db, th, y, X, Y, 0.0, bounds_lo, bounds_hi)
+#                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#     File "/home/user/funzel/experiments/e2_relaxation_gap.py", line 96, in fit_fixed_support
+#       res = minimize(loss_grad, z0, args=(y, X, Y, lam), jac=True, method="L-BFGS-B",
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#     File "/usr/local/lib/python3.11/dist-packages/scipy/optimize/_minimize.py", line 704, in minimize
+#       bounds = standardize_bounds(bounds, x0, 'new')
+#                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#     File "/usr/local/lib/python3.11/dist-packages/scipy/optimize/_minimize.py", line 1126, in standardize_bounds
+#       lb, ub = old_bound_to_new(bounds)
+#                ^^^^^^^^^^^^^^^^^^^^^^^^
+#     File "/usr/local/lib/python3.11/dist-packages/scipy/optimize/_constraints.py", line 446, in old_bound_to_new
+#       lb, ub = zip(*bounds)
+#       ^^^^^^
+#   ValueError: not enough values to unpack (expected 2, got 0)
+
+==============================================================================
+# E2b (section 9.2): cartoon
