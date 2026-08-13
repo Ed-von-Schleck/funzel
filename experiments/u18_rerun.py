@@ -30,12 +30,32 @@ reproducible by construction. A row that differs is not evidence the original
 was wrong -- it is a different instance.
 """
 
-import io
 import sys
 import time
-from contextlib import redirect_stdout
 
 import numpy as np
+
+
+class Tee:
+    """Write through to the console AND collect, instead of buffering.
+
+    The first version wrapped stdout in a StringIO so the output could be
+    captured into the results file. That made a four-hour run completely
+    invisible while it was in progress -- nothing could tell a slow job from a
+    hung one except the process table. Capturing and showing are not in
+    conflict; this does both."""
+
+    def __init__(self, sink):
+        self.sink = sink
+
+    def write(self, s):
+        sys.__stdout__.write(s)
+        sys.__stdout__.flush()
+        self.sink.append(s)
+        return len(s)
+
+    def flush(self):
+        sys.__stdout__.flush()
 
 # Every parameter is recorded here and echoed into the results file.
 # n and u_px chosen so that EVERY ratio keeps the centre lattice inside the
@@ -69,12 +89,14 @@ def main(out="results/u18.txt"):
     log("# E2 (section 9.1): in-model targets, separation sweep")
     log("# NOTE the BLpolish column, which section 9.1's table omitted.")
     t0 = time.time()
-    buf = io.StringIO()
+    buf = []
     try:
-        with redirect_stdout(buf):
+        sys.stdout = Tee(buf)
+        try:
             rows = e2.run(**E2_PARAMS)
-        for ln in buf.getvalue().splitlines():
-            log(ln)
+        finally:
+            sys.stdout = sys.__stdout__
+        lines.extend("".join(buf).splitlines())
         log(f"# E2 completed in {time.time()-t0:.0f}s")
         db = [r["E_db"] / (0.5 * r["ynorm"]) * 100 for r in rows]
         pol = [r["E_pol"] / (0.5 * r["ynorm"]) * 100 for r in rows]
@@ -98,12 +120,14 @@ def main(out="results/u18.txt"):
         log("=" * 78)
         log(f"# E2b (section 9.2): {name}")
         t0 = time.time()
-        buf = io.StringIO()
+        buf = []
         try:
-            with redirect_stdout(buf):
+            sys.stdout = Tee(buf)
+            try:
                 rows = e2b.run(name=name, **E2B_PARAMS)
-            for ln in buf.getvalue().splitlines():
-                log(ln)
+            finally:
+                sys.stdout = sys.__stdout__
+            lines.extend("".join(buf).splitlines())
             pen = [(r["E_db"] - r["E_ref"]) / r["half"] * 100 for r in rows]
             log(f"# penalty by budget: " +
                 "  ".join(f"N={r['N']}:{p:.2f}%" for r, p in zip(rows, pen)))
