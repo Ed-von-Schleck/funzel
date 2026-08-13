@@ -65,6 +65,7 @@ unknown where it matters.
 | **No certified global optimum is reachable by any route tested** | **[V]** §10.8, §10.9 — big-M and perspective relaxations both fail; §2.2 rules out the convex-measure route by proof |
 | **The optimum is canonical — unique off-grid and stable** | **[V]** §10.10, §10.11 — 1 support in 2.5M within 1%; independent restarts agree to 0.01px |
 | Reaching it needs restarts; the grid actively misleads | **[V]** §10.11 — ~1 restart in 10 finds it; the grid optimum refines into a basin 31% worse |
+| **But it is unreachable from $N\approx6$ up, and unrecognisable** | **[V]** §10.12 — 60 restarts give up to 60 distinct optima; the most-agreed solution is not the best in 7/8 rows |
 | But the optimum is often *found* anyway | **[V]** §10.8 — greedy+swap attains the exhaustively verified optimum in 4/8 cells, and at $N{=}4$ matches enumeration over 153.8M supports |
 | How far greedy is from optimal | **[V]** exactly optimal at $N{=}1$; bound vacuous by $N{=}4$–8 — §10.2. **Open at §10's own budgets** |
 | Greedy's placement is itself suboptimal | **[V]** 8.5% at $N{=}2$ on cartoon, 0.5% on face, 0% on two others — §10.3. *Grid* greedy; refinement may repair some of it |
