@@ -52,6 +52,21 @@ placement is **provably suboptimal by 8.5%** at $N=2$ on the cartoon target. So 
 statement about the better of two methods, and how good either is in absolute terms is still
 unknown where it matters.
 
+**The third result, and the one that matters most for why any of this is wanted (§10.10–§10.12).**
+The reason to want the *global* optimum is not reconstruction quality — it is that a global optimum
+is a function of the image alone, so it is reproducible and its structure can be compared across
+images, where a local optimum is an artefact of an initialization. That object turns out to be
+real: the optimum is sharply unique (1 support in 2.5 million within 1% at $N=3$), stable under
+30dB noise and a 1px shift, and unique **off**-grid — independent continuous restarts that reach
+the best error agree on atom positions to 0.01px. But it is **operationally unreachable**. No
+certificate exists (§10.8, §10.9). Agreement between restarts, the obvious empirical substitute,
+does not indicate optimality: the most-agreed solution is *not* the best in 7 of 8 measured rows,
+and taking it costs 4–25% in error.
+And there is progressively nothing to agree on — 60 independent restarts yield 16 distinct optima
+at $N=3$ and up to **60** at $N=8$, where every restart found its own. So from roughly six atoms
+upward the canonical solution is neither findable nor recognisable, and the best of 60 restarts is
+not itself optimal.
+
 **What survived scrutiny:**
 
 | | status |
@@ -64,8 +79,8 @@ unknown where it matters.
 | Wavelet placement does not work | **[V]** §10.6 — loses to greedy 12/12, and to *random* 10/12 |
 | **No certified global optimum is reachable by any route tested** | **[V]** §10.8, §10.9 — big-M and perspective relaxations both fail; §2.2 rules out the convex-measure route by proof |
 | **The optimum is canonical — unique off-grid and stable** | **[V]** §10.10, §10.11 — 1 support in 2.5M within 1%; independent restarts agree to 0.01px |
-| Reaching it needs restarts; the grid actively misleads | **[V]** §10.11 — ~1 restart in 10 finds it; the grid optimum refines into a basin 31% worse |
-| **But it is unreachable from $N\approx6$ up, and unrecognisable** | **[V]** §10.12 — 60 restarts give up to 60 distinct optima; the most-agreed solution is not the best in 7/8 rows |
+| Reaching it needs restarts; the grid actively misleads | **[V]** §10.11 — the grid optimum is 38–43% worse and refines into a basin 31% worse than the global one |
+| **But it is unreachable from $N\approx6$ up, and unrecognisable** | **[V]** §10.12 — 60 restarts give up to 60 distinct optima; the most-agreed solution is not the best in 7/8 rows, and costs 4–25% |
 | But the optimum is often *found* anyway | **[V]** §10.8 — greedy+swap attains the exhaustively verified optimum in 4/8 cells, and at $N{=}4$ matches enumeration over 153.8M supports |
 | How far greedy is from optimal | **[V]** exactly optimal at $N{=}1$; bound vacuous by $N{=}4$–8 — §10.2. **Open at §10's own budgets** |
 | Greedy's placement is itself suboptimal | **[V]** 8.5% at $N{=}2$ on cartoon, 0.5% on face, 0% on two others — §10.3. *Grid* greedy; refinement may repair some of it |
@@ -1189,6 +1204,165 @@ relaxation $\le$ optimum and passes on every row. **[A]** Note the direction: th
 look *smaller*, so the negative conclusion was never at risk — but the $\lambda_2\ge1$ rows, which
 are the ones that decide the trade-off, were entirely wrong before the fix.
 
+### 10.10 The optimum is canonical on the grid — unique, and stable
+
+`experiments/e11_canonical.py`, raw output `results/e11.txt`.
+
+Everything up to here treats the global optimum as a *quality* target, and §10.8–§10.9 have just
+shown it cannot be certified. But the reason to want it is not quality. A local optimum depends on
+the initialization, so two runs on the same image give two different answers and nothing about
+either is a property of the image. **The global optimum is a function of the image alone**, so it
+is reproducible and its structure can be compared across images. That motivation survives the loss
+of the certificate only if the optimum is actually *unique* — a large flat set of near-optimal
+solutions would be no more canonical than a local optimum.
+
+**[V] Part A — uniqueness, by exhaustive enumeration.** Every $N=3$ support over a $D=248$
+dictionary, 2,511,496 of them, on three targets:
+
+| target | best | supports within 1% | within 5% | sharing no atom with the winner |
+|---|---|---|---|---|
+| cartoon | 7.692% | **1** | 15 | 0 |
+| ascent | 19.484% | **1** | 11 | 0 |
+| face | 13.141% | **1** | 30 | 0 |
+
+One support in 2.5 million lies within 1% of the best, and *no* near-optimal support is disjoint
+from the winner — the runners-up are the winner with one atom exchanged, at matched centre
+distances of 0.0px. The argmin is sharp, not a plateau.
+
+**[V] Part B — stability.** Re-running the enumeration on perturbed inputs, the winning support is
+unchanged under 40dB and 30dB additive noise and under a 1.01× intensity scale, on both targets,
+with 0.00px matched centre displacement. A 1px translation leaves ascent's winner intact and
+changes one of cartoon's three atoms — **[A]** and even there the matched *centre* distance is
+0.00px, so the substituted atom sits at the same location with a different scale or orientation.
+The optimum is not balanced on a knife edge.
+
+**[V] Part C — and a result that has nothing to do with canonicity.** The same file compares
+initialization (greedy vs. random) against optimiser (L-BFGS vs. Adam) at budgets 8 and 32:
+
+| target | budget | greedy+L-BFGS | greedy+Adam | random+L-BFGS | random+Adam |
+|---|---|---|---|---|---|
+| cartoon | 8 | 2.411% | 2.258% | 2.197% | **2.073%** |
+| cartoon | 32 | 1.197% | 0.655% | 1.309% | **0.558%** |
+| ascent | 8 | 11.092% | **10.298%** | 10.783% | 10.826% |
+| ascent | 32 | 5.842% | 4.679% | 6.170% | **4.626%** |
+
+Adam beats L-BFGS in 7 of 8 pairings, and **random initialization plus Adam beats greedy
+initialization plus Adam in 3 of 4** — the ordering §10.1 established between greedy and random
+does not survive a good continuous optimiser. **[A] The comparison is deliberately unfair in
+Adam's favour** and says so in the file: Adam gets 6000 gradient evaluations against L-BFGS's
+$\le$1800, so this shows Adam wins when given 3× the budget, not that it is more efficient. What
+it does establish is that the greedy-vs-random ordering is an artefact of weak refinement.
+
+**[A] Scope.** $N=3$ for parts A and B, on a *grid*: uniqueness of a discrete argmin over 248
+candidates is a much weaker statement than uniqueness of the continuous optimum, and §2.2 already
+noted that discretisation imposes a minimum separation which could itself be manufacturing the
+uniqueness. §10.11 tests exactly that.
+
+### 10.11 Canonicity survives off-grid — but the grid optimum is a trap
+
+`experiments/e12_canonical_offgrid.py`, raw output `results/e12.txt`. This is U23.
+
+The worry §10.10 ends on is concrete: if a grid's minimum separation is what makes the argmin
+sharp, then canonicity is bought by discretising and disappears in the continuous problem anyone
+actually wants to solve. The test distinguishes the two readings the way §10.10 did — **by whether
+scattered solutions share an error**. Many continuous optima would show up as restarts that
+disagree in position *at equal error*; a single hard-to-reach optimum shows up as restarts that
+disagree in position *and* in error.
+
+**[V] Part A — 40 independent random restarts of a full continuous fit (Adam then L-BFGS), $N=3$:**
+
+| target | grid optimum | best continuous | restarts within 1% | their atom spread | error spread over all 40 |
+|---|---|---|---|---|---|
+| cartoon | 7.692% | **4.356%** | 3/40 | **0.01px** | 4.356 .. 4.711 .. 5.290% |
+| ascent | 19.484% | **11.935%** | 4/40 | **0.00px** | 11.935 .. 12.949 .. 13.685% |
+
+The answer is unambiguous: restarts that reach the best error agree on atom *positions* to 0.01px,
+while restarts that disagree in position are also worse in error — on cartoon, the ones within 5%
+but not 1% sit 8.56px away. **Canonicity is a property of the problem, not of the grid.** The
+continuous optimum is unique and merely hard to reach.
+
+**[V] Part B — and the grid does not help you reach it.** Taking the grid optimum as an
+initialization and refining it continuously gives 5.700% on cartoon, against 4.356% found from
+random starts: **the grid optimum refines into a basin 31% worse than the global one.** That basin
+is wide — displaced by 8px and re-refined, 5 of 8 seeds return to it within 1px, and by 0.5–2px all
+8 do. So the grid optimum is a strong, stable, wrong attractor. It is 38–43% worse than the
+continuous optimum and sits 13–21px away from it.
+
+**[V] Part C — degeneracy does grow with $N$, slowly.** Enumerating $N=2..5$ on one fixed $D=90$
+dictionary, supports within 1% of the best go 1, 2, 2, 4 (cartoon) and 1, 1, 3, 2 (ascent) while
+the number of supports grows from 4,005 to 43,949,268. Near-ties grow roughly linearly against a
+search space growing by four orders of magnitude, so uniqueness is not visibly collapsing over this
+range.
+
+**[A] What this changes.** The certificate is gone (§10.8, §10.9) but the *object* it would have
+certified is real, and agreement between independent restarts is an obvious empirical substitute at
+a hit rate of roughly 1 in 10. **[A] Two cautions, and the second is fatal.** First, "1 in 10"
+counts restarts agreeing with the best of 40 — not with the true optimum, which is unknown; §10.12
+finds a better solution still, so this is an upper bound on the real hit rate. Second, part B has
+already shown a wide basin around a solution that is 31% *worse*, which is precisely a case where
+frequency of agreement and optimality point in opposite directions. §10.12 tests the substitute
+directly, and it fails.
+
+### 10.12 The hit rate collapses: the canonical optimum is operationally unreachable
+
+`experiments/e13_hit_rate.py`, raw output `results/e13.txt`.
+
+§10.11's agreement heuristic is only as good as the hit rate, and the hit rate was measured at
+$N=3$. This measures it at $N=3,4,6,8$ — **without needing to know the true optimum**, which cannot
+be enumerated above $N=3$. Sixty independent continuous restarts per budget, clustered at 1px max
+matched centre distance (max, not median: at $N=8$ a median would score seven-of-eight agreement as
+perfect). Two statistics, because either alone hides the failure mode — how often the *most-found*
+solution is found, and whether the *lowest-error* solution is that one.
+
+| target | $N$ | best | distinct solutions | largest cluster | best in it? | its error | times best was found |
+|---|---|---|---|---|---|---|---|
+| cartoon | 3 | 4.246% | 16 | 31 | **no** | 4.711% (+11%) | 1/60 |
+| cartoon | 4 | 3.085% | 31 | 8 | **no** | 3.291% (+7%) | 2/60 |
+| cartoon | 6 | 2.250% | 56 | 3 | yes | 2.250% (—) | 3/60 |
+| cartoon | 8 | 1.798% | 58 | 3 | **no** | 2.060% (+15%) | 1/60 |
+| ascent | 3 | 11.896% | 16 | 35 | **no** | 12.949% (+9%) | 1/60 |
+| ascent | 4 | 9.729% | 35 | 6 | **no** | 12.137% (+25%) | 1/60 |
+| ascent | 6 | 8.406% | 54 | 3 | **no** | 9.443% (+12%) | 1/60 |
+| ascent | 8 | 7.466% | **60** | **1** | **no** | 7.736% (+4%) | 1/60 |
+
+**[V] The dominant attractor is not the optimum in 7 of the 8 rows, and taking it costs 4–25%.**
+At $N=3$ on ascent, 35 of 60 restarts converge on one solution — exactly the signal §10.11 proposed
+as a substitute for the missing certificate — and it sits at 12.95% against a best of 11.90%. Basin
+width and optimality are unrelated here, so reading optimality off frequency of agreement returns a
+confidently wrong answer, and confidence rises with how wrong it is: the two rows where the most
+restarts agree ($N=3$, 31/60 and 35/60) are not the rows where agreement is most nearly right.
+
+**[V] Cross-checked against §10.11.** The dominant attractor's error is 4.711% on cartoon and
+12.949% on ascent; §10.11's independent 40-restart runs, on a disjoint set of seeds, report
+*median* restart errors of 4.7107% and 12.9488%. The attractor holds about half the restarts, so it
+sits at the median — and the two experiments agree to four decimals on what that median is. **[A] This is the same fact §10.11 part
+B had already established about the grid optimum being a wide trap; the heuristic was proposed
+without drawing the connection, and is withdrawn.**
+
+**[V] And there is nothing left to agree on.** Distinct solutions grow 16 → 58 on cartoon and
+16 → 60 on ascent across $N=3..8$. At $N=8$ on ascent *every one* of 60 restarts found its own
+optimum and the largest cluster has a single member. The best solution was found exactly once in 6
+of the 8 rows — the floor, since "best" means best of the 60 — so it could not have been
+cross-checked even in principle.
+
+**[A] So the canonical optimum is real but operationally unreachable.** It is unique and stable
+(§10.10) and unique off-grid (§10.11), and from about six atoms upward it is neither findable nor
+recognisable: no certificate exists (§10.8, §10.9), agreement between restarts does not indicate
+it, and the best of 60 restarts is not itself optimal — 58–60 distinct solutions in 60 draws is
+nowhere near saturating the local optima, so the true optimum is below every number in the `best`
+column above.
+
+**[V] Reproducible, unlike §9.** Every seed is a pure function of $(N, \text{restart index})$ and
+the target of a fixed seed, so the experiment is deterministic. It was re-run after adding the
+`largest cluster error` column and reproduced all eight rows — best error, cluster count, cluster
+size, hit rate — to every digit printed. This is what U18 found §9 could not do.
+
+**[A] Scope, pre-registered in the file.** $N\le8$ is three orders of magnitude below the regime of
+interest, and "distinct solutions found in 60 restarts" is a *lower* bound on the number of local
+optima. A hit rate that survived to $N=8$ would not have established that it survives to $10^3$ —
+but it did not survive to 8, and the trend across four budgets is monotone in the wrong direction
+on both targets.
+
 ## 11. Open questions, and what would settle each
 
 | | question | what would settle it | cost |
@@ -1202,7 +1376,9 @@ are the ones that decide the trade-off, were entirely wrong before the fix.
 | **U7** | Does §10's negative result survive scale and a better solver? | **Half answered — §10.4.** With both sides solved *exactly* at $N\le4$, $\ell_1$ loses to $\ell_0$ by 6–409%, so solver quality is not what §10 measured. Whether it survives *scale* is still open: re-run §10 after U5 at $N\ge10^3$ on $\ge256^2$ images, ≥5 instances per cell with error bars | weeks, after U5 |
 | ~~U19~~ | ~~Can exact $\ell_0$ branch-and-bound certify at §10's budgets?~~ | **Resolved, negatively — §10.8, §10.9.** Both standard node relaxations fail on this dictionary. The big-M bound is loose by 6–9× at the tightest admissible box; the perspective relaxation is loose by 64–86% wherever the ridge is small enough to leave the problem intact, and only closes at a ridge that makes the encoding 2.4–4.3× worse. The cause is shared: a single atom's amplitude is the scale of $\|y\|$, so no norm-based relaxation binds. **This was the last route §2.2 left open to a certified global optimum** | done |
 | **U20** | Does §10.5's dictionary effect survive real scale? It is measured at $\le64$ splats on $64^2$, and it already inverts at 64 | Re-run §10.5 at $10^3$ splats on $\ge256^2$; needs no solver work, so unlike U7 it does **not** wait on U5 | days |
-| ~~U23~~ | ~~Does canonicity survive off-grid and at larger $N$?~~ | **Resolved — §10.11.** Yes off-grid: restarts reaching the best error agree to 0.01px while worse ones differ in error, so the continuous optimum is unique and merely hard to reach (~1 restart in 10). Yes in $N$: near-ties grow 1,2,2,4 across $N=2..5$ while supports grow to $4.4\times10^7$. But the grid optimum is 38–43% worse and refines into a basin 31% worse than the global one, so the grid is a trap rather than a starting point | done |
+| ~~U23~~ | ~~Does canonicity survive off-grid and at larger $N$?~~ | **Resolved — §10.11.** Yes off-grid: restarts reaching the best error agree to 0.01px while worse ones differ in error, so the continuous optimum is unique and merely hard to reach. Yes in $N$: near-ties grow 1,2,2,4 across $N=2..5$ while supports grow to $4.4\times10^7$. But the grid optimum is 38–43% worse and refines into a basin 31% worse than the global one, so the grid is a trap rather than a starting point | done |
+| ~~U24~~ | ~~Does the restart-agreement hit rate survive larger $N$?~~ | **Resolved, negatively — §10.12.** No. Distinct solutions in 60 restarts grow 16 → 60 across $N=3..8$; at $N=8$ on ascent every restart found its own optimum. The most-agreed solution is not the best in 7/8 rows and costs 4–25% in error, so agreement is not merely unavailable but actively misleading | done |
+| **U25** | Is *any* practically computable quantity correlated with global optimality on this problem? | §10.8, §10.9 exclude relaxation bounds; §10.12 excludes restart agreement. What remains untested: properties of the solution itself (atom overlap, residual whiteness, gradient-Hessian conditioning) regressed against known-optimal solutions at $N\le3$ where enumeration is possible. Cheap, and a negative result would close the canonical-encoder programme rather than leaving it open | days |
 | ~~U22~~ | ~~Does §10.7's verdict on frequency continuation depend on the blur schedule?~~ | **Resolved — yes, §10.7.** The schedule used was among the worst of five swept. A mild $[1,0]$ schedule gives −2.87% median, better in 9/12 cells, against +0.82% for the one originally used; the trend is monotone in schedule aggressiveness. The gain is small and requires the handicap allocation, so continuation is still not a route to the optimum, but the original verdict was too strong | done |
 | ~~U22-old~~ | ~~superseded~~ A known-answer test shows continuation losing a handed-in optimum by 4e-4% to 27%, erratically across schedules and instances, so the single schedule §10.7 used may not be representative | Re-run §10.7 sweeping the schedule (number of stages, coarsest $\sigma$), medians over $\ge5$ seeds since single draws demonstrably reverse | days |
 | **U21** | Does a frequency-weighted $L^2$ buy perceptual quality while keeping the certificate (§3.2, U9)? A weighted $L^2$ is still Hilbertian, so the adjoint and §6 survive, which SSIM and $L^1$ do not | Fit under a contrast-sensitivity weighting, compare against plain $L^2$ on a perceptual metric at equal $N$ | days; needs the U9 metric decision |
@@ -1246,8 +1422,11 @@ U5, but none of them bounds the optimum.
 
 ## 12. Programme
 
-**P0 — U18.** Make §9 and §10 reproducible before anything re-runs them. Hours, and every later
-step depends on the numbers being recoverable.
+**P0 — ~~U18~~, done.** §9's tables were not reproducible from the repository and are not
+recoverable — the parameters were never recorded, and e2's shared rng means the restart count
+silently changes the ground truth for later rows. Both experiments were re-run at parameters
+written into the file and committed with their raw output (§9.1.1, §9.2); the qualitative findings
+survive. Every later step depended on this and no longer does.
 
 **P1 — U1.** Confirm the forward model. Cheapest check on the load-bearing premise.
 
@@ -1268,7 +1447,21 @@ question is how good the *reachable* solutions are. §10.8's greedy-plus-swap at
 exhaustively verified optimum in half the cells tested; extending that local search (larger
 neighbourhoods, multiple restarts) and calibrating it against enumeration at every $N$ where
 enumeration is affordable is cheap, needs no solver work, and is the only thing here that
-produces numbers about (P0) itself.
+produces numbers about (P0) itself. **[A] But §10.12 bounds what restarts alone can deliver:** 60
+independent restarts return up to 60 distinct optima by $N=8$, so scaling the restart count is not
+a route to the optimum, and calibration against enumeration is the load-bearing half of this step.
+
+**P2d — the canonicity question, and the one thing left to test.** The motivation for wanting the
+global optimum is that it is a function of the image alone, hence reproducible and comparable
+across images. §10.10 and §10.11 confirm the object is real: the optimum is unique on the grid (1
+support in 2.5M within 1%), stable under 30dB noise, and unique off-grid (restarts reaching the
+best error agree to 0.01px). §10.12 then shows it is operationally unreachable from about six
+atoms up — not findable, and not recognisable once found. **[A] So the canonical-encoder
+programme currently rests on U25:** whether *any* cheaply computable property of a solution
+correlates with global optimality. Relaxation bounds are excluded by §10.8–§10.9 and restart
+agreement by §10.12; solution-intrinsic properties are untested and testable at $N\le3$ against
+enumeration. A negative result there closes the programme, which is more useful than leaving it
+open.
 
 **P3 — U7/U8.** Re-run §10 and §9 at scale with error bars. If greedy still wins, the honest
 conclusion is that the convex route is a diagnostic tool and matching pursuit is the *better*
@@ -1296,7 +1489,7 @@ for a recognizable natural image.
 
 ## Appendix A: methodology and error history
 
-Rules adopted after auditing this document's own reversals. Thirteen substantive claims were
+Rules adopted after auditing this document's own reversals. Fourteen substantive claims were
 stated here and later withdrawn. Two further errors (M8's second half, M9) were caught before
 reaching the document and are logged anyway, since neither would have been caught by prose
 review.
@@ -1307,6 +1500,13 @@ result. A mixed Gaussian/DoG dictionary was reported as improving on the unstruc
 mixed dictionary was charged half price (§10.5). And random placement was reported as competitive
 with greedy on the strength of a *single* random draw; five draws reverse it in 12 of 12 cells
 (§10.6).
+
+The fourteenth is the shortest-lived. §10.11 proposed agreement between independent restarts as an
+empirical substitute for the missing optimality certificate, and §10.12 refuted it in the next
+experiment: the most-agreed solution is not the best one in 7 of 8 rows. The refuting evidence was
+partly *already in §10.11* — its part B had measured a wide, stable basin around a solution 31%
+worse than the global optimum, which is exactly a case of agreement and optimality pointing in
+opposite directions. Hence M12.
 
 **M1 — Instrument before interpretation.** *Cost of violating:* a solver bug (§7.1.1)
 invalidated two complete sweeps and three interpretations; the one-run sanity check that
@@ -1334,6 +1534,11 @@ dictionary atoms. The error was invisible in the table, because both columns sai
 **M11 — Compare a deterministic method against a distribution, not a draw.** *Cost:* a single
 random initialisation appeared to beat greedy placement; the median of five loses to it in every
 cell. Any control with a random seed needs several.
+**M12 — A proxy must be checked against the thing it proxies, using the evidence already in
+hand.** *Cost:* the restart-agreement heuristic of §10.11, proposed as a stand-in for the absent
+certificate and refuted one experiment later. It was never tested against known-optimal solutions,
+and the experiment that proposed it had already produced a counterexample in its own part B. A
+recommendation is a claim; it needs the same evidence as any other.
 **M9 — Attribute a spread by conditioning, not by eyeballing a summary statistic.** *Cost:* the
 §7.1.2 norm defect was first attributed to shear on the strength of two quartile medians, which
 can only speak to the bulk and not the tail. Conditioning gave $\rho=-0.082$ for shear against

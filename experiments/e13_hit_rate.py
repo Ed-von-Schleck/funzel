@@ -77,9 +77,9 @@ def run(name, n=48, Ns=(3, 4, 6, 8), n_restarts=60, log=print):
     log(f"  {name}: {n_restarts} independent continuous restarts per N, "
         f"n={n}")
     log(f"      {'N':>2} {'best':>8} {'distinct':>9} {'largest':>8} "
-        f"{'best in':>8} {'hit rate':>9} {'2nd cluster':>12}")
+        f"{'best in':>8} {'hit rate':>9} {'largest':>11} {'2nd cluster':>12}")
     log(f"      {'':>2} {'error':>8} {'solutions':>9} {'cluster':>8} "
-        f"{'largest':>8} {'(best)':>9} {'error':>12}")
+        f"{'largest':>8} {'(best)':>9} {'cl. error':>11} {'error':>12}")
     rows = []
     for N in Ns:
         t0 = time.time()
@@ -102,16 +102,20 @@ def run(name, n=48, Ns=(3, 4, 6, 8), n_restarts=60, log=print):
         big = int(sizes.argmax())
         # hit rate for the BEST solution specifically
         hit = int((labels == labels[ib]).sum())
-        # error of the second-largest cluster, for context on the traps
+        # what the DOMINANT attractor costs -- the number the agreement
+        # heuristic would return, against errs.min() which is the right answer
+        ebig = float(np.median(errs[labels == big]))
+        # and the second-largest, for context on how many such traps there are
         order = np.argsort(-sizes)
         second = order[1] if len(order) > 1 else order[0]
         e2nd = float(np.median(errs[labels == second]))
         log(f"      {N:2d} {pc(errs.min()):8.4f} {k:9d} {int(sizes.max()):8d} "
             f"{'yes' if labels[ib] == big else 'NO':>8} "
-            f"{f'{hit}/{n_restarts}':>9} {pc(e2nd):11.4f}%"
+            f"{f'{hit}/{n_restarts}':>9} {pc(ebig):10.4f}% {pc(e2nd):11.4f}%"
             f"   [{time.time()-t0:.0f}s]")
         rows.append(dict(N=N, best=float(errs.min()), distinct=k,
                          largest=int(sizes.max()), hit=hit,
+                         largest_err=ebig,
                          best_is_largest=bool(labels[ib] == big)))
     return rows
 
