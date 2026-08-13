@@ -1,0 +1,52 @@
+# E11: canonicity of the optimum, and a comparison against Adam.
+
+## A. Is the optimum unique? (exact, every support enumerated, N=3)
+  cartoon  D=248 supports=2,511,496  best=7.6923%
+      within  0.1% of best:       1 supports   (0.000% of all),       0 share NO atom with the winner
+      within  1.0% of best:       1 supports   (0.000% of all),       0 share NO atom with the winner
+      within  5.0% of best:      15 supports   (0.001% of all),       0 share NO atom with the winner
+      runners-up 2..6: matched centre distance from the winner = 0.0px, 0.0px, 0.0px, 0.0px, 0.0px
+  ascent   D=248 supports=2,511,496  best=19.4843%
+      within  0.1% of best:       1 supports   (0.000% of all),       0 share NO atom with the winner
+      within  1.0% of best:       1 supports   (0.000% of all),       0 share NO atom with the winner
+      within  5.0% of best:      11 supports   (0.000% of all),       0 share NO atom with the winner
+      runners-up 2..6: matched centre distance from the winner = 0.0px, 0.0px, 0.0px, 0.0px, 4.3px
+  face     D=248 supports=2,511,496  best=13.1408%
+      within  0.1% of best:       1 supports   (0.000% of all),       0 share NO atom with the winner
+      within  1.0% of best:       1 supports   (0.000% of all),       0 share NO atom with the winner
+      within  5.0% of best:      30 supports   (0.001% of all),       0 share NO atom with the winner
+      runners-up 2..6: matched centre distance from the winner = 0.0px, 0.0px, 0.0px, 0.0px, 0.0px
+
+## B. Is it stable under small changes to the input?
+  cartoon:
+      noise 40dB   shares 3/3 atoms with the unperturbed optimum, matched centre distance  0.00px
+      noise 30dB   shares 3/3 atoms with the unperturbed optimum, matched centre distance  0.00px
+      shift 1px    shares 2/3 atoms with the unperturbed optimum, matched centre distance  0.00px
+      scale x1.01  shares 3/3 atoms with the unperturbed optimum, matched centre distance  0.00px
+  ascent:
+      noise 40dB   shares 3/3 atoms with the unperturbed optimum, matched centre distance  0.00px
+      noise 30dB   shares 3/3 atoms with the unperturbed optimum, matched centre distance  0.00px
+      shift 1px    shares 3/3 atoms with the unperturbed optimum, matched centre distance  0.00px
+      scale x1.01  shares 3/3 atoms with the unperturbed optimum, matched centre distance  0.00px
+
+## C. random/greedy x L-BFGS/Adam, error AND cross-seed spread
+  cartoon: L-BFGS 900 iters (<=~1800 gradient evals) vs Adam 6000 steps = 6000 evals, lr swept over (0.01, 0.03). Adam is therefore given ~3x MORE gradient evaluations.
+      budget    init  optimiser     error  cross-seed spread
+           8  greedy     L-BFGS    2.4114 n/a (deterministic)
+           8  greedy       Adam    2.2582 n/a (deterministic)
+           8  random     L-BFGS    2.1966            15.80px
+           8  random       Adam    2.0730             8.02px
+          32  greedy     L-BFGS    1.1971 n/a (deterministic)
+          32  greedy       Adam    0.6554 n/a (deterministic)
+          32  random     L-BFGS    1.3091             7.10px
+          32  random       Adam    0.5580             5.33px
+  ascent: L-BFGS 900 iters (<=~1800 gradient evals) vs Adam 6000 steps = 6000 evals, lr swept over (0.01, 0.03). Adam is therefore given ~3x MORE gradient evaluations.
+      budget    init  optimiser     error  cross-seed spread
+           8  greedy     L-BFGS   11.0917 n/a (deterministic)
+           8  greedy       Adam   10.2979 n/a (deterministic)
+           8  random     L-BFGS   10.7832             7.21px
+           8  random       Adam   10.8264            14.06px
+          32  greedy     L-BFGS    5.8424 n/a (deterministic)
+          32  greedy       Adam    4.6789 n/a (deterministic)
+          32  random     L-BFGS    6.1704             9.38px
+          32  random       Adam    4.6257             6.88px
