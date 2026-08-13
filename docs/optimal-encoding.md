@@ -155,6 +155,13 @@ relates them; they share only the word.
 
 ### 2.2 Why the gap cannot be removed — convexification annihilates $N$
 
+> **Full treatment in `convexification-and-N.md`**, which proves this with the per-atom amplitude
+> cap included — the case that matters, because the cap is the big-$M$ constraint of §10.8 and the
+> argument below does not cover it. The mechanism there is atoms *colliding*: two atoms of mass $M$
+> can be moved together until they are one atom of mass $2M$, so the cap does not survive closure
+> and only the product $NM$ is left. This section states the no-cap case, which is enough for the
+> framing decision.
+
 **[A] Elementary, from standard facts, and it decides the framing.** The extreme points of the
 total-variation ball $\{m : |m|(\Theta)\le\tau\}$ are the signed Diracs $\pm\tau\delta_\theta$,
 which are **one**-atom measures. The ball is convex and weak-\* compact, so by Krein–Milman it is
@@ -164,8 +171,10 @@ $$\overline{\operatorname{conv}}\,\{m : m \text{ has} \le N \text{ atoms},\ |m|(
 
 The atom count is annihilated. **No convex program over $\mathcal{M}(\Theta)$ can distinguish
 "$N$ atoms" from "any number of atoms of the same total mass"** — not $\ell_1$, not a reweighted
-or spatially varying penalty, not any convex functional whatever, because they all optimize over
-the same convex set and that set has already forgotten $N$.
+or spatially varying penalty, not any convex weak-\* lower semicontinuous functional, because they
+all optimize over the same convex set and that set has already forgotten $N$. **[A]** The lower
+semicontinuity is needed and is not a loophole: `convexification-and-N.md` Corollary 5 reaches the
+same conclusion for optimal *values*, with no closedness assumption at all.
 
 **[A] Three consequences.**
 
