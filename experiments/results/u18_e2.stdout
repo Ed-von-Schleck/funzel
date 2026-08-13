@@ -1,0 +1,6 @@
+
+# completed in 7170s
+
+# hump check: debiased peaks at r=4 (20.53%); ends 0.56% / 0.19%
+# non-monotone hump reproduced: True
+# BLpolish (omitted from section 9.1): r=30:0.001%  r=15:0.000%  r=8:0.000%  r=4:2.305%  r=2:0.718%  r=1:0.100%

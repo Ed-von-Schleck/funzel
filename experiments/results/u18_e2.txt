@@ -1,0 +1,18 @@
+# U18 / E2 (section 9.1) re-run at DOCUMENTED parameters
+# {'n': 128, 'K': 4, 'u_px': 4.0, 'ratios': (30.0, 15.0, 8.0, 4.0, 2.0, 1.0), 'n_restarts': 2, 'seed': 0}
+# every ratio verified in-frame by the new guard
+
+all errors as % of 0.5*||y||^2;  (P0) optimum is exactly 0 by construction
+    r  sep_px    BLraw   BLdebi  BLpolish   P0rstrt   certgap  K_BL    absE_db     halfyy
+30.00  120.0    12.52     0.56     0.001    100.00    0.0210     4    769.766  138367.55
+15.00   60.0     0.02     0.00     0.000     62.42    0.0014     4      0.000   77567.13
+ 8.00   32.0     0.02     0.00     0.000     22.25    0.0005     4      0.000  110102.91
+ 4.00   16.0    75.85    20.53     2.305     81.34    0.0014     4  24162.941  117667.16
+ 2.00    8.0     6.16     3.23     0.718     28.04    0.0081     4   5324.148  164953.00
+ 1.00    4.0     0.59     0.19     0.100      0.47    0.0260     4    684.563  364200.78
+
+# completed in 7170s
+
+# hump check: debiased peaks at r=4 (20.53%); ends 0.56% / 0.19%
+# non-monotone hump reproduced: True
+# BLpolish (omitted from section 9.1): r=30:0.001%  r=15:0.000%  r=8:0.000%  r=4:2.305%  r=2:0.718%  r=1:0.100%

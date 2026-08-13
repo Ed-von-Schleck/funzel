@@ -493,6 +493,38 @@ are genuinely independent instances.
 Absolute error falls alongside the percentage from $r=4$ to $r=1$, so this is not the
 normalization effect of §9.5.
 
+#### 9.1.1 Replicated, and the column that was missing (U18)
+
+**[V]** The table above is not reproducible — its parameters were never recorded (§9 preamble).
+So it was re-run on a fresh instance at parameters written down in full
+(`results/u18_e2.txt`: $n=128$, $K=4$, $u_{px}=4$, `n_restarts=2`, `seed=0`, every ratio verified
+in-frame by the new guard):
+
+| $r$ (widths) | 30 | 15 | 8 | 4 | 2 | 1 |
+|---|---|---|---|---|---|---|
+| BL debiased, original | 0.00 | 0.00 | 0.00 | **22.86** | 4.70 | 0.38 |
+| BL debiased, re-run | 0.56 | 0.00 | 0.00 | **20.53** | 3.23 | 0.19 |
+| **BL polished, re-run** | 0.001 | 0.000 | 0.000 | **2.305** | 0.718 | 0.100 |
+
+**[V] The non-monotone hump replicates** — a different instance, different parameters, peak in the
+same place and within 10% of the same height. §9.1's central observation is therefore a
+reproducible fact and not an artefact of one unrecorded configuration.
+
+**[V] But the polished row changes how the peak should be read, and it was computed all along.**
+`e2` prints a BLpolish column that the original table omitted. Local refinement from BLASSO's own
+support cuts the $r=4$ figure from 20.53% to **2.305%** — an 89% reduction. **[A]** So most of the
+hump is *placement imprecision* that a local solve repairs, not a support chosen in the wrong
+basins. The residual 2.3% against a true optimum of exactly 0 is the part that is genuinely
+support selection. §9.4's first claim survives — a certified gap of 0.0014% beside 20.53% error
+does show the $\ell_1$ solution is far from the $\ell_0$ optimum *in value* — but "genuinely far"
+should be read as far in value and close in support.
+
+**[A]** Note also that the re-run gives 0.56% at $r=30$ where the original gives exactly 0.00. At
+$r=30$ the corner atoms sit about one $\sigma$ from the frame and are partly clipped, so exact
+recovery is not expected. An exact zero there is what one would see if the atoms were *entirely*
+off-image — which is the failure §9's preamble describes and which the new guard now refuses to
+report.
+
 **[A] Hypothesis, not finding (M2).** A natural reading is that recovery difficulty and
 approximation difficulty peak at different separations: wide separation permits recovery; heavy
 overlap makes the representation redundant, so many atom sets reconstruct well and
