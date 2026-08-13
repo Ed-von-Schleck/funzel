@@ -554,6 +554,33 @@ distance / median fitted width) for the BLASSO and reference solutions. $N=32$ r
 uncertified (§9.3).
 
 1. **Penalty 1.0–4.8%**, falling with budget, on every target. A lower bound.
+
+**[V] Replicated at documented parameters (U18)** — `results/u18.txt`, $n=64$, budgets 8/16/32,
+`n_restarts=2`, `seed=0`. Penalty is **positive and falling with budget on all three targets**,
+which is the claim above:
+
+| target | $N{=}8$ | 16 | 32 | original (8, 16) |
+|---|---|---|---|---|
+| cartoon | 2.70 | 1.51 | 0.22 | 4.08, 1.01 |
+| ascent | 4.97 | 3.55 | 1.83 | 4.83, 3.33 |
+| face | 3.60 | 2.01 | 0.93 | 2.60, 1.94 |
+
+**[A]** Row agreement is mixed — `ascent` lands within 0.2pp of the original and `face` at $N{=}16$
+within 0.1pp, while `cartoon` at $N{=}8$ differs by 1.4pp. These are different instances at
+different parameters, so agreement in *shape* is what was being tested and it holds; the spread
+between rows is the honest statistical support, which remains one instance per cell.
+
+**[V] The negative duality gap reappeared.** `face` at $N{=}16$ returned certgap $-0.0007$%. A
+negative gap is impossible for a valid bound, so that row is **not certified** — the same
+self-diagnosis §9.4 records, now seen a fourth time. **[A]** It is worth noting how it presents:
+the row's penalty (2.01%) is entirely plausible and would have been read as evidence had the
+certificate not flagged it.
+
+**[V] §9.3's certification ceiling only partly reproduces.** At $N{=}32$ the re-run gives certgap
+4.39% (cartoon) and 7.23% (ascent) — consistent with §9.3 — but **0.0001% on `face`**, which
+certifies cleanly. **[A]** So "uncertified at $N=32$ on all three targets" is instance-dependent
+rather than a fixed ceiling, and §9.3's framing of it as a scale limit overstates what two of
+three targets show.
 2. **[A] Withdrawn: "out-of-model costs more than in-model" is not supported.** An earlier
    version compared 1.0–4.8% here against an *exact 0.4%* in-model — but that in-model figure is
    at $r=1$, whereas these fits sit at $r_{\rm ref}\approx1.3$–2.9. At matched separation
@@ -1184,7 +1211,7 @@ are the ones that decide the trade-off, were entirely wrong before the fix.
 | **U15** | Is §10.2's decay in $N$ real, or is it slack? The bound covers encodings of mass $\le M_g$ with *any* atom count, and is already vacuous at $1.5M_g$ | **No clean route is known** — cardinality does not dualize, so the relaxation cannot simply be tightened away. What is affordable: re-run greedy under an explicit mass cap so method and bound are matched at the same $M$, and check whether greedy's error rises to meet the bound (decay is real) or does not (decay is slack) | days |
 | **U16** | Does greedy's $N{=}2$ myopia (§10.3) grow or wash out with $N$? | Exhaustive best-3 is $\approx4\times10^{11}$ subsets, so instead sweep the first atom over the top-$K$ grid candidates, run full continuous greedy from each, and compare against standard greedy at $N=8,16$ | days |
 | **U17** | Does the boundary norm defect (§7.1.2) change any result? | Renormalize the dictionary by the *measured* discrete norm rather than the analytic one, re-run §9.1 and §10. §10.2 found no cost at $N{=}1$; this tests everywhere else | days |
-| **U18** | Are §9 and §10 reproducible from the repository? Their committed defaults do not match the reported tables and no raw output is stored (§9 preamble) | Re-run E2 and E2b at the parameters the tables actually used, commit the output alongside as E3 does, and reconcile any row that moves | hours — **do before U7/U8, which re-run both** |
+| ~~U18~~ | ~~Are §9 and §10 reproducible from the repository?~~ | **Resolved — §9.1.1, §9.2.** Neither table was reproducible; both were re-run at fully documented parameters with output committed. §9.1's non-monotone hump replicates (peak at $r{=}4$, 20.53% against 22.86%) and §9.2's penalty is positive and falling on all three targets. Two corrections fell out: the omitted BLpolish column cuts §9.1's peak by 89%, and §9.3's ceiling is instance-dependent. A silent off-image failure in `e2` was found and guarded | done |
 | ~~U13~~ | ~~Which uncertified method beat BLASSO — greedy or restarts?~~ | **Resolved — §10.1.** Greedy, in all nine rows, matching $E_{\rm ref}$ exactly | done |
 | ~~U14~~ | ~~How far is *greedy* from the (P0) optimum out-of-model?~~ | **Partly resolved — §10.2.** Greedy is *exactly* optimal at $N{=}1$ on all four targets; the bound itself certifies only 24–34% there and goes vacuous by $N=4$–8. **Still open at $N\ge8$**, i.e. at §10's own budgets, and the residue is U15. The method originally proposed here was wrong twice over: an exhaustive grid with least-squares amplitudes returns a *feasible point*, hence an **upper** bound on $E_{\rm opt}$, which cannot bound greedy's distance from it; and $\binom{10^5}{8}\approx10^{36}$ is not enumerable. See Appendix A, M8 | partly done |
 
