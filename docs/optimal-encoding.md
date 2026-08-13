@@ -955,10 +955,32 @@ budgets 8–64 splats, greedy and random initialisation:
 
 **[A] The split is the finding.** Continuation is a way to escape a *bad* start: it helps random
 initialisation consistently and hurts greedy initialisation, which is already well placed and
-gets dragged off it by the coarse stages. But the effect is small, and even handicapped,
-continuation beats plain greedy-plus-direct-refinement in only 3 of 12 cells and never by more
-than 6.8%. **[A] So it is not a route to the global optimum** — it is a mild repair for poor
-placement, and §10.6 already shows good placement is cheap.
+gets dragged off it by the coarse stages.
+
+**[V] But the schedule above is nearly the worst one available, and that was not checked before
+concluding** (`e10_schedule_sweep.py`, U22, three targets × two budgets × two initialisations,
+medians over seeds, handicap allocation throughout):
+
+| schedule $\sigma$ (px) | median vs direct | better | worse |
+|---|---|---|---|
+| $[1,0]$ | **−2.87%** | **9** | 3 |
+| $[2,1,0]$ | −2.33% | 9 | 3 |
+| $[4,2,1,0]$ | −1.40% | 7 | 5 |
+| $[8,4,2,1,0]$ — *the one used above* | +0.82% | 4 | 8 |
+| $[16,8,4,2,1,0]$ | +4.81% | 4 | 8 |
+
+Control: the no-blur schedule $[0]$ reproduces direct refinement in 12/12 cells, so the
+differences are the schedule and not the machinery.
+
+**[V] The trend is monotone: the milder the schedule, the better continuation does**, and a mild
+one genuinely helps — 2.9% median, better in 9 of 12 cells. **[A] So the verdict stated above is
+schedule-dependent, and the schedule chosen for it was among the worst tested.** Corrected
+reading: *at equal compute* continuation loses (22 of 24 cells, unchanged); *given free extra
+compute for the coarse stages*, a mild two-stage schedule gives a small but consistent gain, and
+the aggressive schedule originally tried gives none. **[A] It is still not a route to the global
+optimum** — 2.9% is far from the 4–39% that dictionary choice moves, and the gain is bought with
+compute that direct refinement was not given. But "frequency continuation does not help" was too
+strong, and rested on one untuned parameter.
 
 **[A]** The equal-compute row alone would have been misleading: splitting the budget across five
 stages leaves the final stage — the only one run on the true target — a fifth of the iterations.
@@ -1118,7 +1140,8 @@ are the ones that decide the trade-off, were entirely wrong before the fix.
 | **U7** | Does §10's negative result survive scale and a better solver? | **Half answered — §10.4.** With both sides solved *exactly* at $N\le4$, $\ell_1$ loses to $\ell_0$ by 6–409%, so solver quality is not what §10 measured. Whether it survives *scale* is still open: re-run §10 after U5 at $N\ge10^3$ on $\ge256^2$ images, ≥5 instances per cell with error bars | weeks, after U5 |
 | ~~U19~~ | ~~Can exact $\ell_0$ branch-and-bound certify at §10's budgets?~~ | **Resolved, negatively — §10.8, §10.9.** Both standard node relaxations fail on this dictionary. The big-M bound is loose by 6–9× at the tightest admissible box; the perspective relaxation is loose by 64–86% wherever the ridge is small enough to leave the problem intact, and only closes at a ridge that makes the encoding 2.4–4.3× worse. The cause is shared: a single atom's amplitude is the scale of $\|y\|$, so no norm-based relaxation binds. **This was the last route §2.2 left open to a certified global optimum** | done |
 | **U20** | Does §10.5's dictionary effect survive real scale? It is measured at $\le64$ splats on $64^2$, and it already inverts at 64 | Re-run §10.5 at $10^3$ splats on $\ge256^2$; needs no solver work, so unlike U7 it does **not** wait on U5 | days |
-| **U22** | Does §10.7's verdict on frequency continuation depend on the blur schedule? A known-answer test shows continuation losing a handed-in optimum by 4e-4% to 27%, erratically across schedules and instances, so the single schedule §10.7 used may not be representative | Re-run §10.7 sweeping the schedule (number of stages, coarsest $\sigma$), medians over $\ge5$ seeds since single draws demonstrably reverse | days |
+| ~~U22~~ | ~~Does §10.7's verdict on frequency continuation depend on the blur schedule?~~ | **Resolved — yes, §10.7.** The schedule used was among the worst of five swept. A mild $[1,0]$ schedule gives −2.87% median, better in 9/12 cells, against +0.82% for the one originally used; the trend is monotone in schedule aggressiveness. The gain is small and requires the handicap allocation, so continuation is still not a route to the optimum, but the original verdict was too strong | done |
+| ~~U22-old~~ | ~~superseded~~ A known-answer test shows continuation losing a handed-in optimum by 4e-4% to 27%, erratically across schedules and instances, so the single schedule §10.7 used may not be representative | Re-run §10.7 sweeping the schedule (number of stages, coarsest $\sigma$), medians over $\ge5$ seeds since single draws demonstrably reverse | days |
 | **U21** | Does a frequency-weighted $L^2$ buy perceptual quality while keeping the certificate (§3.2, U9)? A weighted $L^2$ is still Hilbertian, so the adjoint and §6 survive, which SSIM and $L^1$ do not | Fit under a contrast-sensitivity weighting, compare against plain $L^2$ on a perceptual metric at equal $N$ | days; needs the U9 metric decision |
 | **U8** | Do any §9 conclusions survive $10^3$–$10^5$ atoms? | Re-run §9 after U5 | after U5 |
 | **U9** | Is $L^2$-optimal perceptually acceptable (§3.2)? | Compare $L^2$-optimal against SSIM-trained fits at equal $N$, human or perceptual metric | days; needs a metric decision |
