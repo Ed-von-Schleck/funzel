@@ -840,11 +840,26 @@ greedy's excess falls 35.5% → 0% and $\ell_1$'s 145% → 19% as coherence goes
 **[A] But it is not a free lunch** — the $\ell_0$ optimum itself worsens 11.86 → 22.20, so random
 pruning trades away more approximation power than it buys.
 
-**[V] A designed dictionary does better than a pruned one.** Building the dictionary the way §4's
-theorem does — parabolic scaling, orientations, a lattice adapted to each atom's own axes — beats
-a dense unstructured sweep at **half the size** on all three targets at $N{=}3$: cartoon's
-$\ell_0$ optimum 9.56 against 11.86, greedy 10.26 against 16.07, $\ell_1$ 12.49 against 29.06.
-**[A] This is §4's first empirical contact of any kind** — U6 records it as never tested.
+**[V] A designed dictionary does better — but the original comparison was confounded.** Building
+the dictionary the way §4's theorem does — parabolic scaling, orientations, a lattice adapted to
+each atom's own axes — beat a dense unstructured sweep at half the size on all three targets at
+$N{=}3$. **[A] That comparison was not fair.** A later audit found the two dictionaries did not
+span the same scales, despite a code comment asserting they did: the unstructured sweep's major
+axis topped out at **12px** against the parabolic one's **24px**. Large atoms carry an image's
+smooth content cheaply, so part of the margin was simply bigger atoms.
+
+**[V] Re-measured under a proper control** (`e5`-derived, three targets, budgets 8–64 splats):
+
+| unstructured baseline | parabolic wins |
+|---|---|
+| original, major axis capped at 12px, $D=768$ | 12/12 — **confounded** |
+| scale-matched but 4.6× larger, $D=1792$ | loses at 8 splats on all three targets |
+| scale- **and** size-matched, $D=448$ vs 386 | **11/12, by 4–39%** |
+
+**[A] The conclusion survives the control but the original framing did not earn it.** Structure
+helps at matched size; dictionary *size* helps too, and the phrase "at half the size" was carrying
+weight that belonged to the scale cap. **[A] This is still §4's first empirical contact** — U6
+records the theorem as never tested.
 
 **[V] Coherence is not the mechanism, though.** A difference-of-Gaussians dictionary has the
 *lowest* coherence tested (0.881 at matched size) and performed **worst** of everything, because
@@ -885,7 +900,11 @@ data.
 identically to §10.5, at matched splat budget, across `haar`, `bior2.2`, `db4`, `sym4`:
 
 - the best wavelet loses to the best greedy in **12 of 12** cells, by **+1.7% to +69%**
-  (median ≈ 31%);
+  (median ≈ 31%). **[V]** The mapping's two free constants (`scale_k`, `aniso`) were guessed, so
+  they were later swept: the chosen pair was best-of-grid on cartoon but *worst* of sixteen on
+  ascent, which inflated that target's gap. Re-tuned **per target** — an advantage greedy is not
+  given — the best wavelet still loses by 17–34%, so the verdict holds and only the magnitudes
+  move;
 - wavelet placement also loses to **random** placement in 10 of 12 cells;
 - no family differs meaningfully from any other;
 - placement is 8–215× cheaper, which does not compensate.

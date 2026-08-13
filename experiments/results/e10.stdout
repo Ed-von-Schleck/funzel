@@ -1,0 +1,8 @@
+# E10 (U22): continuation schedule sweep, medians over seeds.
+# schedules: ['direct', '[0]', '[1,0]', '[2,1,0]', '[4,2,1,0]', '[8,4,2,1,0]', '[16,8,4,2,1,0]']
+#   cartoon  B=  8 greedy  done [11s]
+#   cartoon  B=  8 random  done [50s]
+#   cartoon  B= 32 greedy  done [122s]
+#   cartoon  B= 32 random  done [438s]
+#   ascent   B=  8 greedy  done [512s]
+#   ascent   B=  8 random  done [546s]
