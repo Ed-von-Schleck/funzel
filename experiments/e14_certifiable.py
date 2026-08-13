@@ -14,9 +14,11 @@ already have. What a certificate provides is an ABSOLUTE statement: given one
 solution and no knowledge of the optimum, is this it? So the headline metric is
 the pooled cross-image AUC computed on RAW, un-normalised feature values -- can
 the feature separate optimal from suboptimal solutions when the images, and
-therefore the difficulty levels, are mixed together? The error itself cannot do
-this (8% may be optimal on one image and poor on another), and its failure is the
-baseline the features have to beat.
+therefore the difficulty levels, are mixed together? The raw error is carried
+through every table as the baseline the features have to beat -- an absolute
+error threshold is a weak certificate rather than no certificate, since the
+optimum's own error varies several-fold across images, and how weak is a
+measurement rather than an assumption.
 
 Within-image AUC is reported too, but only as a diagnostic: it says whether a
 feature carries any signal at all. It cannot make a feature useful, because the
@@ -45,6 +47,10 @@ PART D carries the realism the grid cannot. Section 10.12 showed the continuous
 problem has 16-60 distinct optima at N=3 where the grid has 2-5, so off-grid is
 where the question actually bites -- but off-grid there is no proven optimum, so
 the best of many restarts stands in for it and the leg is confirmatory only.
+Its solutions are DEDUPLICATED at 1px matched centre distance before scoring,
+because 60 restarts return the same optimum repeatedly and by wildly differing
+amounts per image: without it, one easy image supplying 29 copies of its own
+best solution would contribute half of all the positives in the pool.
 
 TWELVE FEATURES, chosen before running, each dimensionless so that pooling across
 images is meaningful:
@@ -91,6 +97,7 @@ from e2_relaxation_gap import _grid, atoms
 import e4_exact_l0 as e4
 import e11_canonical as e11
 import e12_canonical_offgrid as e12
+import e13_hit_rate as e13
 
 FAIL = []
 
@@ -596,7 +603,17 @@ def run_continuous(n=48, N=3, n_nat=8, n_cart=4, n_restarts=60, seed=3,
             e, thp = e12.polish(th0, amp0, y, X, Y, n)
             sols.append((e, thp))
         ebest = min(s[0] for s in sols)
-        for (e, thp) in sols:
+        # DEDUPLICATE. 60 restarts contain the same local optimum many times
+        # over -- one image below returns 29 copies of its best solution -- and
+        # scoring the copies would weight each image by how easy it is rather
+        # than by how many distinct optima it has, letting one image supply
+        # half the positives. Clustered at 1px max matched centre distance,
+        # the same criterion section 10.12 used, keeping the best member.
+        reps = []
+        for e, thp in sorted(sols, key=lambda t: t[0]):
+            if all(e13.matched(thp, r[1], n)[1] > 1.0 for r in reps):
+                reps.append((e, thp))
+        for (e, thp) in reps:
             GS = atoms(thp, X, Y)[0]
             c = np.linalg.lstsq(GS.T, y, rcond=None)[0]
             # nothing is excluded from the cos_next scan: the fitted atoms are
@@ -613,8 +630,12 @@ def run_continuous(n=48, N=3, n_nat=8, n_cart=4, n_restarts=60, seed=3,
         nb = sum(1 for s in sols if s[0] <= ebest * (1 + 1e-6))
         log(f"      {nm:9s} best {100*ebest/half:7.4f}%, reached by "
             f"{nb:2d}/{n_restarts} restarts, median restart "
-            f"{100*np.median([s[0] for s in sols])/half:7.4f}%")
+            f"{100*np.median([s[0] for s in sols])/half:7.4f}%, "
+            f"{len(reps):2d} distinct optima")
     log(f"  [{time.time() - t0:.0f}s]")
+    npos = sum(w["opt"] for w in rows)
+    check("C15 one positive per image after deduplication",
+          npos == len(imgs), f"({npos} positives, {len(imgs)} images)")
     return rows
 
 

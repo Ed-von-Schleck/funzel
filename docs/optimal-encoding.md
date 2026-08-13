@@ -1383,8 +1383,9 @@ worse the best available single swap is.
 already ranks solutions perfectly, so a feature that correlates with error inside an image is
 strictly worse than the number we already have. A certificate makes an *absolute* statement: given
 one solution and no knowledge of the optimum, is this it? So the metric is pooled AUC across
-images on **raw** feature values. The error's own failure at this — 6.3% is optimal on one image
-and poor on another — is the baseline to beat.
+images on **raw** feature values, and the raw error is carried through every table as the baseline
+to beat — on this image set the optimum's own error ranges from 2.2% to 15.0%, so an absolute
+error threshold is not obviously informative and not obviously useless either.
 
 **[V] Three populations of negatives, because one hides the failure mode.** Against *random*
 supports the features work: `cos_next` 0.996, `min_sep` 0.813, `swap_margin` 1.000 (reversed).
@@ -1420,11 +1421,17 @@ the population this question needs, which is what the off-grid leg is for.
 
 **[V] The off-grid leg is the decisive one**: 12 images × 60 continuous restarts = 720 solutions,
 every one a genuine local optimum of the real problem, with the best restart standing in for the
-optimum. Nothing reaches 0.71. The best features are `eff_n` 0.700, `log_cond` 0.654, `coh` 0.642,
-`min_sep` 0.641; `cos_next` scores **0.449**, below chance; the null control scores 0.565; the raw
-error scores 0.752. **[A] So the §6 certificate value, the one feature with a theoretical reason to
-work, carries nothing about (P0) optimality** — which sharpens §10's demotion of the certificate
-from optimality proof to diagnostic.
+optimum. **No feature reaches 0.71.** The best are `eff_n` 0.700, `log_cond` 0.654, `coh` 0.642,
+`min_sep` 0.641, against a null control at 0.565; `cos_next` scores **0.449**, below chance.
+**[A] So the §6 certificate value, the one feature with a theoretical reason to work, carries
+nothing about (P0) optimality** — which sharpens §10's demotion of the certificate from optimality
+proof to diagnostic.
+
+**[V] The baseline beats all twelve.** The raw error scores 0.752, the highest number in the
+off-grid table, so the obvious objection is to skip the features and threshold the error. It fails
+for the reason that makes this whole question hard, and the next paragraph measures it: a threshold
+low enough to admit every image's optimum admits nearly every other solution too, because the
+optima themselves span 2.2%–15.0% across these images.
 
 **[V] Held out, and then confirmed on fresh images.** Twelve features on forty images will produce
 a winner by chance, so the best feature *and its orientation* were chosen on half the images and
@@ -1460,6 +1467,15 @@ exists. Off-grid the reference is best-of-60 restarts, which §10.12 showed is n
 though that cuts the safe way here, since a feature that cannot identify the best of 60 certainly
 cannot identify the optimum.
 
+**[A] One qualification on `cos_next` specifically, and it matters because that feature carries the
+theoretical claim.** §6's certificate value is a supremum over the *continuous* parameter space,
+computed elsewhere in this repository by a shape bank plus Nelder-Mead refinement. `cos_next`
+maximizes over the 248 grid atoms instead. That is a lower bound on the true supremum, and a coarse
+one. It is applied identically to every solution, so the comparison between solutions is fair, but
+the honest statement is that **the certificate value maximized over a 248-atom dictionary** carries
+nothing — not that the exact supremum would fail. Testing the exact version would cost a
+Nelder-Mead refinement per solution and is the one clearly worthwhile follow-up here.
+
 ## 11. Open questions, and what would settle each
 
 | | question | what would settle it | cost |
@@ -1475,6 +1491,7 @@ cannot identify the optimum.
 | **U20** | Does §10.5's dictionary effect survive real scale? It is measured at $\le64$ splats on $64^2$, and it already inverts at 64 | Re-run §10.5 at $10^3$ splats on $\ge256^2$; needs no solver work, so unlike U7 it does **not** wait on U5 | days |
 | ~~U23~~ | ~~Does canonicity survive off-grid and at larger $N$?~~ | **Resolved — §10.11.** Yes off-grid: restarts reaching the best error agree to 0.01px while worse ones differ in error, so the continuous optimum is unique and merely hard to reach. Yes in $N$: near-ties grow 1,2,2,4 across $N=2..5$ while supports grow to $4.4\times10^7$. But the grid optimum is 38–43% worse and refines into a basin 31% worse than the global one, so the grid is a trap rather than a starting point | done |
 | ~~U24~~ | ~~Does the restart-agreement hit rate survive larger $N$?~~ | **Resolved, negatively — §10.12.** No. Distinct solutions in 60 restarts grow 16 → 60 across $N=3..8$; at $N=8$ on ascent every restart found its own optimum. The most-agreed solution is not the best in 7/8 rows and costs 4–25% in error, so agreement is not merely unavailable but actively misleading | done |
+| **U27** | Does the *exact* certificate value behave differently from §10.13's grid approximation? `cos_next` maximizes $|\eta(\theta)|$ over 248 atoms; §6's quantity is a supremum over continuous $\theta$ | Recompute `cos_next` with the shape-bank plus Nelder-Mead refinement §9 already uses, on the same 720 solutions, and rescore. The one follow-up §10.13's negative result actually invites | days |
 | ~~U25~~ | ~~Is *any* practically computable quantity correlated with global optimality?~~ | **Resolved, negatively — §10.13.** Twelve dimensionless features over 720 genuine local optima on 12 images: nothing exceeds pooled AUC 0.71 against a null control at 0.565, the $\lambda=0$ certificate value scores 0.449, a logistic regression over all twelve reaches 0.728 held out, and the held-out winner reads 0.867 / 0.482 / 0.704 across three image sets. Flagging every optimum requires flagging 720 of 720 solutions | done |
 | **U26** | Does the grid's tractability at $N{=}3$ (§10.13: local search solves 40/40) survive larger $N$, and can a *sequence* of grids beat one? The grid is easy and wrong; the continuous problem is right and hard | Re-run §10.13's descent leg at $N=4,5$ where enumeration is still affordable; then test grid-refinement — solve on a coarse grid, refine the dictionary around the solution, repeat — against continuous restarts at matched cost | days |
 | ~~U22~~ | ~~Does §10.7's verdict on frequency continuation depend on the blur schedule?~~ | **Resolved — yes, §10.7.** The schedule used was among the worst of five swept. A mild $[1,0]$ schedule gives −2.87% median, better in 9/12 cells, against +0.82% for the one originally used; the trend is monotone in schedule aggressiveness. The gain is small and requires the handicap allocation, so continuation is still not a route to the optimum, but the original verdict was too strong | done |
