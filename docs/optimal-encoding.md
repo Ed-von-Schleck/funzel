@@ -946,6 +946,19 @@ stages leaves the final stage — the only one run on the true target — a fift
 The handicap row exists to remove that confound, and it changes the verdict from "clearly harmful"
 to "neutral".
 
+**[V] A known-answer test sharpens this** (`verify_experiments.py`). On a target that is an exact
+combination of dictionary atoms — optimum exactly 0 — started *at* that optimum and mildly
+perturbed, direct refinement returns to $2.7\times10^{-5}$% every time. Continuation with a
+trivial (no-blur) schedule reproduces direct exactly, confirming the machinery. Continuation with
+a real schedule lands anywhere from $4\times10^{-4}$% to **27%** away, varying erratically with
+the schedule *and* with the instance, in no stable pattern. **[A]** So continuation can lose a
+solution it was handed, and direct refinement does not. That is a stronger statement than §10.7's
+relative comparisons support on their own, and it is the mechanism behind the "worse from greedy
+init" column. **[A] Not established:** an earlier reading attributed the loss specifically to the
+coarsest ($\sigma=8$px) stage on the strength of one draw; a second draw reversed which schedule
+failed, so only the erratic behaviour is supported, not a culprit stage. Whether a *tuned*
+schedule would change §10.7's aggregate verdict is untested — §11 U22.
+
 ---
 
 ### 10.8 Branch-and-bound: the search works, the certificate does not
@@ -1086,6 +1099,7 @@ are the ones that decide the trade-off, were entirely wrong before the fix.
 | **U7** | Does §10's negative result survive scale and a better solver? | **Half answered — §10.4.** With both sides solved *exactly* at $N\le4$, $\ell_1$ loses to $\ell_0$ by 6–409%, so solver quality is not what §10 measured. Whether it survives *scale* is still open: re-run §10 after U5 at $N\ge10^3$ on $\ge256^2$ images, ≥5 instances per cell with error bars | weeks, after U5 |
 | ~~U19~~ | ~~Can exact $\ell_0$ branch-and-bound certify at §10's budgets?~~ | **Resolved, negatively — §10.8, §10.9.** Both standard node relaxations fail on this dictionary. The big-M bound is loose by 6–9× at the tightest admissible box; the perspective relaxation is loose by 64–86% wherever the ridge is small enough to leave the problem intact, and only closes at a ridge that makes the encoding 2.4–4.3× worse. The cause is shared: a single atom's amplitude is the scale of $\|y\|$, so no norm-based relaxation binds. **This was the last route §2.2 left open to a certified global optimum** | done |
 | **U20** | Does §10.5's dictionary effect survive real scale? It is measured at $\le64$ splats on $64^2$, and it already inverts at 64 | Re-run §10.5 at $10^3$ splats on $\ge256^2$; needs no solver work, so unlike U7 it does **not** wait on U5 | days |
+| **U22** | Does §10.7's verdict on frequency continuation depend on the blur schedule? A known-answer test shows continuation losing a handed-in optimum by 4e-4% to 27%, erratically across schedules and instances, so the single schedule §10.7 used may not be representative | Re-run §10.7 sweeping the schedule (number of stages, coarsest $\sigma$), medians over $\ge5$ seeds since single draws demonstrably reverse | days |
 | **U21** | Does a frequency-weighted $L^2$ buy perceptual quality while keeping the certificate (§3.2, U9)? A weighted $L^2$ is still Hilbertian, so the adjoint and §6 survive, which SSIM and $L^1$ do not | Fit under a contrast-sensitivity weighting, compare against plain $L^2$ on a perceptual metric at equal $N$ | days; needs the U9 metric decision |
 | **U8** | Do any §9 conclusions survive $10^3$–$10^5$ atoms? | Re-run §9 after U5 | after U5 |
 | **U9** | Is $L^2$-optimal perceptually acceptable (§3.2)? | Compare $L^2$-optimal against SSIM-trained fits at equal $N$, human or perceptual metric | days; needs a metric decision |
