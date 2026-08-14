@@ -151,10 +151,13 @@ def run():
     atom = finish(atom, tgt, 0, False)
     report("E3 beta / unlocked-from-2", fit(atom, tgt, IT))
 
-    # E4-E7: gabor cells at two frequencies x four policies
+    # E4-E7: gabor cells at two frequencies x four policies.
+    # Seeds via crc32, NOT hash(): Python salts str hashes per process, which made
+    # the random-omega cells irreproducible across runs.
+    import zlib
     for kmag, ktag in [(0.25 * math.pi, "0.25pi"), (0.60 * math.pi, "0.60pi")]:
         for policy in ["spectro", "random", "eps", "polar"]:
-            gen = g(hash((ktag, policy)) % (2 ** 31))
+            gen = g(zlib.crc32(f"{ktag}/{policy}".encode()))
             planted, k_true = plant_gabor(gen, kmag)
             with torch.no_grad():
                 tgt = render(planted, H, W)
