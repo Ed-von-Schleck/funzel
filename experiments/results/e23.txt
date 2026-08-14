@@ -1,0 +1,40 @@
+# E20: what Theorem 10's local-mass cap is worth as a bound
+# dictionary D=248 on 48x48, N=3; the exact optimum is enumerated (2,511,496 supports per image)
+# delta and M are read off that optimum, which is the tightest
+# admissible pair -- the same convention Section 9 uses for big-M.
+
+  tightness = (bound - L_ball)/(E_opt - L_ball): the share of the way
+  from the mass-ball bound to the truth. big-M is Theorem 11's
+  polytope; local is Theorem 10's set, which sits strictly inside it.
+
+  image      E_opt%  L_ball%   bigM%  local-ctr%  local-coh% | tight(bigM)  tight(ctr)  tight(coh) | ball sizes ctr/coh  M/||y||
+  ascentx1   29.41%   11.23%  11.23%      11.23%      11.23% |      0.0000      0.0000      0.0000 |   18.1/  7.3    0.602
+            mass-ball solution against the caps it is given: largest single amplitude 0.601M, largest ball mass 0.662M (centre) 0.677M (coherence) — a cap only bites when this exceeds 1
+  facex1      9.49%    2.06%   2.06%       2.07%       2.06% |     -0.0000      0.0016     -0.0000 |   41.5/  9.5    0.837
+            mass-ball solution against the caps it is given: largest single amplitude 0.737M, largest ball mass 1.176M (centre) 0.924M (coherence) — a cap only bites when this exceeds 1
+  ascentx2   14.05%    5.50%   5.50%       5.50%       5.50% |     -0.0000     -0.0000     -0.0000 |    2.4/  2.2    1.123
+            mass-ball solution against the caps it is given: largest single amplitude 0.442M, largest ball mass 0.442M (centre) 0.442M (coherence) — a cap only bites when this exceeds 1
+  facex2     17.80%   11.87%  11.87%      11.96%      11.87% |      0.0000      0.0155      0.0000 |   40.5/  4.4    0.635
+            mass-ball solution against the caps it is given: largest single amplitude 0.745M, largest ball mass 1.225M (centre) 0.745M (coherence) — a cap only bites when this exceeds 1
+  cartoon    14.77%    2.73%   2.73%       2.73%       2.73% |     -0.0000     -0.0000     -0.0000 |    9.2/  1.2    1.408
+            mass-ball solution against the caps it is given: largest single amplitude 0.145M, largest ball mass 0.491M (centre) 0.170M (coherence) — a cap only bites when this exceeds 1
+  cartoon    15.56%    7.81%   7.81%       7.81%       7.81% |      0.0000      0.0000     -0.0000 |   27.3/  3.9    0.471
+            mass-ball solution against the caps it is given: largest single amplitude 0.625M, largest ball mass 0.926M (centre) 0.837M (coherence) — a cap only bites when this exceeds 1
+
+  checks
+    ok   N1 the three bounds are ordered ball <= bigM <= local (centre metric), as the nesting requires (0 rows)
+    ok   N2 same for the coherence metric (0 rows)
+    ok   N3 no bound exceeds the exact optimum it relaxes (0 rows)
+    ok   N4 the optimum is feasible for its own local-mass program (delta and M were read off it, so it must be) (worst violation 0.00e+00)
+    ok   N6 the refit optimum agrees with the enumerator's own value (0 rows disagree)
+    ok   N7 the ball-to-truth distance is large enough for tightness to mean anything (0 rows below 0.1% of 0.5||y||^2)
+    ok   N5 every returned point is feasible (worst 0.00e+00)
+    ok   N8 the local cap is strictly tighter than big-M somewhere (diagnostic, not a requirement) (centre metric on 3 of 6 rows, coherence metric on 2)
+
+  What Theorem 10 adds over big-M, at its tightest admissible parameters:
+    centre metric     best gain +0.0155 of the ball-to-truth distance
+    coherence metric  best gain +0.0000
+    the mass-ball solution already obeys the per-atom cap at 0.745M and the local cap at 1.225M, so neither is active
+    mean atoms per admissible ball: 23.2 (centre), 4.7 (coherence); a ball holding one atom reproduces big-M exactly
+
+  [108s] 8/8 checks passed

@@ -499,8 +499,33 @@ and the mass budget $NM$ that implies is 1.45–2.27 times the mass the optimum 
 which is where the second measurement finds the ball already saying nothing. The local cap would
 have to carry the argument by itself.
 
-The other two stand. The containment is one-way, so how much smaller the hull is has not been
-computed, and nothing here says the resulting programme is tractable.
+The second and third are settled too, and against the theorem.
+`experiments/e20_local_mass.py` computes the programme rather than speculating about it. On a
+finite dictionary the local cap is one linear constraint per ball centre, so the relaxation is a
+quadratic program, and it nests exactly: every ball contains its own centre, so the local
+constraints already imply $\|c\|_\infty\le M$ and the set sits inside Theorem 11's polytope
+$P_{N,M}$, which in turn sits inside the mass ball. The three bounds are therefore ordered, and the
+difference between the second and the third is what Theorem 10 contributes and nothing else.
+
+Both parameters are read off the enumerated optimum — $M$ its largest amplitude, $\delta$ its
+smallest pairwise separation — which is the tightest admissible pair, since anything smaller in $M$
+or larger in $\delta$ excludes the answer. The radius used is just under $\delta/2$ rather than the
+$\delta/3$ of the theorem's statement: the proof needs only that a ball's diameter stays below
+$\delta$, and the wider ball holds more atoms and binds harder. This is the theorem's best case.
+
+Measured as the share of the distance from the mass-ball bound to the truth, over six images at
+$D=248$, $N=3$: big-$M$ recovers **0.0000** of it, on every image. Theorem 10's set recovers at
+most **0.0155** — about one and a half per cent — and nothing at all under the coherence metric.
+The balls are not the problem; they hold 23 atoms on average. The amplitudes are. The mass-ball
+solution's largest single amplitude is already at most $0.745M$, so the per-blob cap is inactive
+before it is imposed, and its largest ball mass only just crosses the local cap. A cap set by an
+optimum whose largest blob carries the energy of the image is too large to constrain anything, and
+making it local does not change that.
+
+So Theorem 10 is true, its programme is tractable, its set is strictly smaller in three of the six
+instances — and it is worth about one per cent. The one remaining gap is that all of this is on a
+grid: the continuum statement is not reachable this way, and how much smaller the continuum hull is
+has still not been computed.
 
 **Point out that the BLASSO's own solutions are sparse.** They are: for a fixed $\lambda$ the
 minimiser of (P$\lambda$) is generically a finite sum of point masses, and under a separation
@@ -831,7 +856,8 @@ it was not read.
 | Branch-and-bound solvers reaching $10^7$ variables | from search summaries; the sources were never read |
 | Moment hierarchies for the BLASSO target the dual constraint, not the count | from search summaries; not read, not tested |
 | Optima are separated, but the cap they force leaves the mass budget 1.45–2.27× slack | measured, `experiments/e19_optimum_separation.py` |
-| Tractability of the separated relaxation (Theorem 10) | open; neither derived nor tested |
+| Theorem 10's programme is a QP on a grid, and recovers $\le1.6\%$ of the distance from the mass ball to the truth | measured, `experiments/e20_local_mass.py`, at the tightest admissible $\delta$ and $M$ and the widest valid ball radius. Big-$M$ recovers 0.0% on the same instances |
+| How much smaller the *continuum* separated hull is | open; e20 measures only the grid restriction |
 | Prior art for Theorem 10's construction | searching turned up the separation hypothesis only in its recovery role, not as a way of convexifying the count. Per M6 of the companion document a null search result is not novelty, and this row records a failed search, not a claim of priority |
 | Gap closes exactly at $N_0=3$–48 at fixed mass; Theorem 8's bound never binding | measured, `experiments/e16_fixed_mass.py`. $U$ is a search upper bound above $N=2$, so the gap is an upper bound; small values are conclusive, large ones may be the solver |
 | Theorem 8's $N^{-1/2}$ rate itself | not isolated. The measured decay is dominated by the support-size mechanism, so these runs do not test the rate |
