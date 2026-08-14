@@ -175,8 +175,13 @@ INITS = {"random": init_random, "lattice": init_lattice,
 
 
 # ------------------------------------------------------------------ optimiser
-def adam(th0, y, X, Y, n, steps, lr=0.01, checkpoints=(1500, 6000)):
-    """Adam on amplitudes and atom parameters, recording at each checkpoint."""
+def adam(th0, y, X, Y, n, checkpoints=(1000, 4000), lr=0.01):
+    """Adam on amplitudes and atom parameters, recording at each checkpoint.
+
+    One parameter, not two. An earlier version took both a step count and a
+    checkpoint tuple; callers passed the checkpoints positionally into the step
+    count, so the recording silently used the DEFAULT checkpoints and the run
+    died much later, in aggregation, on a missing key."""
     lo, hi = e5.bounds(n)
     K = len(th0)
     th0 = np.clip(th0, lo, hi)
@@ -198,6 +203,7 @@ def adam(th0, y, X, Y, n, steps, lr=0.01, checkpoints=(1500, 6000)):
         if t in checkpoints:
             f, _ = loss_grad(z, y, X, Y, 0.0)
             out[t] = (float(f), z[K:].reshape(K, NP_ATOM).copy())
+    assert set(out) == set(checkpoints), (sorted(out), sorted(checkpoints))
     return out
 
 
