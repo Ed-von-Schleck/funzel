@@ -100,8 +100,8 @@ $A$ is the usual anisotropic pose (2 log-scales + rotation), $H_\alpha$ the Herm
 While $\omega$ is locked at $0$, the $\sin$ block and all $d_\alpha$ **do not exist** — they
 are not stored at zero, they are absent, so the blunt atom is exactly a 6-parameter Gaussian
 with no dormant freight. Unlocking $\omega$ creates the carrier *and* one quadrature partner
-$d_\alpha$ per existing $c_\alpha$; from then on the appearance pair $(c_\alpha,d_\alpha)$ is
-the complex coefficient of the earlier discussions, and phase is never a descended parameter.
+$d_\alpha$ per existing $c_\alpha$; from then on the appearance pair $(c_\alpha,d_\alpha)$ acts
+as a complex coefficient, and phase is never a descended parameter.
 The order-0, $\omega$-unlocked atom is precisely the complex Gabor.
 
 | knob | blunt value | unlock cost | serves | sieve status |
