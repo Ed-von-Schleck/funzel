@@ -3,8 +3,7 @@
 An experiment design. Self-contained and independent of the documents in `docs/` — it shares no
 premises with them and none of their conclusions are assumed here.
 
-**Status: planned, not run.** Nothing below is a result. Revision 2, after an adversarial pass;
-the substantive corrections are listed in Appendix A so they are not silently absorbed.
+**Status: planned, not run.** Nothing below is a result.
 
 ---
 
@@ -51,7 +50,7 @@ design principles fall out:
   parameters (frequency, sharpness, warp) are what wreck landscapes.
 - **Every atom is born a Gaussian**, and every knob has a blunt value at which the atom *is* a
   plain Gaussian — with **no dormant parameters attached**. A parameter exists only from the
-  moment it can receive gradient (see §4; the first draft violated this).
+  moment it can receive gradient (§4).
 - **Domain knowledge enters at birth, not during descent.** Nonlinear parameters that descent
   cannot find (a carrier frequency: capture radius in space $\sigma$ times capture radius in
   frequency $1/\sigma$ is pinned at $\sim1$ by the uncertainty principle, so position and
@@ -185,8 +184,8 @@ the *policy*, never the schedule.
 
 ## 7. Targets, budgets, protocol
 
-**Targets** — three content classes, **8 images each** (n=4 per class cannot support a
-per-class claim; this was a statistics bug in revision 1):
+**Targets** — three content classes, **8 images each** (fewer cannot support a per-class
+claim under a paired signed-rank test):
 
 - Kodak, 8 images, 512² center crops, converted to luma (BT.601). *Not* comparable to published
   color full-resolution numbers, and no such comparison will be drawn;
@@ -204,7 +203,7 @@ nothing may reach acceptable quality on texture. Both remain in the grid as seco
 for the H5 trend, but every headline reading binds at 24k. Report atoms *and* parameters for
 every arm.
 
-**Metrics** (absent from revision 1): PSNR is primary — $L^2$ is the training loss, so it is
+**Metrics**: PSNR is primary — $L^2$ is the training loss, so it is
 the only metric an arm can be *selected* on. SSIM and LPIPS are reported, never selected on;
 a PSNR win that inverts under LPIPS is reported as exactly that. Efficiency: iterations and
 wall-clock to reach within 0.5 dB of the arm's own final PSNR (per-class absolute thresholds
@@ -236,8 +235,8 @@ Fixed before running; a null is a null. All headline readings bind at the primar
   framing* (it collapses to "Gaussians + one texture knob"). Margins: ≥1 dB class-median on
   texture, ≥0.3 dB on Kodak and cartoon.
 - **H2.** A3 > A2a: adaptivity beats uniform richness *with birth policy held equal* — A2a, not
-  A2b, is the comparator, else richness is confounded with init (revision-1 bug). If A2a ≥ A3,
-  the allocator is dead weight: unlock everything, skip §5.
+  A2b, is the comparator, else richness is confounded with init. If A2a ≥ A3, the allocator is
+  dead weight: unlock everything, skip §5.
 - **H3 (attribution, exploratory).** The spending map is content-locked: $\omega$ unlocks
   concentrate on texture, Hermite on edges/junctions, $\beta$ on region boundaries. Deliverable:
   knob-type overlay maps. Explicitly exploratory — no threshold, and a suggestive map is a
@@ -280,37 +279,3 @@ the nonstandard machinery is §5's move scoring (windowed-FFT measurement, close
 projections, calibration log) and §4's analytic pixel filter. Recommended first cut: sanity
 phase plus the core triangle on four images at the primary budget — an afternoon-scale run that
 decides whether the full grid is worth its GPU-days.
-
----
-
-## Appendix A: revision history
-
-**Revision 2** — after an adversarial pass. Substantive corrections, kept visible on the
-principle that silently absorbed errors get repeated:
-
-1. **Dead-parameter bug.** Revision 1 defined the atom with complex coefficients
-   unconditionally; at $\omega=0$ every imaginary part had zero gradient — dormant freight on
-   exactly the atoms claimed to be "born Gaussian with 6 parameters." The atom is now
-   $\omega$-conditional (§4): quadrature partners exist only once the carrier does.
-2. **Unlock-cost bug.** Costs in the knob table ignored the coupling ("unlock $\omega$: +2" is
-   +3 at order 0, more at higher order; order-1 cost depends on carrier state). The allocator
-   ranks by Δloss/Δparams, so wrong costs corrupted the quantity under test.
-3. **A2 conflation.** "Fully unlocked from birth" left $\omega$-init unspecified, conflating
-   uniform richness with a hostile landscape. Split into A2a (informed birth, the clean corner,
-   now in the core triangle) and A2b (random $\omega$, demoted to a landscape control).
-4. **A5 strawman.** Retraining final knob configs at random *positions* scrambles the
-   config–location correspondence and loses by construction. A5 now keeps spawn sites.
-5. **Untested core claim.** The quadrature principle had no arm. Added A4d (descended-phase
-   twin) with readings H6/H7.
-6. **Estimator bias.** Exact linear gains ranked against estimated nonlinear gains bias the
-   allocator systematically. Added per-move-type calibration and a spawn floor (§5).
-7. **Statistics.** Per-class claims rested on n=4 images; now 8 per class. Seed variance was
-   called primary but had no reading; now H6.
-8. **Aliasing.** Point-sampled high-$\omega$ atoms would be punished for a sampling artifact.
-   Now rendered through the family's closed-form Gaussian pixel filter (§4).
-9. **Scoping.** No primary cell existed; ceiling risk at 96k unstated; PSNR-30 threshold was
-   unreachable/trivial by class. Primary cell fixed at 24k; efficiency measured relative to
-   each arm's own final quality; metrics section added; false Kodak-comparability claim
-   removed; irreversible unlocks made reversible (re-locking, §4); knob redundancies
-   (Hermite-1 vs $\partial_\omega$, rotation vs $\omega$-direction) recorded with their
-   consequences.
