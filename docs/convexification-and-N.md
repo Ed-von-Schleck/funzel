@@ -99,9 +99,10 @@ wants the minimum to be attained, one takes the closure, $\overline{\operatornam
 
 So the best any convex approach can do with "at most $N$ blobs" is determined by the convex hull of
 the set of $N$-blob encodings. **If that hull does not depend on $N$, then no convex method depends
-on $N$** — not this penalty or that one, not a cleverer algorithm. Corollary 7 extends the same
-conclusion to formulations that introduce new variables, where the hull being taken is not in the
-space of measures at all.
+on $N$** — not this penalty or that one, not a cleverer algorithm. Corollary 7 extends this to
+formulations that introduce new variables, so long as the rendering stays linear and the objective
+stays the error of the rendered image. Theorem 11 shows what happens when it does not, and it is
+the boundary of everything claimed here.
 
 The hull does not depend on $N$. The reason is one picture. Take two blobs, each of amplitude $M$,
 and slide them towards each other. Their masses add. In the limit they are a single blob of
@@ -270,6 +271,12 @@ conclusion about *optimal values* without assuming anything is closed.
 
 *Proof.* $J$ is weak-\* continuous, so its infimum over a set equals its infimum over that set's
 closure. Apply Theorem 3. $\square$
+
+The proof uses nothing about $J$ beyond weak-\* continuity, so *every* weak-\* continuous objective
+has the same infimum over $\operatorname{conv}\mathcal{F}_{N,M}$ as over $B_{NM}$. In measure space
+the collapse is a fact about the feasible set alone, and changing what is being minimised does not
+touch it. The objective becomes load-bearing only when one leaves measure space, which is
+Corollary 7, and Theorem 11 shows that its hypothesis is exactly what does the work there.
 
 The plain convex hull, before any closure, is genuinely smaller than the ball: a finite weighted
 average $\sum_j\lambda_j\mu_j$ of elements of $\mathcal{F}_{N,M}$ has mass at most $M$ at any
@@ -529,11 +536,27 @@ reconstruction error has risen by a factor of 2.4–4.3. There is no setting in 
 tight and the problem is still the one wanted. Two relaxations failing for one shared reason —
 amplitudes at signal scale — points at the dictionary rather than at the choice of relaxation.
 
-The sparse-regression literature reports the same dependence from the other side. With the ridge at
-zero, the optimal perspective relaxation is said to be effective only when the Gram matrix is
-sufficiently diagonally dominant. The coherence here is 0.985, so that condition fails about as
-badly as a dictionary can make it fail, and a loose bound at small $\lambda_2$ is what the
-condition predicts rather than a surprise. From search summaries; not read.
+**Why it fails is computable, and the answer is that there is nothing to work with.**
+`experiments/e17_separable_mass.py`. A perspective-type strengthening acts on the part of the
+quadratic that is a *separable* function of the coefficients: it splits
+$c^{\!\top}(A^{\!\top}\!A+\lambda_2I)c$ into $c^{\!\top}Dc$ with $D$ diagonal and a convex remainder,
+and replaces $c_j^2$ by $c_j^2/z_j$. Breaking Corollary 7's pairing is exactly what that separable
+piece is for, and how much of it exists is an eigenvalue computation. Certified from below the
+eigendecomposition, the largest admissible $\operatorname{tr}D$ on this dictionary is
+
+| $\lambda_2$ | 0 | $10^{-3}$ | $10^{-2}$ | $10^{-1}$ | 1 |
+|---|---|---|---|---|---|
+| separable share of the quadratic | **0.15%** | 1.30% | 3.95% | 15.27% | **57.70%** |
+
+The driver is that the Gram is rank deficient — 531 of 768 — and every one of the 768 coordinates
+carries energy in the null space, so an exact null vector forces $d_j=0$ at every coordinate. At
+$\lambda_2=0$ the relaxation has essentially nothing to strengthen with, and the 64–86% above is
+forced rather than incidental: no better implementation of that family recovers it. The share only
+becomes substantial at $\lambda_2\approx1$, where $D=\lambda_2I$ alone supplies half the quadratic —
+and where the reconstruction is 2.4–4.3× worse. The ridge buys the relaxation its raw material and
+pays for it in the objective, at the same rate, which is why there is no setting with both. The
+sparse-regression literature reports the same dependence qualitatively, as a diagonal-dominance
+condition at $\lambda_2=0$; from search summaries, not read.
 
 **On a grid, the relaxation is tight only where the dictionary is useless.**
 `experiments/e4_exact_l0.py`, output `results/e4_coherence.txt`. Theorem 9 restores the dependence
@@ -668,18 +691,42 @@ moment hierarchy; and the finite dictionary of Section 7. The moment work locate
 applies the hierarchy to the dual constraint $|\eta|\le1$ for tractability rather than to the count;
 it was not read.
 
-One formulation in that gap is worth naming, because it settles what the obstruction actually is.
+The exclusion for the objective is not a technicality, and the cheapest way to see that is to
+exhibit a lift where convexification costs exactly nothing.
+
+> **Theorem 11 (a lift that loses nothing).** Write $\Lambda\mu=\big(\Phi\mu,\ (\Phi\mu)(\Phi\mu)^{\!\top}\big)
+> \in\mathbb{R}^P\times\mathbb{S}^P$ and $\ell(z,Z)=\tfrac12\|y\|^2-\langle y,z\rangle
+> +\tfrac12\operatorname{tr}Z$. Then $\ell$ is affine, $\ell(\Lambda\mu)=J(\mu)$, and for every
+> $N$ and $M$
+> $$\inf_{\overline{\operatorname{conv}}\,\Lambda\mathcal{F}_{N,M}}\ell\ =\ \inf_{\mathcal{F}_{N,M}}J .$$
+
+*Proof.* $\ell(\Lambda\mu)=\tfrac12\|y\|^2-\langle y,\Phi\mu\rangle+\tfrac12\|\Phi\mu\|^2=J(\mu)$.
+An affine functional has the same infimum over a set as over its convex hull, because
+$\ell(\sum_i\lambda_iu_i)=\sum_i\lambda_i\ell(u_i)\ge\min_i\ell(u_i)$, and the same infimum over the
+closure by continuity. $\square$
+
+So the $N$-blob family has a convex relaxation with **no gap at all**, and one that sees $N$ for
+every $N$. Theorem 3 is not contradicted. $\Lambda$ is quadratic in $\mu$, so $\Lambda$ of a convex
+hull is not the convex hull of $\Lambda$, and the collision that collapses $\Phi\mathcal{F}_{N,M}$
+does not collapse $\Lambda\mathcal{F}_{N,M}$. The mechanism is one line: along a convex combination,
+$$\operatorname{tr}Z-\|z\|^2=\sum_i\lambda_i\|z_i\|^2-\Big\|\sum_i\lambda_iz_i\Big\|^2$$
+is the variance the averaging introduced, and $\ell$ charges for it. Averaging two blobs into one is
+free in measure space; under $\Lambda$ it is not.
+
+What Theorem 11 gives up is any description of the set. Optimising $\ell$ over
+$\overline{\operatorname{conv}}\,\Lambda\mathcal{F}_{N,M}$ is the original problem written out
+again. That is not a defect of this particular lift, and the literature says where the difficulty
+goes.
+
 On a finite dictionary, cardinality-constrained least squares is reported to admit an **exact**
 reformulation as a linear objective over the completely positive cone — a convex cone — with the
 whole of the non-convexity moved into cone membership, which is NP-hard. So a convex formulation
-that sees $N$ exists. It escapes Corollary 7 for a nameable reason: its objective is linear in the
-lifted variable rather than a strictly convex function of a linearly rendered image, so the step
-"the image is convex, and $J$ is minimised over it" has nothing to act on. Convexity alone is
-therefore not what obstructs. What Corollary 7 identifies is narrower — a convex feasible set
-*together with* an objective that is the error of a linearly rendered image — and the completely
-positive formulation buys its way out of exactly that pairing, at the price of an NP-hard cone.
-Whether an analogue exists over $\mathcal{M}(\Theta)$ was not searched. Both statements are from
-search summaries and were not read.
+that sees $N$ exists, it is Theorem 11's construction made concrete, and it escapes Corollary 7 the
+same way — the objective is affine in the lifted variable rather than the error of a linearly
+rendered image. Convexity alone is therefore not what obstructs. Corollary 7 identifies a pairing:
+a convex feasible set *together with* an objective that is the error of a linearly rendered image.
+Break the pairing and the gap vanishes; the price is that the feasible set stops having a
+description. Both statements about the cone are from search summaries and were not read.
 
 ---
 
@@ -687,7 +734,7 @@ search summaries and were not read.
 
 | claim | status |
 |---|---|
-| Theorems 1, 3, 4, 8, 9, 10; Lemma 2; Corollaries 5, 6, 7 | proved above; nothing imported |
+| Theorems 1, 3, 4, 8, 9, 10, 11; Lemma 2; Corollaries 5, 6, 7 | proved above; nothing imported |
 | Extreme points of the total-variation ball are the signed point masses | standard; Lemma 2 proves what is used, so it is not relied on |
 | $\overline{\operatorname{conv}}\,\mathcal{F}_N^{\,\tau}=B_\tau$ (second half of Theorem 3) | proved above, but not new: it is the definition of an atomic-norm ball |
 | Theorem 9 is the convex hull of the big-$M$ sparse set | not new. $\ell_1$ is the convex envelope of $\ell_0$ on the $\ell_\infty$ ball; Kim, Tawarmalani & Richard, *Convexification of Permutation-Invariant Sets*, generalise to any permutation- and sign-invariant norm ball. From search summaries, not read; the proof above is independent |
@@ -700,6 +747,8 @@ search summaries and were not read.
 | Mass-constrained bound goes vacuous by $N=4$–8 | measured, `experiments/e3_absolute_bound.py` |
 | Big-$M$ node bound off by 5.7–8.9× | measured, `experiments/e8_branch_and_bound.py` |
 | Perspective relaxation root gap 64–86% | measured, `experiments/e9_perspective.py` |
+| Separable share of the quadratic is 0.15% at $\lambda_2=0$, 57.7% at $\lambda_2=1$ | computed, `experiments/e17_separable_mass.py`; a certified upper bound on the raw material, not on the resulting gap |
+| Theorem 11 | proved above |
 | Coherence governs tightness and costs approximation power | measured, `results/e4_coherence.txt` |
 | Certificate value not separable from chance on the restart population | measured, `experiments/e14_certifiable.py`; the bootstrap interval is the claim, not the point estimate |
 | Branch-and-bound solvers reaching $10^7$ variables | from search summaries; the sources were never read |

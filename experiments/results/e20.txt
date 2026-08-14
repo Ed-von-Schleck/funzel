@@ -1,0 +1,32 @@
+# E17: separable mass available to a perspective-type relaxation
+# dictionary D=768 atoms in P=1024 pixels, unit-norm, tr(Gram)=768.0
+# largest eigenvalue 83.3017; numerical rank at 1e-10 is 531 of 768
+# the Gram is RANK DEFICIENT, which is what drives the result: an
+# exact null vector v forces sum_j d_j v_j^2 <= 0, hence d_j = 0 on
+# its support. Below, every coordinate carries null-space energy, so
+# no coordinate escapes.
+
+  nullity at 1e-10: 237;  coordinates with zero null-space energy: 0 of 768
+
+  lambda2   tr(Gram+l2 I)   certified tr(D) <=    as % of trace   at k
+        0          768.00               1.1779            0.153%    290
+   0.0001          768.08               5.0576            0.658%    530
+    0.001          768.77              10.0086            1.302%    540
+     0.01          775.68              30.6255            3.948%    610
+      0.1          844.80             129.0094           15.271%    690
+        1         1536.00             886.3136           57.703%    720
+
+  checks
+    ok   C1 bound at lambda2=0 is below 1% of the trace (0.153%)
+    ok   C2 every coordinate carries null-space energy, so d=0 is forced in exact arithmetic 
+    ok   C3 D = lambda2 * I is feasible, so the bound is at least D*lambda2 (a bound below it would be wrong)
+    ok   C4 the available fraction is monotone in lambda2 
+
+  reading: at lambda2 = 0 a perspective-type strengthening has essentially
+  nothing to act on. The fraction only becomes substantial once lambda2 is
+  of order 1, where D = lambda2*I alone supplies half the quadratic --
+  and section 9 measures the reconstruction 2.4-4.3x worse there. The
+  ridge buys the relaxation its raw material and pays for it in the
+  objective; there is no setting where it gets one without the other.
+
+  4/4 checks passed
