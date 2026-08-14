@@ -1,4 +1,4 @@
-"""E19: are the optimal blobs separated, and is a local mass cap worth anything?
+"""E22: are the optimal blobs separated, and is a local mass cap worth anything?
 
 Section 6 of `convexification-and-N.md` proves (Theorem 10) that requiring the
 blobs of an encoding to be at least delta apart survives the collision that
@@ -76,7 +76,7 @@ def run(n=48, N=3, n_nat=8, n_cart=4, seed=0, log=print):
     rng = np.random.default_rng(seed)
     imgs = e14.image_set(n, rng, n_nat=n_nat, n_cart=n_cart, log=lambda *a: None)
 
-    log(f"# E19: geometry of the exactly enumerated N={N} optimum")
+    log(f"# E22: geometry of the exactly enumerated N={N} optimum")
     log(f"# dictionary D={D} on {n}x{n}; all C(D,{N})="
         f"{D*(D-1)*(D-2)//6:,} supports enumerated per image")
     log(f"# dictionary coherence {float(Coh[np.triu_indices(D,1)].max()):.3f}")

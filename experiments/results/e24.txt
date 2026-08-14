@@ -1,4 +1,4 @@
-# E21: what makes a splatting dictionary coherent
+# E24: what makes a splatting dictionary coherent
 # same lattice, 32x32; a DoG atom is two splats with opposite signs,
 # so it changes the parameterisation and not the model class.
 

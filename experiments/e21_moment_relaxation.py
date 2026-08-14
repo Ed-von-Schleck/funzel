@@ -1,4 +1,4 @@
-"""E18: the moment relaxation, the last convex route section 11 left untested.
+"""E21: the moment relaxation, the last convex route section 11 left untested.
 
 Section 10 of `convexification-and-N.md` proves (Corollary 7) that no convex
 lift beats the mass ball while its objective is the error of a LINEARLY
@@ -11,7 +11,7 @@ repository has tested it.
 It deserves a test for a specific reason. Every relaxation measured so far
 fails through an AMPLITUDE CAP with nothing to bite on -- big-M loose by
 5.7-8.9x (e8), perspective loose by 64-86% wherever the ridge is small (e9),
-and at most 0.15% of the quadratic available to make separable (e17). The
+and at most 0.15% of the quadratic available to make separable (e20). The
 moment relaxation needs no cap: it carries ||Ac||^2 in a lifted matrix variable
 X, so it is the one candidate not excluded by the shared cause.
 
@@ -348,7 +348,7 @@ def run(n=32, k=6, targets=("cartoon", "ascent", "face"),
     cross = (cp.SCS, dict(eps=1e-8, max_iters=200000))
     rows = []
 
-    log("# E18: Shor / DNN moment relaxation of the cardinality-constrained")
+    log("# E21: Shor / DNN moment relaxation of the cardinality-constrained")
     log("# least-squares problem, on splatting dictionaries.")
     log("# tightness = (bound - E_LS)/(E_opt - E_LS); 1 = exact, 0 = no better")
     log("# than dropping the cardinality constraint. It OVER-states the exact")

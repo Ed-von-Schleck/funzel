@@ -1,9 +1,9 @@
-"""E21: why a splatting dictionary is coherent, and what would fix it.
+"""E24: why a splatting dictionary is coherent, and what would fix it.
 
 Every negative measurement in `convexification-and-N.md` runs through the same
 quantity. The relaxations are loose where the dictionary's atoms resemble one
-another and tight where they do not (e18, and Section 9's coherence table), and
-the amplitude scale that ruins the amplitude caps (e8, e17, e19, e20) is the
+another and tight where they do not (e21, and Section 9's coherence table), and
+the amplitude scale that ruins the amplitude caps (e8, e20, e22, e23) is the
 same phenomenon seen from the other side: atoms that resemble one another can
 cancel, so the coefficients that fit an image with few of them are large and
 opposed.
@@ -53,7 +53,7 @@ WHAT THIS CANNOT SHOW.
         this file does not budget anything.
   (ii)  One lattice, one image size. The packing numbers are properties of this
         dictionary family.
-  (iii) Coherence is a proxy for what the relaxations need. e18 measures the
+  (iii) Coherence is a proxy for what the relaxations need. e21 measures the
         relaxation directly; this file measures only the dictionary.
 """
 
@@ -66,7 +66,7 @@ import numpy as np
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import e4_exact_l0 as e4
-import e17_separable_mass as e17
+import e20_separable_mass as e20
 
 
 def unit(G):
@@ -79,7 +79,7 @@ def profile(name, G, log):
     Gram = G @ G.T
     w, V = np.linalg.eigh(Gram)
     off = np.abs(Gram[np.triu_indices(len(G), 1)])
-    ub, _, _ = e17.certified_bound(w, V, 0.0, log=lambda *a: None)
+    ub, _, _ = e20.certified_bound(w, V, 0.0, log=lambda *a: None)
     log(f"  {name:22s} D={len(G):4d}  rank@1e-10={int((w>1e-10*w[-1]).sum()):4d}"
         f"  max coh={off.max():.4f}  median={np.median(off):.4f}"
         f"  pairs>0.9: {100*(off>0.9).mean():5.2f}%"
@@ -105,7 +105,7 @@ def run(n=32, log=print):
     Gm = Gm[np.linalg.norm(Gm, axis=1) > 1e-9]
 
     t0 = time.time()
-    log("# E21: what makes a splatting dictionary coherent")
+    log("# E24: what makes a splatting dictionary coherent")
     log(f"# same lattice, {n}x{n}; a DoG atom is two splats with opposite signs,")
     log("# so it changes the parameterisation and not the model class.")
     log("")

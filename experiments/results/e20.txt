@@ -1,4 +1,4 @@
-# E17: separable mass available to a perspective-type relaxation
+# E20: separable mass available to a perspective-type relaxation
 # dictionary D=768 atoms in P=1024 pixels, unit-norm, tr(Gram)=768.0
 # largest eigenvalue 83.3017; numerical rank at 1e-10 is 531 of 768
 # the Gram is RANK DEFICIENT, which is what drives the result: an

@@ -1,4 +1,4 @@
-"""E20: does Theorem 10's local-mass cap buy any bound at all?
+"""E23: does Theorem 10's local-mass cap buy any bound at all?
 
 Section 6 of `convexification-and-N.md` proves (Theorem 10) that the convex
 hull of the delta-separated N-blob encodings obeys a cap of M on the mass in
@@ -47,7 +47,7 @@ space works in the proof, and which one is used decides how many atoms share a
 ball and therefore how strong the constraints are. Both are reported:
 
   centre     Euclidean distance between blob centres, in pixels. Geometric and
-             comparable with e19. Blind to scale: two atoms at one centre with
+             comparable with e22. Blind to scale: two atoms at one centre with
              different widths are at distance 0.
   coherence  1 - |<g_i,g_j>| on unit-norm atoms. Zero exactly when two atoms
              are the same blob, which is the thing Theorem 1's collision does,
@@ -60,7 +60,7 @@ Reported for big-M and for local-mass, so the difference between them is what
 Theorem 10 contributes and nothing else.
 
 PRE-REGISTERED (M5), prediction on the record: the local cap will add little.
-e19 measured the tightest admissible M on this dictionary as the optimum's own
+e22 measured the tightest admissible M on this dictionary as the optimum's own
 largest amplitude, which reaches 1.19 times ||y||, and the mass budget N*M it
 implies as 1.45-2.27 times the mass the optimum spends -- a regime where e3
 already finds the mass ball vacuous. The local cap has to overcome that on its
@@ -189,7 +189,7 @@ def run(n=48, N=3, n_nat=4, n_cart=2, seed=0, log=print):
     imgs = e14.image_set(n, rng, n_nat=n_nat, n_cart=n_cart,
                          log=lambda *a: None)
 
-    log(f"# E20: what Theorem 10's local-mass cap is worth as a bound")
+    log(f"# E23: what Theorem 10's local-mass cap is worth as a bound")
     log(f"# dictionary D={D} on {n}x{n}, N={N}; the exact optimum is "
         f"enumerated ({D*(D-1)*(D-2)//6:,} supports per image)")
     log(f"# delta and M are read off that optimum, which is the tightest")

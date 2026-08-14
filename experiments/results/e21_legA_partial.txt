@@ -1,4 +1,4 @@
-# E18: Shor / DNN moment relaxation of the cardinality-constrained
+# E21: Shor / DNN moment relaxation of the cardinality-constrained
 # least-squares problem, on splatting dictionaries.
 # tightness = (bound - E_LS)/(E_opt - E_LS); 1 = exact, 0 = no better
 # than dropping the cardinality constraint. It OVER-states the exact

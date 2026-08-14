@@ -1,9 +1,9 @@
 # Reduced rerun. The full-scale run died silently at 20 of ~64 rows;
-# its leg A survives in e18_legA_partial.txt and is not repeated in
+# its leg A survives in e21_legA_partial.txt and is not repeated in
 # full here. Leg A below keeps only the extreme widths, which is what
 # V14's contrast check needs; legs B and C run in full, since neither
 # ran at all before and they carry the controls.
-# E18: Shor / DNN moment relaxation of the cardinality-constrained
+# E21: Shor / DNN moment relaxation of the cardinality-constrained
 # least-squares problem, on splatting dictionaries.
 # tightness = (bound - E_LS)/(E_opt - E_LS); 1 = exact, 0 = no better
 # than dropping the cardinality constraint. It OVER-states the exact

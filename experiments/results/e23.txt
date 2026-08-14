@@ -1,4 +1,4 @@
-# E20: what Theorem 10's local-mass cap is worth as a bound
+# E23: what Theorem 10's local-mass cap is worth as a bound
 # dictionary D=248 on 48x48, N=3; the exact optimum is enumerated (2,511,496 supports per image)
 # delta and M are read off that optimum, which is the tightest
 # admissible pair -- the same convention Section 9 uses for big-M.

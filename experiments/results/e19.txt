@@ -1,4 +1,4 @@
-# E16: fixed-mass sweep for Theorem 10 of convexification-and-N.md
+# E19: fixed-mass sweep for Theorem 10 of convexification-and-N.md
 # rho is HELD FIXED while N varies. Section 9's e3 lets it grow with
 # N, which is why that measurement cannot test the theorem.
 # Read the module docstring for what this can and cannot show; in

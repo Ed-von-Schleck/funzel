@@ -1,4 +1,4 @@
-"""E16: the fixed-mass sweep Theorem 10 asks for.
+"""E19: the fixed-mass sweep Theorem 10 asks for.
 
 Section 10 of `convexification-and-N.md` proves that at a FIXED mass budget rho
 the mass-ball relaxation is within O(N^{-1/2}) of the best N-blob encoding of
@@ -481,7 +481,7 @@ def main(targets=("cartoon", "face", "inmodel"),
         print(*a, file=stream)
         stream.flush()
 
-    log("# E16: fixed-mass sweep for Theorem 10 of convexification-and-N.md")
+    log("# E19: fixed-mass sweep for Theorem 10 of convexification-and-N.md")
     log("# rho is HELD FIXED while N varies. Section 9's e3 lets it grow with")
     log("# N, which is why that measurement cannot test the theorem.")
     log("# Read the module docstring for what this can and cannot show; in")

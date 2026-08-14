@@ -1,4 +1,4 @@
-"""E17: how much of the objective can be taken out of the rendered image.
+"""E20: how much of the objective can be taken out of the rendered image.
 
 Corollary 7 of `convexification-and-N.md` says a convex lift cannot beat the
 mass ball when its objective is the error of a LINEARLY rendered image. Every
@@ -92,7 +92,7 @@ def run(n=32, lam2s=(0.0, 1e-4, 1e-3, 1e-2, 1e-1, 1.0), log=print):
     w, V = np.linalg.eigh(Gram)
     tr = float(np.trace(Gram))
 
-    log(f"# E17: separable mass available to a perspective-type relaxation")
+    log(f"# E20: separable mass available to a perspective-type relaxation")
     log(f"# dictionary D={D} atoms in P={P} pixels, unit-norm, tr(Gram)={tr:.1f}")
     log(f"# largest eigenvalue {w[-1]:.4f}; numerical rank at 1e-10 is "
         f"{int((w > 1e-10*w[-1]).sum())} of {D}")

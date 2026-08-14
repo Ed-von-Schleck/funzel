@@ -1,4 +1,4 @@
-# E19: geometry of the exactly enumerated N=3 optimum
+# E22: geometry of the exactly enumerated N=3 optimum
 # dictionary D=248 on 48x48; all C(D,3)=2,511,496 supports enumerated per image
 # dictionary coherence 0.962
 

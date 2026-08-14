@@ -488,7 +488,7 @@ $\mathcal{F}_{N,M}$ from $B_{NM}$, and it does not: $\mathcal{F}_{N,M}$ contains
 in one ball. It sees $N$ only on the separated family — separation is a hypothesis on the
 encodings, not a better penalty.
 
-Three things are owed, and `experiments/e19_optimum_separation.py` settles the first. At the
+Three things are owed, and `experiments/e22_optimum_separation.py` settles the first. At the
 exactly enumerated $N=3$ optimum on a $D=248$ dictionary of coherence 0.962, the chosen blobs are
 not near-duplicates: their largest pairwise coherence runs 0.199–0.808 and their closest centres
 3.8–25.5 pixels apart on a 48-pixel image. Some $\delta$ admits the optimum, so the separated
@@ -500,7 +500,7 @@ which is where the second measurement finds the ball already saying nothing. The
 have to carry the argument by itself.
 
 The second and third are settled too, and against the theorem.
-`experiments/e20_local_mass.py` computes the programme rather than speculating about it. On a
+`experiments/e23_local_mass.py` computes the programme rather than speculating about it. On a
 finite dictionary the local cap is one linear constraint per ball centre, so the relaxation is a
 quadratic program, and it nests exactly: every ball contains its own centre, so the local
 constraints already imply $\|c\|_\infty\le M$ and the set sits inside Theorem 11's polytope
@@ -660,7 +660,7 @@ single best blob can be found exactly by direct search so the true optimum is kn
 reaches 66–76% of it and leaves 24–34% it cannot exclude.
 
 **At a fixed mass budget the same relaxation is exactly tight, at small $N$.**
-`experiments/e16_fixed_mass.py`. The previous measurement lets the budget grow with $N$, which is
+`experiments/e19_fixed_mass.py`. The previous measurement lets the budget grow with $N$, which is
 the regime Theorem 8 says nothing about. Holding $\rho$ fixed and sweeping $N$ instead, on the
 $D=768$ dictionary at $32\times32$: the gap between the ball and the best $N$-blob encoding of the
 same mass closes **exactly** — not asymptotically — at $N_0$ between **3 and 48** across twelve
@@ -713,7 +713,7 @@ tight and the problem is still the one wanted. Two relaxations failing for one s
 amplitudes at signal scale — points at the dictionary rather than at the choice of relaxation.
 
 **How much a perspective-type relaxation has to work with is computable.**
-`experiments/e17_separable_mass.py`. Such a relaxation acts on the part of the quadratic that is a
+`experiments/e20_separable_mass.py`. Such a relaxation acts on the part of the quadratic that is a
 *separable* function of the coefficients: it splits $c^{\!\top}(A^{\!\top}\!A+\lambda_2I)c$ into
 $c^{\!\top}Dc$ with $D$ diagonal and a convex remainder, then replaces $c_j^2$ by $c_j^2/z_j$. That
 separable piece is how it escapes Corollary 7, and its size follows from the eigendecomposition.
@@ -758,7 +758,7 @@ there is nothing worth approximating. The claim that it does so *monotonically* 
 Both sides here are the mass-capped $\ell_0$ described above.
 
 **The moment relaxation is exact where the dictionary is useless and loose where it is not.**
-`experiments/e18_moment_relaxation.py`. The one convex route Corollary 7 does not cover by the
+`experiments/e21_moment_relaxation.py`. The one convex route Corollary 7 does not cover by the
 objective's shape, and the only one that needs no amplitude cap at all: lift the problem so that
 $\|Ac\|^2$ is carried by a matrix variable, impose the count by complementarity rather than by
 big-$M$, and relax. Tightness here means the share of the distance from the free least-squares
@@ -771,7 +771,7 @@ what moves coherence: tightness is **1.000** at coherence 0.062 and **0.24–0.4
 feasible point of the original problem and therefore certifies exactness in both directions rather
 than bounding it. Over the same sweep the exact optimum moves from 84% of the image energy to 10%:
 the relaxation is exact precisely where the dictionary explains nothing and near-useless where it
-explains most. A partial run over a finer width sweep, committed as `e18_legA_partial.txt` before
+explains most. A partial run over a finer width sweep, committed as `e21_legA_partial.txt` before
 the solver died, puts the coherent end lower still, at 0.08–0.30.
 
 Two qualifications, both against the experiment. Its paired rows, which vary coherence at matched
@@ -782,7 +782,7 @@ because the wider dictionaries are numerically singular, so it confirms exactnes
 and says nothing at the hard one. 15 of 16 checks pass; the one that fails is the margin between
 the contrast and the solver spread.
 
-**Where the coherence comes from, and what does not fix it.** `experiments/e21_atom_shape.py`.
+**Where the coherence comes from, and what does not fix it.** `experiments/e24_atom_shape.py`.
 Coherence drives every result above, so it is worth knowing what causes it. Three measurements on
 the $D=248$ dictionary. The pairs that are actually coherent — those above 0.9 — sit 1.13 pixels
 apart against 16.5 typical, are the **same size** to two decimals, and differ by 30° of
@@ -923,18 +923,18 @@ to the dual constraint $|\eta|\le1$ for tractability rather than to the count; i
 | Mass-constrained bound goes vacuous by $N=4$–8 | measured, `experiments/e3_absolute_bound.py` |
 | Big-$M$ node bound off by 5.7–8.9× | measured, `experiments/e8_branch_and_bound.py` |
 | Perspective relaxation root gap 64–86% | measured, `experiments/e9_perspective.py` |
-| Separable share of the quadratic is 0.15% at $\lambda_2=0$, 57.7% at $\lambda_2=1$ | computed, `experiments/e17_separable_mass.py`; a certified upper bound on the raw material, not on the resulting gap |
+| Separable share of the quadratic is 0.15% at $\lambda_2=0$, 57.7% at $\lambda_2=1$ | computed, `experiments/e20_separable_mass.py`; a certified upper bound on the raw material, not on the resulting gap |
 | Theorem 9 | proved above |
 | Coherence governs tightness and costs approximation power | measured, `results/e4_coherence.txt`, at the endpoints only; the sweep is not monotone and is less so on two of its three targets |
-| Big-$M$ node bound figures (5.7–8.9×, the 24.0 amplitude, 200,000 nodes) | **the raw output of `e8_branch_and_bound.py` is not committed.** The numbers are quoted from a run that left no artifact in this repository, which by the standard applied everywhere else here is not good enough. e19 corroborates the amplitude scale independently, on a different enumeration; the rest is uncorroborated until the run is repeated and its output committed |
+| Big-$M$ node bound figures (5.7–8.9×, the 24.0 amplitude, 200,000 nodes) | **the raw output of `e8_branch_and_bound.py` is not committed.** The numbers are quoted from a run that left no artifact in this repository, which by the standard applied everywhere else here is not good enough. e22 corroborates the amplitude scale independently, on a different enumeration; the rest is uncorroborated until the run is repeated and its output committed |
 | Certificate value not separable from chance on the restart population | measured, `experiments/e14_certifiable.py`; the bootstrap interval is the claim, not the point estimate |
 | Branch-and-bound solvers reaching $10^7$ variables | from search summaries; the sources were never read |
-| Shor / doubly-nonnegative moment relaxation: exact at coherence 0.06, 0.24–0.48 at 0.94 | measured, `experiments/e18_moment_relaxation.py`, 15/16 checks. Reported tightness is an upper bound, so the low values are the conclusive ones; the failing check is the margin between the contrast and the solver spread |
-| Coherence comes from equal-size near-coincident atoms at different orientations; removing the mean does not help; a localised negative surround packs 2.9× better | measured, `experiments/e21_atom_shape.py`, 2/3 checks. The failing check is this file's own pre-registered prediction, which said the binding pairs would be cross-scale and was wrong |
+| Shor / doubly-nonnegative moment relaxation: exact at coherence 0.06, 0.24–0.48 at 0.94 | measured, `experiments/e21_moment_relaxation.py`, 15/16 checks. Reported tightness is an upper bound, so the low values are the conclusive ones; the failing check is the margin between the contrast and the solver spread |
+| Coherence comes from equal-size near-coincident atoms at different orientations; removing the mean does not help; a localised negative surround packs 2.9× better | measured, `experiments/e24_atom_shape.py`, 2/3 checks. The failing check is this file's own pre-registered prediction, which said the binding pairs would be cross-scale and was wrong |
 | Moment hierarchies for the BLASSO target the dual constraint, not the count | from search summaries; not read |
-| Optima are separated, but the cap they force leaves the mass budget 1.45–2.27× slack | measured, `experiments/e19_optimum_separation.py` |
-| Theorem 10's programme is a QP on a grid, and recovers $\le1.6\%$ of the distance from the mass ball to the truth | measured, `experiments/e20_local_mass.py`, at the tightest admissible $\delta$ and $M$ and the widest valid ball radius. Big-$M$ recovers 0.0% on the same instances |
-| How much smaller the *continuum* separated hull is | open; e20 measures only the grid restriction |
+| Optima are separated, but the cap they force leaves the mass budget 1.45–2.27× slack | measured, `experiments/e22_optimum_separation.py` |
+| Theorem 10's programme is a QP on a grid, and recovers $\le1.6\%$ of the distance from the mass ball to the truth | measured, `experiments/e23_local_mass.py`, at the tightest admissible $\delta$ and $M$ and the widest valid ball radius. Big-$M$ recovers 0.0% on the same instances |
+| How much smaller the *continuum* separated hull is | open; e23 measures only the grid restriction |
 | Prior art for Theorem 10's construction | searching turned up the separation hypothesis only in its recovery role, not as a way of convexifying the count. Per M6 of the companion document a null search result is not novelty, and this row records a failed search, not a claim of priority |
-| Gap closes exactly at $N_0=3$–48 at fixed mass; Theorem 8's bound never binding | measured, `experiments/e16_fixed_mass.py`. $U$ is a search upper bound above $N=2$, so the gap is an upper bound; small values are conclusive, large ones may be the solver |
+| Gap closes exactly at $N_0=3$–48 at fixed mass; Theorem 8's bound never binding | measured, `experiments/e19_fixed_mass.py`. $U$ is a search upper bound above $N=2$, so the gap is an upper bound; small values are conclusive, large ones may be the solver |
 | Theorem 8's $N^{-1/2}$ rate itself | not isolated. The measured decay is dominated by the support-size mechanism, so these runs do not test the rate |
