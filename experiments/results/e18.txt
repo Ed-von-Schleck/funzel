@@ -1,0 +1,15 @@
+  3 images (2 photo crops, 1 cartoons), 0 rejected as too flat (std < 0.08)
+# E18 (U31): is the optimiser's restart floor just unfinished
+# optimisation? Section 10.16 showed it binds: no placement rule can
+# beat it, and it is the same size as the whole perturbation response.
+
+
+## Floor, perturbation response and quality against optimiser effort
+  N=36, quadtree init, three optimiser settings. Displacement is median / max over atoms, in pixels.
+          setting    PSNR   dPSNR  |grad|/loss    restart floor       30dB noise
+                          restart                  (same image)     (new encode)
+         adam4000  28.747  +0.344     1.38e+00     1.47 / 10.16     5.01 / 18.01   [263s]
+        adam16000  29.292  +0.139     4.38e-01     0.56 /  7.41     5.36 / 19.08   [1045s]
+       adam+lbfgs  28.838  +0.335     1.33e-01     1.12 / 12.77     2.83 / 34.20   [586s]
+
+# checks failed: none

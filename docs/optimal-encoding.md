@@ -85,6 +85,12 @@ optimal.
 | **The optimum is canonical — unique off-grid and stable** | **[V]** §10.10, §10.11 — 1 support in 2.5M within 1%; independent restarts agree to 0.01px |
 | Reaching it needs restarts; the grid actively misleads | **[V]** §10.11 — the grid optimum is 38–43% worse and refines into a basin 31% worse than the global one |
 | **But it is unreachable from $N\approx6$ up, and unrecognisable** | **[V]** §10.12 — 60 restarts give up to 60 distinct optima; the most-agreed solution is not the best in 7/8 rows, and costs 4–25% |
+| **A deterministic encoder costs nothing in quality** | **[V]** §10.14 — against a scale-tuned random baseline it scores +0.8/+0.9 dB, inside the baseline's own seed spread. Canonicity is free |
+| **But no encoder here is stable** | **[V]** §10.14 — 30dB noise moves the atoms 2.7–3.3 px on a 64px image, against 0.00 px for the grid optimum in §10.10 |
+| Quantisation cannot rescue it | **[V]** §10.15 — matching 3/4 of the centres costs 16.4 dB; the full atom code never matches above 13% |
+| The instability is not the optimum | **[V]** §10.15 — warm-started encodings sit at the 1.47 px restart floor while cold starts land at 5.01 px |
+| ~~The optimiser is the binding constraint~~ | **withdrawn — §10.17.** Lowering the restart floor 2.6× left the perturbation response unchanged; the two were never the same phenomenon |
+| **The instability is the basin structure, not any component** | **[V]** §10.16, §10.17 — a 30× more stable initialisation buys 18%, a 2.6× lower optimiser floor buys nothing, and quantisation costs 16 dB (§10.15) |
 | **No cheap property of a solution certifies it either** | **[V]** §10.13 — 12 features over 178 distinct local optima: the best reads 0.645 where a null control reads 0.363, and flagging every optimum means flagging 178 of 178 solutions |
 | On the grid at $N{=}3$, local search simply solves it | **[V]** §10.13 — 1-swap descent reaches the enumerated optimum on 40/40 images; only 2–5 local optima exist. Discretising buys a problem that is easy and wrong (§10.11) |
 | But the optimum is often *found* anyway | **[V]** §10.8 — greedy+swap attains the exhaustively verified optimum in 4/8 cells, and at $N{=}4$ matches enumeration over 153.8M supports |
@@ -529,8 +535,8 @@ normalization effect of §9.5.
 #### 9.1.1 Replicated, and the column that was missing (U18)
 
 **[V]** The table above is not reproducible — its parameters were never recorded (§9 preamble).
-So it was re-run on a fresh instance at parameters written down in full
-(`results/u18_e2.txt`: $n=128$, $K=4$, $u_{px}=4$, `n_restarts=2`, `seed=0`, every ratio verified
+So it was re-run on a fresh instance (`experiments/u18_rerun.py`) at parameters written down in
+full (`results/u18_e2.txt`: $n=128$, $K=4$, $u_{px}=4$, `n_restarts=2`, `seed=0`, every ratio verified
 in-frame by the new guard):
 
 | $r$ (widths) | 30 | 15 | 8 | 4 | 2 | 1 |
@@ -971,7 +977,7 @@ half price), scales to 64 splats on $64^2$ images, and refines both sides identi
 **[V] Refinement itself cuts error by 50–65%**, far more than any dictionary choice at any budget.
 
 **[A] So the honest claim is narrow:** structure buys a better *starting point* at small budgets,
-not a better answer. An earlier draft of this section claimed a 36–52% improvement from a mixed
+not a better answer (raw output `results/e4_mixed.txt`). An earlier draft of this section claimed a 36–52% improvement from a mixed
 dictionary; that was the splat-accounting error, and with correct accounting mixed and parabolic
 are level and both wash out. Withdrawn — Appendix A.
 
@@ -1050,7 +1056,8 @@ initialisation consistently and hurts greedy initialisation, which is already we
 gets dragged off it by the coarse stages.
 
 **[V] But the schedule above is nearly the worst one available, and that was not checked before
-concluding** (`e10_schedule_sweep.py`, U22, three targets × two budgets × two initialisations,
+concluding** (`e10_schedule_sweep.py`, raw output `results/e10.txt`, U22, three targets × two
+budgets × two initialisations,
 medians over seeds, handicap allocation throughout):
 
 | schedule $\sigma$ (px) | median vs direct | better | worse |
@@ -1504,6 +1511,289 @@ the honest statement is that **the certificate value maximized over a 248-atom d
 nothing — not that the exact supremum would fail. Testing the exact version would cost a
 Nelder-Mead refinement per solution and is the one clearly worthwhile follow-up here.
 
+### 10.14 A canonical encoder costs nothing in quality, and is not stable
+
+`experiments/e15_canonical_quality.py`, raw output `results/e15.txt`.
+
+§10.13 closed "know you have the global optimum". It did not close what the global optimum was
+wanted *for*. The motivation was that the optimum is a function of the image alone, hence
+reproducible and comparable across images — and **that needs determinism and stability, not
+optimality**. A deterministic encoder is reproducible by construction. So the question becomes
+whether it costs anything, measured against the recipe everyone actually uses: uniform-random
+placement followed by Adam on every parameter, which is GaussianImage's method without
+densification or pruning, reimplemented here rather than taken from a paper.
+
+**[V] Five arms on $64\times64$ images at 36 and 144 splats, PSNR after 4000 Adam steps**, three
+images, two seeds for the stochastic arms. 144 splats on $64^2$ is one atom per 28 pixels, the
+density published results work at, though the absolute scale is far below them.
+
+| budget | random | random-fine | lattice | lattice-fine | structure |
+|---|---|---|---|---|---|
+| 36 | 26.200 | 27.793 | 26.874 | 28.222 | **28.611** |
+| 144 | 27.380 | 31.917 | 28.519 | 31.445 | **32.815** |
+
+`lattice` is a regular grid of identical atoms — deterministic and completely *image-independent*.
+`structure` is deterministic and adaptive: a variance quadtree, one atom per cell, oriented along
+the edge direction from the cell's structure tensor. The `-fine` arms are the same two placements
+at a five-times-smaller initial atom size.
+
+**[V] The decomposition, and it is not what the first run appeared to show:**
+
+| | $N{=}36$ | $N{=}144$ |
+|---|---|---|
+| initial atom size, on random placement | **+1.593** | **+4.537** |
+| determinism, at the original atom size | +0.674 | +1.139 |
+| determinism, at the smaller atom size | +0.429 | **−0.472** |
+| adaptive placement, at matched atom size | +0.389 | +1.370 |
+| **structure vs. the scale-tuned baseline** | **+0.818** | **+0.898** |
+| the baseline's own seed-to-seed spread | 0.238 | 1.107 |
+
+**[A] The largest effect is a hyperparameter of the baseline.** Initial atom size is worth 1.6–4.5
+dB and has nothing to do with canonical encoding; it is a setting the random recipe adopts as
+easily as any other. An earlier version of this experiment omitted that control and would have
+reported adaptive placement as worth 5.4 dB. It is worth 1.4.
+
+**[A] Determinism itself is free, and that is the result that matters here.** Against a baseline
+tuned to the same atom size, the image-independent lattice scores +0.429 and −0.472 — a wash — and
+the adaptive encoder scores +0.818 and +0.898. **A canonical encoder is not meaningfully worse
+than the standard recipe. At these budgets it is very slightly better.** Two caveats keep this from
+being stronger. At $N=144$ the +0.898 advantage is *smaller than the baseline's own 1.107 dB
+seed-to-seed spread*, so with two seeds it is not separated from noise. And it shrinks with
+optimisation: structure leads the tuned baseline by 1.470 dB at 1000 steps and 0.898 dB at 4000, so
+part of it is convergence speed rather than final quality, and at some larger step count it may be
+nil. Nil would still answer the question asked.
+
+**[V] Stability is where it fails.** Determinism gives identical output for identical input, which
+is trivial. A canonical representation needs more: a small change in the image must produce a small
+change in the atoms, or two similar images cannot be compared. Re-encoding perturbed images at
+$N=36$ and matching atoms:
+
+| perturbation | random | lattice | structure |
+|---|---|---|---|
+| 30dB noise | 2.66 px | 3.30 px | 2.94 px |
+| 1px shift (undone before matching) | 5.13 px | 5.78 px | **2.58 px** |
+| intensity ×1.01 | 0.37 px | 0.77 px | 0.71 px |
+
+**[A] Three pixels of movement under 30dB noise, on a 64-pixel image, is not a stable map.** Mean
+atom spacing at $N=36$ is about 10.7 px, so the atoms move roughly a quarter of the way to their
+neighbours in response to noise that is barely visible. Set against §10.10, where the *grid*
+optimum was unmoved to 0.00 px by the same perturbation, the cause is visible: the grid optimum is
+a discrete argmin, and quantisation is what made it stable. A continuous local optimum reached by
+Adam has no such quantisation and inherits the optimiser's path dependence — the same instability
+§10.12 measured as 16 to 60 distinct optima per image. The adaptive encoder is the best of the
+three under a shift, at half the displacement, and the only one whose PSNR does not degrade under
+perturbation, but 2.58 px is still not small.
+
+**[A] So the answer splits.** On quality, canonicity is free: this is the first result in this
+document that says a reproducible encoder costs nothing to have. On stability it fails, and
+stability is the half that "comparable across images" actually needs.
+
+**[A] Scope.** $64\times64$, two budgets, three images, two seeds, one optimiser, 4000 steps, no
+densification or pruning. The baseline is a reimplementation and no claim is made about matching
+published numbers. The seed count is the weakest part and is what U28 asks for.
+
+### 10.15 Quantisation does not buy stability; the initialisation is the culprit
+
+`experiments/e16_quantised_stability.py`, raw output `results/e16.txt`.
+
+§10.14 left the canonical encoder free on quality and unstable under perturbation. §10.10 measured
+the enumerated *grid* optimum as completely unmoved by the same perturbation — 0.00px under 30dB
+noise. The difference between them is quantisation: a discrete argmin cannot move a little. So snap
+the converged continuous atoms onto a grid, and two nearby images should produce the same code. The
+question is what that costs.
+
+**[V] It costs far more than it buys.** Snapping centres onto a grid of step $q$, refitting
+amplitudes, and measuring both the PSNR paid and the fraction of atoms landing on identical cells
+for an image and its 30dB-noise version:
+
+| $q$ (px) | $N{=}36$: PSNR cost | code match | $N{=}144$: PSNR cost | code match |
+|---|---|---|---|---|
+| 0.25 | −0.10 | 0.01 | −0.93 | 0.04 |
+| 1.0 | −1.39 | 0.07 | −6.36 | 0.17 |
+| 2.0 | −3.78 | 0.17 | −10.11 | 0.31 |
+| 4.0 | −7.88 | 0.32 | −14.23 | 0.53 |
+| 8.0 | −9.06 | 0.54 | −16.42 | 0.76 |
+
+At $N=144$, matching three quarters of the centres costs **16.4 dB**. At the other end, a
+quantisation cheap enough to be free (0.25px, −0.93 dB) matches 4% of them. There is no useful
+point on this curve.
+
+**[A] And there was never going to be, for a geometric reason worth stating.** An atom displaced by
+$d$ on a grid of step $q$ keeps its cell only if the displacement does not cross a boundary, which
+for a uniformly placed atom happens with probability about $(1-d/q)^2$ in two dimensions. With
+$d\approx3$px measured in §10.14, $q=8$ predicts about 39% retention against 54% observed — the
+right order. Getting retention near 1 needs $q\gg d$, and the PSNR cost grows with $q$ throughout.
+The two requirements move in opposite directions, which is the same shape as §10.9's ridge
+trade-off and has the same conclusion.
+
+**[V] The full code is worse still.** A discrete representation needs scales and orientations
+quantised too, not just centres. Quantising the whole atom to an integer tuple — centre cell, axis
+lengths on a 1.25 ratio ladder, orientation in 8 sectors — the match never exceeds **0.08** at
+$N=36$ or **0.13** at $N=144$, at any $q$. Centres are the *most* stable part of the encoding.
+
+**[V] Part B locates the instability, and this is the useful half.** The encoder is deterministic,
+so the movement comes either from the quadtree's split decisions flipping under the perturbation,
+or from the optimum itself moving. Re-encoding the perturbed image starting from the *clean*
+image's converged solution separates them, read against a floor row that re-runs on the unperturbed
+image:
+
+| perturbation | cold start | warm start | interpretation |
+|---|---|---|---|
+| none (floor) | 0.00 px | 1.47 px | the encoder is deterministic; Adam does not sit still when restarted |
+| 30dB noise | 5.01 px | **1.90 px** | at the floor |
+| 1px shift | 2.96 px | **1.84 px** | at the floor |
+| ×1.01 scale | 0.35 px | 1.58 px | already stable cold |
+
+**[A] Warm-started encodings sit at the restart floor.** The local optimum near the clean solution
+survives the perturbation and can be re-found; a cold start lands 3.4× further away because the
+initialisation changed. **So the instability is in the initialisation and the optimisation path,
+not in the location of the optimum.** That is a considerably more hopeful diagnosis than the
+alternative, and it points at a specific culprit: the quadtree makes *discrete* split decisions,
+and a decision that flips under imperceptible noise moves an atom a long way. A placement rule
+that varies continuously with the image would not have that failure mode. U30.
+
+**[A] A byproduct that qualifies §10.14 and this section both.** The floor row exists because
+re-running Adam from its own converged point moves the solution 1.47px — and *improves* PSNR every
+time, by 0.28 to 0.46 dB across three images. Four thousand steps is not convergence. Some part of
+every displacement reported in §10.14 and here is therefore continued optimisation rather than
+response to the perturbation, which makes these stability numbers upper bounds.
+
+**[A] Scope.** $64\times64$, three images, $N=36$ and 144, one optimiser, one quantiser design. The
+warm start is a diagnostic and not a proposal: an encoder that needs the unperturbed image's
+solution in order to encode the perturbed one is not an encoder.
+
+### 10.16 The initialisation can be fixed; it is not what limits stability
+
+`experiments/e17_continuous_placement.py`, raw output `results/e17.txt`.
+
+§10.15 traced the instability to the initialisation: the variance quadtree takes an argmax over a
+list of cells at every step, and a flip near the top changes every split that follows. This replaces
+it with two placement rules that have no such decision — **softgrid**, where each atom sits at the
+density-weighted centroid of a fixed Gaussian window, and **lloyd**, Lloyd's algorithm on the same
+density with hard Voronoi cells. All three arms are rescaled to the same median atom size, since
+§10.14 found size to be the largest single effect on quality.
+
+**[V] At the level of the initialisation, the diagnosis is confirmed and the fix works.**
+Displacement of the *initialisation alone*, before any optimisation, under 30dB noise, as median /
+max over atoms:
+
+| $N$ | structure | softgrid | lloyd |
+|---|---|---|---|
+| 36 | 0.00 / 0.00 | 0.28 / 0.53 | 0.17 / 1.28 |
+| 144 | 0.00 / **34.93** | 0.12 / **0.49** | 0.03 / **1.20** |
+
+**[A] The median is useless here and nearly caused a false conclusion.** At $N=144$ the quadtree's
+median displacement is 0.00 px — half its atoms do not move at all — while at least one atom crosses
+**more than half the image**. That is a flipped split, exactly the predicted failure, and a median
+over 36 or 144 atoms cannot see it. Reported on the median alone, this table would have said the
+quadtree initialisation is perfectly stable and §10.15's diagnosis was wrong. The continuous rules
+cut the worst case from 35 px to about 1 px, a factor of thirty.
+
+**[V] After optimisation, almost none of that survives.** At $N=36$, 4000 Adam steps, each arm read
+against **its own** restart floor:
+
+| init | restart floor | 30dB noise | 1px shift | ×1.01 | noise ÷ floor |
+|---|---|---|---|---|---|
+| structure | 1.47 px | 5.01 px | 2.96 px | 0.35 px | 3.4× |
+| softgrid | 2.52 px | 4.37 px | 4.41 px | 0.16 px | 1.7× |
+| lloyd | 3.22 px | 4.08 px | 3.96 px | 2.07 px | **1.3×** |
+
+A thirtyfold improvement in the initialisation buys **18%** in the converged encoding, 5.01 px down
+to 4.08. And the reason is in the floor column: the continuous arms have *higher* floors, 2.52 and
+3.22 px against 1.47. Measured as excess over each arm's own floor the fix works well — lloyd's
+response to noise is only 1.3× what re-running the optimiser does by itself — but that is a
+statement about attribution, not about the encoder. In absolute terms the atoms still move four
+pixels.
+
+**[A] So the limit is the optimiser, not the initialisation.** The restart floor is the distance
+Adam moves a converged solution when simply run again on unchanged input, and at 1.5–3.2 px it is
+the same order as the entire perturbation response. No initialisation can produce a stable encoder
+while the optimiser is that irreproducible. This revises §10.15, which named the initialisation and
+the path together: the initialisation half is now fixed and it was the smaller half.
+
+**[V] And it costs quality.** PSNR at $N=144$: structure 35.361, lloyd 34.033, softgrid 33.485. The
+continuous rules give up **1.3–1.9 dB**, which is more than the +0.9 dB §10.14 measured for the
+deterministic encoder over a scale-tuned random baseline. **[A]** Note these are not comparable with
+§10.14's numbers in absolute terms — this experiment refits amplitudes by least squares after Adam,
+which §10.16 does throughout and §10.14 did not — but the comparison *between arms* here is matched.
+
+**[A] The trade is therefore bad on both axes**: 18% less movement for 1.3–1.9 dB. The idea is not
+refuted, though — what it establishes is that the placement rule is no longer the binding
+constraint, and that the next thing to fix is the optimiser's own reproducibility. U31.
+
+**[A] One arm was written and dropped.** A fully continuous *iterated* soft assignment collapses:
+coincident atoms are a fixed point of any soft update, so the atoms merge, 0.08 px between the
+closest pair at $N=144$ against a 5.33 px lattice spacing. Normalising responsibilities across atoms
+halves it and no more. Full continuity is not the right target by itself — `lloyd` contains an
+argmin and is the best-behaved arm here, because a flipped Voronoi boundary moves a sliver of area
+and the centroids shift infinitesimally, whereas a flipped quadtree argmax splits a different cell
+and changes everything after it.
+
+**[A] Scope.** $64\times64$, three images, $N=36$ for stability and 144 for quality, 4000 Adam steps,
+one density and one blur setting. The shift column is weak evidence for every arm: all three anchor
+to a fixed lattice, so none tracks a translation and the median reads ~1 px by construction.
+
+### 10.17 The floor falls and stability does not follow — §10.16's diagnosis was wrong
+
+`experiments/e18_convergence_floor.py`, raw output `results/e18.txt`.
+
+§10.16 concluded that the optimiser's restart floor was the binding constraint on a canonical
+encoder, on the grounds that it was the same order as the whole perturbation response. That
+inference is testable by lowering the floor, and it is wrong.
+
+**[V] Three optimiser settings on the same deterministic encoder**, $N=36$, displacement as
+median / max over atoms:
+
+| setting | $\lvert g\rvert/\text{loss}$ | restart floor | 30dB noise | PSNR | ΔPSNR on restart |
+|---|---|---|---|---|---|
+| 4000 Adam steps | 1.38 | 1.47 / 10.16 | 5.01 / 18.01 | 28.747 | +0.344 |
+| 16000 Adam steps | 0.438 | **0.56** / 7.41 | **5.36** / 19.08 | 29.292 | +0.139 |
+| 4000 Adam + L-BFGS | **0.133** | 1.12 / 12.77 | 2.83 / **34.20** | 28.838 | +0.335 |
+
+**[V] The floor does fall.** Quadrupling the Adam steps makes the solution three times more
+stationary and cuts the restart floor from 1.47 px to 0.56 px, and adding an L-BFGS polish reaches a
+point ten times more stationary than the incumbent. So the floor *was* unfinished optimisation, as
+§10.15 suspected.
+
+**[V] The perturbation response does not follow it.** At 16000 steps the floor is 2.6× smaller and
+the response to 30dB noise is 5.36 px against 5.01 — unchanged, if anything slightly worse. Across a
+tenfold range of stationarity the response sits between 2.8 and 5.4 px. The ratio of response to
+floor goes 3.4×, **9.6×**, 2.5×: at the best-converged Adam setting the perturbation moves the atoms
+nearly ten times further than re-running the optimiser does, so the two quantities are not the same
+phenomenon and the floor never bounded the response.
+
+**[A] So §10.16's claim that "the optimiser is the binding constraint" is withdrawn.** It was an
+inference from two numbers being the same size, and the experiment that varied one of them shows
+they are unrelated. Logged in Appendix A.
+
+**[A] What is left is the only remaining candidate, and it is not a component.** The initialisation
+is not the constraint (§10.16: a thirtyfold more stable init buys 18%). The optimiser's
+reproducibility is not the constraint (this section: a 2.6× lower floor buys nothing). A nearby
+optimum does exist for the perturbed image (§10.15: warm-starting finds it and stays at the floor).
+Putting those together, the encoder starts from nearly the same place, could reach a nearby answer,
+and does not — so what differs is the **trajectory**, and what makes trajectories diverge is that
+the landscape's basins are finely interleaved. §10.12 measured 16 to 60 distinct optima per image at
+$N=3$ alone. An imperceptible change to the loss surface moves a basin boundary past the trajectory
+and it ends somewhere else.
+
+**[A] That is a discontinuity in the problem, not a defect of a method.** The map from image to
+encoding is genuinely discontinuous wherever two basins exchange rank, and no choice of
+initialisation, optimiser, or quantisation removes it — the first two are measured here and in
+§10.16, the third in §10.15. A canonical encoder in the sense this strand set out to build would
+have to select a basin by a rule that is itself stable, which is a different problem from anything
+attempted here.
+
+**[A] One number cuts the other way and should not be oversold.** The L-BFGS polish has the *lowest*
+median response, 2.83 px, and the *worst* maximum, 34.20 px. It moves most atoms less and a few much
+further. With three images that is one or two atoms, and it is not evidence of anything by itself —
+but it is the only setting whose median dropped, and if the tail were understood it would be the
+place to look. U32.
+
+**[A] Scope, and a caveat on the whole strand.** $64\times64$, three images, $N=36$, one
+initialisation, one learning rate. Note also that even after L-BFGS the restart still improves PSNR
+by 0.335 dB, so none of these settings is actually at a stationary point — "converged" here means
+ten times more stationary than the incumbent, not converged.
+
 ## 11. Open questions, and what would settle each
 
 | | question | what would settle it | cost |
@@ -1521,6 +1811,11 @@ Nelder-Mead refinement per solution and is the one clearly worthwhile follow-up 
 | ~~U24~~ | ~~Does the restart-agreement hit rate survive larger $N$?~~ | **Resolved, negatively — §10.12.** No. Distinct solutions in 60 restarts grow 16 → 60 across $N=3..8$; at $N=8$ on ascent every restart found its own optimum. The most-agreed solution is not the best in 7/8 rows and costs 4–25% in error, so agreement is not merely unavailable but actively misleading | done |
 | **U27** | Does the *exact* certificate value behave differently from §10.13's grid approximation? `cos_next` maximizes $|\eta(\theta)|$ over 248 atoms; §6's quantity is a supremum over continuous $\theta$ | Recompute `cos_next` with the shape-bank plus Nelder-Mead refinement §9 already uses, on the same 178 solutions, and rescore. The one follow-up §10.13's negative result actually invites | days |
 | ~~U25~~ | ~~Is *any* practically computable quantity correlated with global optimality?~~ | **Resolved, negatively — §10.13.** Twelve dimensionless features over 178 distinct local optima on 12 images: the best reads pooled AUC 0.645 where an information-free null control reads 0.363, the $\lambda=0$ certificate value reads 0.560, and the held-out winner reads 0.772 / 0.533 / 0.710 across three image sets. A logistic regression over all twelve reaches 0.751 held out — a weak real signal — but flagging every optimum still requires flagging 178 of 178 solutions, and 146 of 146 on a fresh set | done |
+| **U28** | Is §10.14's +0.9 dB for adaptive placement real, or seed noise? At $N{=}144$ it is smaller than the baseline's own 1.107 dB spread over two seeds, and it shrinks from 1.470 dB at 1000 steps to 0.898 at 4000 | Re-run §10.14's quality leg at 8 seeds and a third checkpoint at 16000 steps, on 8 images. Cheap, and it decides whether the deterministic encoder is *better* or merely *equal* — the second still answers the question that motivated it | days |
+| **U32** | Why does the L-BFGS polish have the lowest median perturbation response (2.83 px) and the worst maximum (34.20 px)? It is the only setting whose median fell | Identify the atoms in the tail and check whether they are the low-amplitude ones a polish is free to move; if so, a response weighted by atom energy may be the honest metric, and every displacement number in §10.14–§10.17 should be re-read that way | days |
+| ~~U31~~ | ~~Can the optimiser be made reproducible?~~ §10.16 shows its restart floor, 1.5–3.2 px, is the same order as the whole perturbation response, so no placement rule can beat it | Run to actual convergence rather than 4000 steps — §10.15 showed re-running still improves PSNR by 0.28–0.46 dB — and re-measure the floor; then test a deterministic second-order polish (L-BFGS to a tight tolerance) which has no momentum state to restart. **Resolved, negatively — §10.17.** The floor falls, 1.47 px to 0.56 px at four times the steps, and stability does not follow: the 30dB response is 5.36 px against 5.01. Across a tenfold range of stationarity the response stays between 2.8 and 5.4 px | done |
+| ~~U30~~ | ~~Would a *continuously varying* placement rule be stable?~~ §10.15 shows the instability is in the initialisation, and the quadtree's split decisions are discrete — one flip under imperceptible noise moves an atom far | Replace the quadtree with a placement that varies continuously with the image (weighted centroids of a fixed soft partition, or Lloyd iterations on an image-derived density), **Resolved — §10.16.** The initialisation half is fixed: a soft-window or Lloyd placement cuts the initialisation's worst-case displacement from 34.93 px to 0.49–1.20 px. It buys only 18% in the converged encoding and costs 1.3–1.9 dB, because the optimiser's own restart floor dominates. Became U31 | done |
+| ~~U29~~ | ~~Can quantisation restore stability?~~ §10.14 shows continuous optimisation is not: noise moves atoms 2.7–3.3 px where the grid optimum moved 0.00. Quantisation is the visible cause | Test whether snapping the converged atoms to a fine grid restores stability without costing PSNR, and whether stability improves when the perturbed image is encoded from the *unperturbed* solution as a warm start. **Resolved, negatively — §10.15.** Snapping to a grid buys code agreement only at $q\gg$ the displacement, which costs 9–16 dB. The warm-start half of the question is answered positively and became U30 | done |
 | **U26** | Does the grid's tractability at $N{=}3$ (§10.13: local search solves 40/40) survive larger $N$, and can a *sequence* of grids beat one? The grid is easy and wrong; the continuous problem is right and hard | Re-run §10.13's descent leg at $N=4,5$ where enumeration is still affordable; then test grid-refinement — solve on a coarse grid, refine the dictionary around the solution, repeat — against continuous restarts at matched cost | days |
 | ~~U22~~ | ~~Does §10.7's verdict on frequency continuation depend on the blur schedule?~~ | **Resolved — yes, §10.7.** The schedule used was among the worst of five swept. A mild $[1,0]$ schedule gives −2.87% median, better in 9/12 cells, against +0.82% for the one originally used; the trend is monotone in schedule aggressiveness. The gain is small and requires the handicap allocation, so continuation is still not a route to the optimum, but the original verdict was too strong | done |
 | ~~U22-old~~ | ~~superseded~~ A known-answer test shows continuation losing a handed-in optimum by 4e-4% to 27%, erratically across schedules and instances, so the single schedule §10.7 used may not be representative | Re-run §10.7 sweeping the schedule (number of stages, coarsest $\sigma$), medians over $\ge5$ seeds since single draws demonstrably reverse | days |
@@ -1602,6 +1897,18 @@ best error agree to 0.01px). §10.12 then shows it is operationally unreachable 
 atoms up — not findable, and not recognisable once found. §10.13 then closes the last route tested: no cheap property of a solution
 identifies it as optimal either, including the certificate value itself.
 
+**[A] §10.14–§10.17 then answer the question the whole strand was for, and the answer is half good.** A
+*deterministic* encoder — which is canonical by construction, without needing the global optimum —
+costs nothing in quality: against a scale-tuned random baseline it scores +0.8 to +0.9 dB, inside
+the baseline's own seed-to-seed spread. But it is not stable: 30dB of noise moves its atoms 2.7–3.3
+pixels on a 64-pixel image, where the grid optimum of §10.10 did not move at all. Reproducibility
+is free; stability is not, and stability is what comparing two images requires. Three attempts to
+buy it all failed, and each failed by a measured amount: quantising the atoms costs 16 dB for
+three-quarters code agreement (§10.15), a thirtyfold more stable placement rule buys 18% (§10.16),
+and making the optimiser 2.6× more reproducible buys nothing at all (§10.17). What is left is the
+landscape itself — the map from image to encoding is discontinuous wherever two of the 16–60 basins
+per image exchange rank, and no component substitution removes that.
+
 **[A] So the canonical-encoder programme, as a programme aimed at *knowing* you have the optimum,
 is closed by measurement rather than left open.** Every route this document could test has been
 tested and has failed: convexification over measures cannot encode $N$ at all (§2.2, by proof),
@@ -1621,10 +1928,15 @@ resting on hypothesis. **[A]** U15 deserves priority among them: it is the only 
 absolute statement at realistic $N$ that does not wait on U5, because §10.2's bound is valid
 whether or not any solver converged.
 
-**P5 — geometry-informed initialization.** Structure tensor or $|H|$ → density law →
-semi-discrete OT placement → Hessian-derived covariances. **[A]** Motivated by §7.2, not implied
-by it — those guarantees are for a surrogate objective. The incumbent to beat is matched-filter
-placement, not random initialization.
+**P5 — ~~geometry-informed initialization~~, largely done and the answer is known.** The proposal
+was: structure tensor or $|H|$ → density law → semi-discrete OT placement → Hessian-derived
+covariances. §10.14 built the structure-tensor half (a variance quadtree with edge-aligned
+covariances) and §10.16 built the density half (Lloyd's algorithm on a blurred gradient density,
+which is semi-discrete OT in the quantisation limit). Both work: at matched atom size the
+deterministic encoder beats a scale-tuned random baseline by +0.8 to +0.9 dB, inside its seed
+spread. Neither buys stability — §10.16 and §10.17 measure why. What remains untried from the
+original proposal is Hessian-derived rather than gradient-derived covariances, which is a small
+variation on a question now answered.
 
 **Reference points.** **[V]** `papers/tip2006.pdf` — matching pursuit over translated, rotated,
 anisotropically-scaled atoms, reported comparable to JPEG2000 and SPIHT at low rates.
@@ -1638,7 +1950,7 @@ for a recognizable natural image.
 
 ## Appendix A: methodology and error history
 
-Rules adopted after auditing this document's own reversals. Fourteen substantive claims were
+Rules adopted after auditing this document's own reversals. Fifteen substantive claims were
 stated here and later withdrawn. Two further errors (M8's second half, M9) were caught before
 reaching the document and are logged anyway, since neither would have been caught by prose
 review.
@@ -1656,6 +1968,52 @@ experiment: the most-agreed solution is not the best one in 7 of 8 rows. The ref
 partly *already in §10.11* — its part B had measured a wide, stable basin around a solution 31%
 worse than the global optimum, which is exactly a case of agreement and optimality pointing in
 opposite directions. Hence M12.
+
+### The verification apparatus
+
+**[V] Two standing suites, and per-experiment checks.** The reversals above are the ones that were
+caught by later evidence. The concern they raise is the ones that were not — a wrong number that
+happens to look plausible is never questioned. Everything below exists because of that.
+
+**`experiments/verify_primitives.py`, 10 checks on the code every result shares.** The rule is that
+a check must reach the same number by a *different route*, or assert an identity that holds
+analytically. Re-running the same function is not a check. So `atoms()` is recomputed through
+scipy's `multivariate_normal` density from $\Sigma=(M^\top M)^{-1}$ rather than through the internal
+Cholesky expression; `loss_grad`'s analytic gradient is compared against central finite differences;
+`_extend()` is compared against `itertools.combinations`; `omega()`'s water-filling closed form
+against brute-force minimisation over $z$; the low-pass filter against Parseval and against
+$\exp(-2\pi^2\sigma^2f^2)$ on pure cosines. **[A] The load-bearing one is the gradient**, at 2e-07
+against finite differences: every fit in this document is a descent on it, and a wrong gradient
+degrades results silently rather than crashing.
+
+**[A] One check is deliberately one-sided.** `sup_corr()` is asserted to be $\ge$ a dense
+brute-force scan rather than equal to it. Understating a supremum would make the certificate look
+satisfied when it is not, which is the error that would matter; overstating it only costs work.
+
+**`experiments/verify_experiments.py`, 14 known-answer checks** on E5, E6 and E7 — cases where the
+right answer is known in advance, so a wrong implementation cannot hide. On a target that is an
+exact sum of dictionary atoms, least squares on the true support must give exactly 0, refinement
+must hold it there, and continuation with a trivial schedule must reproduce direct fitting exactly.
+The wavelet coefficient-to-position mapping is checked against the basis functions it claims to
+index, exact to 0.00 px on Haar.
+
+**[V] Every experiment from E3 on also carries its own numbered checks** — 3 in E3, 1 in E9, 10 in
+E14, 4 each in E15, E16 and E17, 3 in E18 — asserting invariants specific to that experiment, and
+they run before its numbers are printed. They have caught: a support enumeration that let an atom be
+"replaced" by itself and so reported a zero margin for every support (E16 C14); a relaxation that
+exceeded the quantity it relaxes (E9 C5); and greedy scoring worse than its own starting point
+(E8, from masking with $-\infty$ and then taking an absolute value).
+
+**[A] The most useful thing the suites taught is about the tests, not the code.** On first run, four
+of five failures in `verify_experiments` were the test's own fault: a db4 boundary wraparound
+inventing a 26 px error, a 1-D array passed where 2-D was needed, and two tests demanding that OMP
+recover a support it never claims to recover. In `verify_primitives`, `ray_bound`'s check failed
+against a grid whose step was coarse relative to the quantity being measured. **A failing check is
+at least as likely to be a broken check as a broken primitive** — its value is in forcing the
+question, not in its verdict. **[A]** The corollary is that a check which cannot fail is worse than
+none: E17 initially asserted a property of a variant that was known to break, which would have put a
+permanent failure in the output and made the failure list useless for spotting real breakage. It is
+now logged as a measurement instead.
 
 **M1 — Instrument before interpretation.** *Cost of violating:* a solver bug (§7.1.1)
 invalidated two complete sweeps and three interpretations; the one-run sanity check that
@@ -1683,6 +2041,12 @@ dictionary atoms. The error was invisible in the table, because both columns sai
 **M11 — Compare a deterministic method against a distribution, not a draw.** *Cost:* a single
 random initialisation appeared to beat greedy placement; the median of five loses to it in every
 cell. Any control with a random seed needs several.
+**M14 — Two quantities being the same size is not evidence that one bounds the other.** *Cost:*
+§10.16 concluded from the restart floor (1.5–3.2 px) and the perturbation response (4–5 px) being
+comparable that the floor was the binding constraint, and named the optimiser as the thing to fix.
+§10.17 lowered the floor 2.6× and the response did not move. The test was cheap and available at the
+time the claim was made; the claim was made without it. This is the fifteenth withdrawn claim and
+the second (with M12) to be refuted by the very next experiment.
 **M13 — Test a discriminator against the population that actually occurs, not a convenient
 one.** *Worked, for once:* §10.13 scored every feature against three populations rather than one.
 `swap_margin` separates the optimum from the 200 lowest-error supports at AUC 0.998 — which would
