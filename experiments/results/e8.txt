@@ -1,0 +1,28 @@
+# E8: exact l0 branch-and-bound, certified global optimum over a box.
+
+# target=cartoon n=48 dict=parabolic D=248 coherence=0.9615 N=4
+  M=2.0x|c|max=  48.039  greedy+swap   6.6895  B&B   6.6895  improvement  +0.00%  gap <= 100.00%  [400000 nodes, 75s]
+
+# target=cartoon n=48 dict=parabolic D=248 coherence=0.9615 N=6
+  M=2.0x|c|max=  50.712  greedy+swap   5.1124  B&B   5.1124  improvement  +0.00%  gap <= 100.00%  [400000 nodes, 84s]
+
+# target=cartoon n=48 dict=parabolic D=248 coherence=0.9615 N=8
+  M=2.0x|c|max=  49.969  greedy+swap   3.9810  B&B   3.8858  improvement  +2.39%  gap <= 100.00%  [400000 nodes, 80s]
+
+# target=ascent n=48 dict=parabolic D=248 coherence=0.9615 N=4
+  M=2.0x|c|max=  34.861  greedy+swap  17.1857  B&B  17.1857  improvement  +0.00%  gap <= 100.00%  [400000 nodes, 77s]
+
+# target=ascent n=48 dict=parabolic D=248 coherence=0.9615 N=6
+  M=2.0x|c|max=  32.487  greedy+swap  14.3218  B&B  13.6665  improvement  +4.58%  gap <= 100.00%  [400000 nodes, 94s]
+
+# target=ascent n=48 dict=parabolic D=248 coherence=0.9615 N=8
+  M=2.0x|c|max=  31.884  greedy+swap  12.3253  B&B  12.0106  improvement  +2.55%  gap <= 100.00%  [400000 nodes, 94s]
+
+# target=face n=48 dict=parabolic D=248 coherence=0.9615 N=4
+  M=2.0x|c|max=  47.622  greedy+swap  12.0859  B&B  12.0356  improvement  +0.42%  gap <= 100.00%  [400000 nodes, 79s]
+
+# target=face n=48 dict=parabolic D=248 coherence=0.9615 N=6
+  M=2.0x|c|max=  45.382  greedy+swap  10.8254  B&B  10.6511  improvement  +1.61%  gap <= 100.00%  [400000 nodes, 93s]
+
+# target=face n=48 dict=parabolic D=248 coherence=0.9615 N=8
+  M=2.0x|c|max=  44.106  greedy+swap   9.9672  B&B   9.6637  improvement  +3.05%  gap <= 100.00%  [400000 nodes, 91s]

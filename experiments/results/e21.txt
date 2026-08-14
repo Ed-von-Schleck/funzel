@@ -1,0 +1,104 @@
+# Reduced rerun. The full-scale run died silently at 20 of ~64 rows;
+# its leg A survives in e21_legA_partial.txt and is not repeated in
+# full here. Leg A below keeps only the extreme widths, which is what
+# V14's contrast check needs; legs B and C run in full, since neither
+# ran at all before and they carry the controls.
+# E21: Shor / DNN moment relaxation of the cardinality-constrained
+# least-squares problem, on splatting dictionaries.
+# tightness = (bound - E_LS)/(E_opt - E_LS); 1 = exact, 0 = no better
+# than dropping the cardinality constraint. It OVER-states the exact
+# SDP's tightness, so low values are the conclusive ones.
+
+======================================================================================================================
+# LEG A -- coherence swept at FIXED size and FIXED positions.
+# 6x6=36 isotropic atoms on a grid; only the width changes.
+
+  target=cartoon
+  cartoon sig=1.6px          D= 36/ 36 coh=0.062 N=2 | E_opt= 84.03%  E_LS= 14.92%  l1sel= 84.39% | shor= 0.997  +rlt= 1.000 (den=0.6911) | sumz= 2.00 ev2/ev1=6.5e-08 repair=+1.5e-08 violR=1.5e-09 lmin=-1.8e-09 spread=0.000 RANK1 scs optimal        [33s]
+  cartoon sig=1.6px          D= 36/ 36 coh=0.062 N=3 | E_opt= 77.28%  E_LS= 14.92%  l1sel= 77.59% | shor= 0.998  +rlt= 1.000 (den=0.6236) | sumz= 3.00 ev2/ev1=1.5e-06 repair=+2.2e-07 violR=1.4e-08 lmin=-9.2e-09 spread=0.000 RANK1 clb optimal_inaccu [27s]
+  cartoon sig=8.5px          D= 36/ 35 coh=0.943 N=2 | E_opt= 10.45%  E_LS=  3.58%  l1sel= 15.54% | shor= 0.102  +rlt= 0.269 (den=0.0688) | sumz= 2.00 ev2/ev1=7.9e-01 repair=+1.0e-03 violR=1.8e-06 lmin=-1.2e-04 spread=0.160       scs optimal        [61s]
+  cartoon sig=8.5px          D= 36/ 35 coh=0.943 N=3 | E_opt=  8.77%  E_LS=  3.58%  l1sel= 14.22% | shor= 0.114  +rlt= 0.302 (den=0.0519) | sumz= 3.00 ev2/ev1=8.5e-01 repair=+3.7e-04 violR=8.2e-07 lmin=-7.6e-05 spread=0.182       scs optimal        [68s]
+
+  target=ascent
+  ascent sig=1.6px           D= 36/ 36 coh=0.062 N=2 | E_opt= 87.34%  E_LS= 20.53%  l1sel= 87.52% | shor= 0.999  +rlt= 1.000 (den=0.6681) | sumz= 2.00 ev2/ev1=8.6e-02 repair=+7.2e-09 violR=8.2e-10 lmin=-6.3e-10 spread=0.000       scs optimal_inaccu [30s]
+  ascent sig=1.6px           D= 36/ 36 coh=0.062 N=3 | E_opt= 82.22%  E_LS= 20.53%  l1sel= 82.30% | shor= 0.999  +rlt= 1.000 (den=0.6170) | sumz= 3.00 ev2/ev1=8.1e-02 repair=+2.1e-07 violR=1.8e-08 lmin=-1.3e-08 spread=0.000       clb optimal_inaccu [31s]
+  ascent sig=8.5px           D= 36/ 35 coh=0.943 N=2 | E_opt= 25.65%  E_LS=  9.20%  l1sel= 36.42% | shor= 0.143  +rlt= 0.236 (den=0.1644) | sumz= 2.00 ev2/ev1=8.1e-01 repair=+1.1e-03 violR=2.2e-06 lmin=-1.4e-04 spread=0.090       scs optimal        [62s]
+  ascent sig=8.5px           D= 36/ 35 coh=0.943 N=3 | E_opt= 16.49%  E_LS=  9.20%  l1sel= 29.66% | shor= 0.301  +rlt= 0.482 (den=0.0729) | sumz= 3.00 ev2/ev1=8.4e-01 repair=+5.9e-04 violR=1.1e-06 lmin=-1.0e-04 spread=0.175       scs optimal        [65s]
+
+======================================================================================================================
+# LEG B -- section 9's decorrelation ladder, each level paired with a
+# RANDOM subset of the same size, so coherence and size are separated.
+
+  target=cartoon  (full dictionary D=81 coh=0.952)
+  cartoon mu=0.8 decorrelated D= 18/ 18 coh=0.792 N=3 | E_opt= 27.90%  E_LS=  9.82%  l1sel= 31.67% | shor= 0.457  +rlt= 0.575 (den=0.1808) | sumz= 3.00 ev2/ev1=4.8e-01 repair=+4.0e-07 violR=1.1e-08 lmin=-1.2e-08 spread=0.000       clb optimal_inaccu [2s]
+  cartoon mu=0.8 size-matched D= 18/ 18 coh=0.948 N=3 | E_opt= 17.33%  E_LS= 10.43%  l1sel= 17.33% | shor= 0.494  +rlt= 0.607 (den=0.0689) | sumz= 3.00 ev2/ev1=4.6e-01 repair=+1.9e-06 violR=4.0e-08 lmin=-4.0e-07 spread=0.000       scs optimal        [2s]
+  cartoon mu=0.6 decorrelated D= 12/ 12 coh=0.572 N=3 | E_opt= 26.22%  E_LS= 11.80%  l1sel= 32.79% | shor= 0.815  +rlt= 0.855 (den=0.1442) | sumz= 3.00 ev2/ev1=6.2e-01 repair=+2.6e-07 violR=3.6e-09 lmin=-3.4e-09 spread=0.000       scs optimal_inaccu [0s]
+  cartoon mu=0.6 size-matched D= 12/ 12 coh=0.952 N=3 | E_opt= 61.89%  E_LS= 51.44%  l1sel= 63.01% | shor= 0.567  +rlt= 0.652 (den=0.1045) | sumz= 3.00 ev2/ev1=5.5e-01 repair=+3.2e-08 violR=1.7e-09 lmin=-8.9e-10 spread=0.000       scs optimal        [0s]
+
+  target=ascent  (full dictionary D=81 coh=0.952)
+  ascent mu=0.8 decorrelated D= 18/ 18 coh=0.792 N=3 | E_opt= 47.99%  E_LS= 22.86%  l1sel= 47.99% | shor= 0.441  +rlt= 0.540 (den=0.2512) | sumz= 3.00 ev2/ev1=5.6e-01 repair=+1.6e-07 violR=4.9e-09 lmin=-2.4e-09 spread=0.000       scs optimal_inaccu [1s]
+  ascent mu=0.8 size-matched D= 18/ 18 coh=0.952 N=3 | E_opt= 59.21%  E_LS= 35.91%  l1sel= 60.72% | shor= 0.351  +rlt= 0.438 (den=0.2329) | sumz= 3.00 ev2/ev1=1.5e-01 repair=+8.1e-08 violR=2.8e-09 lmin=-2.3e-08 spread=0.000       scs optimal        [2s]
+  ascent mu=0.6 decorrelated D= 12/ 12 coh=0.572 N=3 | E_opt= 39.75%  E_LS= 23.65%  l1sel= 39.75% | shor= 0.866  +rlt= 0.916 (den=0.1609) | sumz= 3.00 ev2/ev1=2.6e-01 repair=+2.2e-08 violR=4.3e-10 lmin=-4.2e-10 spread=0.000       scs optimal        [0s]
+  ascent mu=0.6 size-matched D= 12/ 12 coh=0.952 N=3 | E_opt= 47.63%  E_LS= 33.34%  l1sel= 47.63% | shor= 0.552  +rlt= 0.650 (den=0.1429) | sumz= 3.00 ev2/ev1=3.4e-01 repair=+2.5e-07 violR=3.6e-09 lmin=-4.1e-09 spread=0.000       scs optimal_inaccu [1s]
+
+  e4 enumerator vs brute force at D=36, N=3: 8.714081461 vs 8.714081461 -> agree
+
+======================================================================================================================
+# LEG C -- same span, same size, coherence removed by orthonormalising.
+# E_LS is identical within a row pair by construction; only the basis
+# differs, so any change in tightness is coherence and nothing else.
+  leg C uses sig=1.6px, the widest width whose Gram is full rank
+  cartoon legC splat sig=1.6px D= 36/ 36 coh=0.062 N=2 | E_opt= 84.03%  E_LS= 14.92%  l1sel= 84.39% | shor= 0.997  +rlt= 1.000 (den=0.6911) | sumz= 2.00 ev2/ev1=6.5e-08 repair=+1.5e-08 violR=1.5e-09 lmin=-1.8e-09 spread=0.000 RANK1 scs optimal        [30s]
+  cartoon legC orthonormalised D= 36/ 36 coh=0.000 N=2 | E_opt= 86.04%  E_LS= 14.92%  l1sel= 86.04% | shor= 1.000  +rlt= 1.000 (den=0.7112) | sumz= 2.00 ev2/ev1=1.7e-07 repair=+6.4e-08 violR=6.1e-09 lmin=-1.2e-08 spread=0.000 RANK1 clb optimal_inaccu [21s]
+  cartoon legC splat sig=1.6px D= 36/ 36 coh=0.062 N=3 | E_opt= 77.28%  E_LS= 14.92%  l1sel= 77.59% | shor= 0.998  +rlt= 1.000 (den=0.6236) | sumz= 3.00 ev2/ev1=1.5e-06 repair=+2.2e-07 violR=1.4e-08 lmin=-9.2e-09 spread=0.000 RANK1 clb optimal_inaccu [26s]
+  cartoon legC orthonormalised D= 36/ 36 coh=0.000 N=3 | E_opt= 79.66%  E_LS= 14.92%  l1sel= 79.66% | shor= 1.000  +rlt= 1.000 (den=0.6474) | sumz= 3.00 ev2/ev1=1.1e-07 repair=+1.6e-07 violR=1.2e-08 lmin=-2.7e-08 spread=0.000 RANK1 clb optimal_inaccu [22s]
+  ascent legC splat sig=1.6px D= 36/ 36 coh=0.062 N=2 | E_opt= 87.34%  E_LS= 20.53%  l1sel= 87.52% | shor= 0.999  +rlt= 1.000 (den=0.6681) | sumz= 2.00 ev2/ev1=8.6e-02 repair=+7.2e-09 violR=8.2e-10 lmin=-6.3e-10 spread=0.000       scs optimal_inaccu [31s]
+  ascent legC orthonormalised D= 36/ 36 coh=0.000 N=2 | E_opt= 87.98%  E_LS= 20.53%  l1sel= 87.98% | shor= 1.000  +rlt= 1.000 (den=0.6746) | sumz= 2.00 ev2/ev1=1.0e-08 repair=+8.2e-08 violR=1.6e-08 lmin=-2.5e-08 spread=0.000 RANK1 clb optimal_inaccu [21s]
+  ascent legC splat sig=1.6px D= 36/ 36 coh=0.062 N=3 | E_opt= 82.22%  E_LS= 20.53%  l1sel= 82.30% | shor= 0.999  +rlt= 1.000 (den=0.6170) | sumz= 3.00 ev2/ev1=8.1e-02 repair=+2.1e-07 violR=1.8e-08 lmin=-1.3e-08 spread=0.000       clb optimal_inaccu [27s]
+  ascent legC orthonormalised D= 36/ 36 coh=0.000 N=3 | E_opt= 83.56%  E_LS= 20.53%  l1sel= 83.56% | shor= 1.000  +rlt= 1.000 (den=0.6303) | sumz= 3.00 ev2/ev1=1.1e-07 repair=+2.3e-08 violR=3.7e-09 lmin=-4.0e-09 spread=0.000 RANK1 scs optimal_inaccu [20s]
+
+======================================================================================================================
+# checks
+  ok   V1 no row's reported value materially exceeds the exact l0 optimum (largest excess 0.000% of the tightness denominator; a small excess is expected wherever the relaxation is exact)
+  ok   V2 bound >= unconstrained least squares on every row (<Gram,X> >= c'Gram c) (0 violations)
+  ok   V3 adding valid RLT cuts never lowers the reported value (0 violations; this is the check the first draft failed)
+  ok   V0 exact l0 optimum >= unconstrained least squares (own arithmetic) (0 violations)
+  ok   V4 returned points are feasible (max constraint violation small) (worst 6.84e-09)
+  ok   V5 the REPAIRED point is feasible (raw points are not, at the coherent end) (worst residual after repair 2.25e-06; worst raw minimum eigenvalue -1.36e-04)
+  ok   V5b the repair cannot change any conclusion (largest repair is 0.015% of the tightness denominator)
+  ok   V6 bound is non-increasing in N (a larger budget is a weaker constraint) (0 of 8 pairs violate)
+  ok   V7 no row's solver spread is large enough to make it garbage (24 rows cross-checked; largest disagreement 18.2% of the denominator. Both solvers return feasible points, so both over-state the SDP optimum and the larger is reported -- spread threatens a HIGH tightness, never a low one)
+  FAIL V14 leg A's contrast is far larger than the solver spread (tightness 1.000 at coherence 0.062 against 0.482 at 0.943: margin 0.518 versus spread 0.182)
+  ok   V9 the bound actually responds to N (strict decrease somewhere) (8 of 8 pairs strictly decrease)
+  ok   V10 leg C pairs share E_LS (the span really is held fixed) (0 pairs differ)
+  ok   V13 relaxation is EXACT on an orthonormal dictionary, as it must be (4 rows, worst tightness 1.000000). With Gram=I the problem decouples and X_jj >= c_j^2/z_j makes the SDP optimum 0.5||y||^2 - 0.5*sum_j z_j <g_j,y>^2, maximised by z=1 on the top N -- the true optimum. A miss here is the formulation or the solver, not the dictionary.
+  ok   V11 brute-force optimum agrees with e4's enumerator (ties these numbers to section 9's machinery)
+  ok   V12 tightness denominators are large enough to be meaningful (0 rows with E_opt-E_LS below 0.1% of 0.5||y||^2; tightness there is noise)
+  ok   V8 every solve returned a usable point (0 failures)
+
+  15/16 checks passed
+
+======================================================================================================================
+# leg B paired rows: does tightness follow coherence or size?
+  Reported tightness is an UPPER bound on the truth, so a LOW value
+  is conclusive and a high one is only a ceiling. Rows marked RANK1
+  returned a rank-one W, which is a genuine feasible point of the
+  original problem and therefore certifies exactness both ways.
+
+  label                         D   coh   E_opt%  tightness  spread  certified
+  cartoon mu=0.8 decorrelated   18  0.792   27.90%      0.575   0.000  ceiling only
+  cartoon mu=0.8 size-matched   18  0.948   17.33%      0.607   0.000  ceiling only
+  cartoon mu=0.6 decorrelated   12  0.572   26.22%      0.855   0.000  ceiling only
+  cartoon mu=0.6 size-matched   12  0.952   61.89%      0.652   0.000  ceiling only
+  ascent mu=0.8 decorrelated    18  0.792   47.99%      0.540   0.000  ceiling only
+  ascent mu=0.8 size-matched    18  0.952   59.21%      0.438   0.000  ceiling only
+  ascent mu=0.6 decorrelated    12  0.572   39.75%      0.916   0.000  ceiling only
+  ascent mu=0.6 size-matched    12  0.952   47.63%      0.650   0.000  ceiling only
+  cartoon legC splat sig=1.6px  36  0.062   84.03%      1.000   0.000  exact (rank one)
+  cartoon legC orthonormalised  36  0.000   86.04%      1.000   0.000  exact (rank one)
+  cartoon legC splat sig=1.6px  36  0.062   77.28%      1.000   0.000  exact (rank one)
+  cartoon legC orthonormalised  36  0.000   79.66%      1.000   0.000  exact (rank one)
+  ascent legC splat sig=1.6px   36  0.062   87.34%      1.000   0.000  ceiling only
+  ascent legC orthonormalised   36  0.000   87.98%      1.000   0.000  exact (rank one)
+  ascent legC splat sig=1.6px   36  0.062   82.22%      1.000   0.000  ceiling only
+  ascent legC orthonormalised   36  0.000   83.56%      1.000   0.000  exact (rank one)

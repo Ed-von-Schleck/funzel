@@ -1,0 +1,613 @@
+# E19: fixed-mass sweep for Theorem 8 of convexification-and-N.md
+# rho is HELD FIXED while N varies. Section 9's e3 lets it grow with
+# N, which is why that measurement cannot test the theorem.
+# Read the module docstring for what this can and cannot show; in
+# particular the fixed-rho comparison is NOT (P0).
+
+==============================================================================================
+# target=cartoon n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=99.4030  ||y||=14.0999
+# FIXED mass budget rho=10.5749 = 0.75*||y||
+# L(rho)=26.174446 (26.332% of 0.5||y||^2), certificate 2.79e-09
+# K=7 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1    33.43532    33.636%     7.26087    7.304%     205.019    206.3%   10.575     11.526  bind
+   2    27.59882    27.765%     1.42437    1.433%     133.390    134.2%   10.575     15.770  bind
+   3    26.42545    26.584%     0.25101    0.253%     104.724    105.4%   10.575     17.126  bind
+   4    26.27240    26.430%     0.09796    0.099%      88.531     89.1%   10.575     17.245  bind
+   6    26.18044    26.338%     0.00600    0.006%      70.191     70.6%   10.575     26.392  bind
+   8    26.17445    26.332%     0.00000    0.000%      59.706     60.1%   10.575     32.100  bind
+  12    26.17445    26.332%     0.00000    0.000%      47.702     48.0%   10.575    135.226  bind
+  16    26.17445    26.332%     0.00000    0.000%      40.771     41.0%   10.575     96.202  bind
+  24    26.17445    26.332%     0.00000    0.000%      32.766     33.0%   10.575    637.211  bind
+  32    26.17445    26.332%     0.00000    0.000%      28.106     28.3%   10.575   6276.127  bind
+  48    26.17445    26.332%     0.00000    0.000%      22.686     22.8%   10.575  20566.770  bind
+  64    26.17445    26.332%     0.00000    0.000%      19.512     19.6%   10.575   6524.394  bind
+
+  N0 = 8   (smallest swept budget whose certified gap is below 9.94e-05)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=4
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-1.42e-14)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=2.79e-09, L=26.174446, 0.5||y||^2=99.4030)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 33.435317 vs exhaustive 33.435317 -> search excess -1.421e-14 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 27.631009 vs exhaustive 27.598816 -> search excess 3.219e-02 = 2.26% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [72s] 7/7 checks passed
+
+==============================================================================================
+# target=cartoon n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=99.4030  ||y||=14.0999
+# FIXED mass budget rho=14.0999 = 1.0*||y||
+# L(rho)=15.769077 (15.864% of 0.5||y||^2), certificate 1.08e-06
+# K=11 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1    32.98341    33.182%    17.21433   17.318%     298.209    300.0%   11.526     11.526  -
+   2    19.24793    19.364%     3.47885    3.500%     190.279    191.4%   14.100     15.770  bind
+   3    16.73061    16.831%     0.96153    0.967%     147.915    148.8%   14.100     18.259  bind
+   4    16.07581    16.172%     0.30673    0.309%     124.254    125.0%   14.100     19.386  bind
+   6    15.77603    15.871%     0.00695    0.007%      97.729     98.3%   14.100     22.609  bind
+   8    15.76933    15.864%     0.00026    0.000%      82.714     83.2%   14.100     26.610  bind
+  12    15.76908    15.864%     0.00000    0.000%      65.674     66.1%   14.100     54.004  bind
+  16    15.76908    15.864%     0.00000    0.000%      55.914     56.3%   14.100    137.245  bind
+  24    15.76908    15.864%     0.00000    0.000%      44.723     45.0%   14.100    341.604  bind
+  32    15.76908    15.864%     0.00000    0.000%      38.251     38.5%   14.100   6451.785  bind
+  48    15.76908    15.864%     0.00000    0.000%      30.766     31.0%   14.100  17974.817  bind
+  64    15.76908    15.864%     0.00000    0.000%      26.404     26.6%   14.100   9276.907  bind
+
+  N0 = 12   (smallest swept budget whose certified gap is below 1.00e-04)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=6
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-3.19e-12)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=1.08e-06, L=15.769077, 0.5||y||^2=99.4030)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 32.983408 vs exhaustive 32.983408 -> search excess -1.421e-14 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 20.032614 vs exhaustive 19.247929 -> search excess 7.847e-01 = 22.56% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [78s] 7/7 checks passed
+
+==============================================================================================
+# target=cartoon n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=99.4030  ||y||=14.0999
+# FIXED mass budget rho=21.1498 = 1.5*||y||
+# L(rho)=5.510560 (5.544% of 0.5||y||^2), certificate 8.28e-06
+# K=18 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1    32.98341    33.182%    27.47286   27.638%     521.866    525.0%   11.526     11.526  -
+   2    17.89339    18.001%    12.38284   12.457%     322.694    324.6%   15.770     15.770  -
+   3    15.23269    15.324%     9.72214    9.781%     246.723    248.2%   18.186     18.186  -
+   4     7.94066     7.988%     2.43011    2.445%     205.019    206.3%   21.150     21.396  bind
+   6     6.20202     6.239%     0.69147    0.696%     159.019    160.0%   21.150     22.781  bind
+   8     5.80058     5.835%     0.29003    0.292%     133.390    134.2%   21.150     24.728  bind
+  12     5.53255     5.566%     0.02200    0.022%     104.724    105.4%   21.150     31.932  bind
+  16     5.51112     5.544%     0.00057    0.001%      88.531     89.1%   21.150     45.646  bind
+  24     5.51056     5.544%     0.00001    0.000%      70.191     70.6%   21.150    151.818  bind
+  32     5.51056     5.544%     0.00001    0.000%      59.706     60.1%   21.150   2680.841  bind
+  48     5.51056     5.544%     0.00001    0.000%      47.702     48.0%   21.150  10726.290  bind
+  64     5.51056     5.544%     0.00001    0.000%      40.771     41.0%   21.150  10925.376  bind
+
+  N0 = 24   (smallest swept budget whose certified gap is below 1.08e-04)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=16
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-6.26e-11)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=8.28e-06, L=5.510560, 0.5||y||^2=99.4030)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 32.983408 vs exhaustive 32.983408 -> search excess -1.421e-14 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 19.156404 vs exhaustive 17.893390 -> search excess 1.263e+00 = 10.20% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [171s] 7/7 checks passed
+
+==============================================================================================
+# target=cartoon n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=99.4030  ||y||=14.0999
+# FIXED mass budget rho=28.1997 = 2.0*||y||
+# L(rho)=2.548298 (2.564% of 0.5||y||^2), certificate 3.04e-06
+# K=44 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1    32.98341    33.182%    30.43511   30.618%     795.224    800.0%   11.526     11.526  -
+   2    17.89339    18.001%    15.34510   15.437%     479.960    482.8%   15.770     15.770  -
+   3    15.23269    15.324%    12.68440   12.761%     362.099    364.3%   18.186     18.186  -
+   4     7.93078     7.978%     5.38248    5.415%     298.209    300.0%   21.396     21.396  -
+   6     6.86283     6.904%     4.31454    4.340%     228.593    230.0%   28.200     29.977  bind
+   8     4.23415     4.260%     1.68585    1.696%     190.279    191.4%   24.993     24.993  -
+  12     3.51023     3.531%     0.96194    0.968%     147.915    148.8%   27.795     27.795  -
+  16     2.88776     2.905%     0.33947    0.342%     124.254    125.0%   28.200     28.744  bind
+  24     2.63972     2.656%     0.09143    0.092%      97.729     98.3%   28.200     33.005  bind
+  32     2.56982     2.585%     0.02153    0.022%      82.714     83.2%   28.200     41.623  bind
+  48     2.54830     2.564%     0.00000    0.000%      65.674     66.1%   28.200     81.857  bind
+  64     2.54830     2.564%     0.00000    0.000%      55.914     56.3%   28.200   1912.891  bind
+
+  N0 = 48   (smallest swept budget whose certified gap is below 1.02e-04)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=24
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-5.97e-11)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=3.04e-06, L=2.548298, 0.5||y||^2=99.4030)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 32.983408 vs exhaustive 32.983408 -> search excess -1.421e-14 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 19.156404 vs exhaustive 17.893390 -> search excess 1.263e+00 = 8.23% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [709s] 7/7 checks passed
+
+==============================================================================================
+# target=face n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=138.7728  ||y||=16.6597
+# FIXED mass budget rho=12.4948 = 0.75*||y||
+# L(rho)=47.442461 (34.187% of 0.5||y||^2), certificate 4.42e-07
+# K=11 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1    66.83712    48.163%    19.39466   13.976%     286.219    206.3%   11.995     11.995  -
+   2    52.47147    37.811%     5.02901    3.624%     186.221    134.2%   12.495     17.804  bind
+   3    48.14066    34.690%     0.69820    0.503%     146.201    105.4%   12.495     20.476  bind
+   4    47.61490    34.311%     0.17244    0.124%     123.595     89.1%   12.495     21.982  bind
+   6    47.47384    34.210%     0.03138    0.023%      97.991     70.6%   12.495     42.551  bind
+   8    47.45897    34.199%     0.01651    0.012%      83.353     60.1%   12.495     71.621  bind
+  12    47.44246    34.187%     0.00000    0.000%      66.595     48.0%   12.495     75.049  bind
+  16    47.44246    34.187%     0.00000    0.000%      56.919     41.0%   12.495    195.944  bind
+  24    47.44246    34.187%     0.00000    0.000%      45.743     33.0%   12.495   1720.135  bind
+  32    47.44246    34.187%     0.00000    0.000%      39.237     28.3%   12.495   2348.382  bind
+  48    47.44246    34.187%     0.00000    0.000%      31.671     22.8%   12.495   4193.310  bind
+  64    47.44246    34.187%     0.00000    0.000%      27.240     19.6%   12.495   5943.132  bind
+
+  N0 = 12   (smallest swept budget whose certified gap is below 1.39e-04)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=4
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-3.41e-13)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=4.42e-07, L=47.442461, 0.5||y||^2=138.7728)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 66.837122 vs exhaustive 66.837122 -> search excess -1.421e-14 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 52.973086 vs exhaustive 52.471472 -> search excess 5.016e-01 = 9.97% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [80s] 7/7 checks passed
+
+==============================================================================================
+# target=face n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=138.7728  ||y||=16.6597
+# FIXED mass budget rho=16.6597 = 1.0*||y||
+# L(rho)=32.528820 (23.440% of 0.5||y||^2), certificate 4.40e-06
+# K=12 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1    66.83712    48.163%    34.30831   24.723%     416.318    300.0%   11.995     11.995  -
+   2    45.08189    32.486%    12.55307    9.046%     265.641    191.4%   16.660     17.804  bind
+   3    34.01573    24.512%     1.48692    1.071%     206.499    148.8%   16.660     23.150  bind
+   4    33.38404    24.057%     0.85522    0.616%     173.466    125.0%   16.660     23.945  bind
+   6    32.63166    23.514%     0.10284    0.074%     136.436     98.3%   16.660     25.119  bind
+   8    32.55200    23.457%     0.02318    0.017%     115.474     83.2%   16.660     27.033  bind
+  12    32.52882    23.440%     0.00000    0.000%      91.685     66.1%   16.660     75.886  bind
+  16    32.52882    23.440%     0.00000    0.000%      78.060     56.2%   16.660    186.733  bind
+  24    32.52882    23.440%     0.00000    0.000%      62.436     45.0%   16.660   2320.315  bind
+  32    32.52882    23.440%     0.00000    0.000%      53.400     38.5%   16.660   2347.799  bind
+  48    32.52882    23.440%     0.00000    0.000%      42.951     31.0%   16.660   3893.066  bind
+  64    32.52882    23.440%     0.00000    0.000%      36.862     26.6%   16.660   5804.076  bind
+
+  N0 = 12   (smallest swept budget whose certified gap is below 1.43e-04)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=6
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-3.23e-11)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=4.40e-06, L=32.528820, 0.5||y||^2=138.7728)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 66.837122 vs exhaustive 66.837122 -> search excess -1.421e-14 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 45.081890 vs exhaustive 45.081890 -> search excess 0.000e+00 = 0.00% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [65s] 7/7 checks passed
+
+==============================================================================================
+# target=face n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=138.7728  ||y||=16.6597
+# FIXED mass budget rho=24.9896 = 1.5*||y||
+# L(rho)=16.524698 (11.908% of 0.5||y||^2), certificate 4.35e-06
+# K=22 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1    66.83712    48.163%    50.31243   36.255%     728.557    525.0%   11.995     11.995  -
+   2    44.52762    32.087%    28.00292   20.179%     450.501    324.6%   17.804     17.804  -
+   3    27.43425    19.769%    10.90955    7.861%     344.441    248.2%   22.900     22.900  -
+   4    21.03390    15.157%     4.50920    3.249%     286.219    206.3%   24.990     25.527  bind
+   6    18.86829    13.597%     2.34359    1.689%     222.001    160.0%   24.990     26.713  bind
+   8    17.47164    12.590%     0.94695    0.682%     186.221    134.2%   24.990     28.877  bind
+  12    16.66207    12.007%     0.13738    0.099%     146.201    105.4%   24.990     32.151  bind
+  16    16.53927    11.918%     0.01458    0.011%     123.595     89.1%   24.990     50.646  bind
+  24    16.52470    11.908%     0.00000    0.000%      97.991     70.6%   24.990     85.937  bind
+  32    16.52470    11.908%     0.00000    0.000%      83.353     60.1%   24.990   1154.491  bind
+  48    16.52470    11.908%     0.00000    0.000%      66.595     48.0%   24.990   6552.234  bind
+  64    16.52470    11.908%     0.00000    0.000%      56.919     41.0%   24.990   5081.520  bind
+
+  N0 = 24   (smallest swept budget whose certified gap is below 1.43e-04)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=16
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-3.73e-11)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=4.35e-06, L=16.524698, 0.5||y||^2=138.7728)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 66.837122 vs exhaustive 66.837122 -> search excess -1.421e-14 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 44.697323 vs exhaustive 44.527615 -> search excess 1.697e-01 = 0.61% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [124s] 7/7 checks passed
+
+==============================================================================================
+# target=face n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=138.7728  ||y||=16.6597
+# FIXED mass budget rho=33.3194 = 2.0*||y||
+# L(rho)=10.223841 (7.367% of 0.5||y||^2), certificate 9.60e-06
+# K=40 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1    66.83712    48.163%    56.61329   40.796%    1110.183    800.0%   11.995     11.995  -
+   2    44.52762    32.087%    34.30378   24.719%     670.054    482.8%   17.804     17.804  -
+   3    27.43425    19.769%    17.21042   12.402%     505.513    364.3%   22.900     22.900  -
+   4    20.98437    15.121%    10.76054    7.754%     416.318    300.0%   25.527     25.527  -
+   6    18.06291    13.016%     7.83907    5.649%     319.130    230.0%   27.789     27.789  -
+   8    14.23151    10.255%     4.00768    2.888%     265.641    191.4%   33.319     34.042  bind
+  12    11.57833     8.343%     1.35450    0.976%     206.499    148.8%   33.319     33.783  bind
+  16    10.66175     7.683%     0.43792    0.316%     173.466    125.0%   33.319     37.305  bind
+  24    10.26270     7.395%     0.03887    0.028%     136.436     98.3%   33.319     41.998  bind
+  32    10.22540     7.368%     0.00157    0.001%     115.474     83.2%   33.319     63.566  bind
+  48    10.22384     7.367%     0.00001    0.000%      91.685     66.1%   33.319    656.650  bind
+  64    10.22384     7.367%     0.00001    0.000%      78.060     56.2%   33.319   5502.213  bind
+
+  N0 = 48   (smallest swept budget whose certified gap is below 1.48e-04)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=24
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-5.42e-10)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=9.60e-06, L=10.223841, 0.5||y||^2=138.7728)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 66.837122 vs exhaustive 66.837122 -> search excess -1.421e-14 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 44.697323 vs exhaustive 44.527615 -> search excess 1.697e-01 = 0.49% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [347s] 7/7 checks passed
+
+==============================================================================================
+# target=inmodel n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=1.8558  ||y||=1.9266
+# FIXED mass budget rho=1.4449 = 0.75*||y||
+# L(rho)=0.491214 (26.469% of 0.5||y||^2), certificate 3.50e-10
+# K=5 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1     0.73065    39.371%     0.23944   12.902%       3.828    206.3%    1.445      1.501  bind
+   2     0.51866    27.948%     0.02745    1.479%       2.490    134.2%    1.445      2.440  bind
+   3     0.50294    27.101%     0.01173    0.632%       1.955    105.4%    1.445      2.429  bind
+   4     0.49121    26.469%     0.00000    0.000%       1.653     89.1%    1.445      3.146  bind
+   6     0.49121    26.469%     0.00000    0.000%       1.310     70.6%    1.445      3.146  bind
+   8     0.49121    26.469%     0.00000    0.000%       1.115     60.1%    1.445      3.146  bind
+  12     0.49121    26.469%     0.00000    0.000%       0.891     48.0%    1.445      3.146  bind
+  16     0.49121    26.469%     0.00000    0.000%       0.761     41.0%    1.445      3.146  bind
+  24     0.49121    26.469%     0.00000    0.000%       0.612     33.0%    1.445      3.146  bind
+  32     0.49121    26.469%     0.00000    0.000%       0.525     28.3%    1.445      3.146  bind
+  48     0.49121    26.469%     0.00000    0.000%       0.424     22.8%    1.445      3.146  bind
+  64     0.49121    26.469%     0.00000    0.000%       0.364     19.6%    1.445      3.146  bind
+
+  N0 = 4   (smallest swept budget whose certified gap is below 1.86e-06)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=4
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-2.22e-16)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=3.50e-10, L=0.491214, 0.5||y||^2=1.8558)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 0.730652 vs exhaustive 0.730652 -> search excess -3.331e-16 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 0.518663 vs exhaustive 0.518663 -> search excess 0.000e+00 = 0.00% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [24s] 7/7 checks passed
+
+==============================================================================================
+# target=inmodel n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=1.8558  ||y||=1.9266
+# FIXED mass budget rho=1.9266 = 1.0*||y||
+# L(rho)=0.252375 (13.599% of 0.5||y||^2), certificate 5.96e-11
+# K=5 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1     0.72907    39.286%     0.47670   25.686%       5.567    300.0%    1.501      1.501  -
+   2     0.32302    17.406%     0.07065    3.807%       3.552    191.4%    1.927      2.440  bind
+   3     0.26119    14.074%     0.00881    0.475%       2.762    148.8%    1.927      3.146  bind
+   4     0.25238    13.599%     0.00000    0.000%       2.320    125.0%    1.927      3.146  bind
+   6     0.25238    13.599%     0.00000    0.000%       1.825     98.3%    1.927      3.146  bind
+   8     0.25238    13.599%     0.00000    0.000%       1.544     83.2%    1.927      3.146  bind
+  12     0.25238    13.599%     0.00000    0.000%       1.226     66.1%    1.927      3.146  bind
+  16     0.25238    13.599%     0.00000    0.000%       1.044     56.3%    1.927      3.146  bind
+  24     0.25238    13.599%     0.00000    0.000%       0.835     45.0%    1.927      3.146  bind
+  32     0.25238    13.599%     0.00000    0.000%       0.714     38.5%    1.927      3.146  bind
+  48     0.25238    13.599%     0.00000    0.000%       0.574     31.0%    1.927      3.146  bind
+  64     0.25238    13.599%     0.00000    0.000%       0.493     26.6%    1.927      3.146  bind
+
+  N0 = 4   (smallest swept budget whose certified gap is below 1.86e-06)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=6
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-2.22e-16)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=5.96e-11, L=0.252375, 0.5||y||^2=1.8558)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 0.729071 vs exhaustive 0.729071 -> search excess -2.220e-16 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 0.323021 vs exhaustive 0.323021 -> search excess 0.000e+00 = 0.00% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [21s] 7/7 checks passed
+
+==============================================================================================
+# target=inmodel n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=1.8558  ||y||=1.9266
+# FIXED mass budget rho=2.8898 = 1.5*||y||
+# L(rho)=0.011104 (0.598% of 0.5||y||^2), certificate 3.20e-10
+# K=5 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1     0.72907    39.286%     0.71797   38.687%       9.743    525.0%    1.501      1.501  -
+   2     0.25198    13.578%     0.24087   12.979%       6.025    324.6%    2.440      2.440  -
+   3     0.01149     0.619%     0.00039    0.021%       4.606    248.2%    2.890      3.146  bind
+   4     0.01110     0.598%     0.00000    0.000%       3.828    206.3%    2.890      3.146  bind
+   6     0.01110     0.598%     0.00000    0.000%       2.969    160.0%    2.890      3.146  bind
+   8     0.01110     0.598%     0.00000    0.000%       2.490    134.2%    2.890      3.146  bind
+  12     0.01110     0.598%     0.00000    0.000%       1.955    105.4%    2.890      3.146  bind
+  16     0.01110     0.598%     0.00000    0.000%       1.653     89.1%    2.890      3.146  bind
+  24     0.01110     0.598%     0.00000    0.000%       1.310     70.6%    2.890      3.146  bind
+  32     0.01110     0.598%     0.00000    0.000%       1.115     60.1%    2.890      3.146  bind
+  48     0.01110     0.598%     0.00000    0.000%       0.891     48.0%    2.890      3.146  bind
+  64     0.01110     0.598%     0.00000    0.000%       0.761     41.0%    2.890      3.146  bind
+
+  N0 = 4   (smallest swept budget whose certified gap is below 1.86e-06)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=16
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=1.39e-17)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=3.20e-10, L=0.011104, 0.5||y||^2=1.8558)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 0.729071 vs exhaustive 0.729071 -> search excess -2.220e-16 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 0.251979 vs exhaustive 0.251979 -> search excess -5.551e-16 = -0.00% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [14s] 7/7 checks passed
+
+==============================================================================================
+# target=inmodel n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
+# 0.5||y||^2=1.8558  ||y||=1.9266
+# FIXED mass budget rho=3.8531 = 2.0*||y||
+# L(rho)=0.000000 (0.000% of 0.5||y||^2), certificate 2.89e-08
+# K=730 nnz in the returned ball minimiser -- an upper bound witness only; where
+#   the ball optimum is non-unique a first-order method returns a dense one.
+
+  gap(N) = U(N,rho) - L(rho), both at the same mass budget.
+  gap+cert is the certified upper bound on the true gap.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
+  free mass is the mass the UNCAPPED best N-atom encoding wants; where
+  it exceeds rho, that row is not the (P0) comparison -- see (iii).
+
+   N    U(N,rho)  U as %half    gap+cert  as %half        T(N)  as %half    mass  free mass  cap
+   1     0.72907    39.286%     0.72907   39.286%      14.847    800.0%    1.501      1.501  -
+   2     0.25198    13.578%     0.25198   13.578%       8.961    482.8%    2.440      2.440  -
+   3     0.00000     0.000%     0.00000    0.000%       6.760    364.3%    3.146      3.146  -
+   4     0.00000     0.000%     0.00000    0.000%       5.567    300.0%    3.146      3.146  -
+   6     0.00000     0.000%     0.00000    0.000%       4.268    230.0%    3.146      3.146  -
+   8     0.00000     0.000%     0.00000    0.000%       3.552    191.4%    3.146      3.146  -
+  12     0.00000     0.000%     0.00000    0.000%       2.762    148.8%    3.146      3.146  -
+  16     0.00000     0.000%     0.00000    0.000%       2.320    125.0%    3.146      3.146  -
+  24     0.00000     0.000%     0.00000    0.000%       1.825     98.3%    3.146      3.146  -
+  32     0.00000     0.000%     0.00000    0.000%       1.544     83.2%    3.146      3.146  -
+  48     0.00000     0.000%     0.00000    0.000%       1.226     66.1%    3.146      3.146  -
+  64     0.00000     0.000%     0.00000    0.000%       1.044     56.3%    3.146      3.146  -
+
+  N0 = 3   (smallest swept budget whose certified gap is below 1.88e-06)
+  T(N) is above the measured gap on every row; it first drops below 0.5||y||^2 at N=24
+
+  checks  (T = theory, S = solver diagnostic)
+    ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-1.94e-10)
+    ok   T2 Theorem 8's bound holds at every N 
+    ok   T3 mass never exceeds rho 
+    ok   S1 certificate small against the problem scale (cert=2.89e-08, L=0.000000, 0.5||y||^2=1.8558)
+    ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
+         whether the search needed it)
+
+  leg C: how far the search falls short where enumeration is possible
+  (the exhaustive value is USED for U at these N; this is calibration
+   for the larger N where no check exists, not a pass/fail gate)
+    N=1: search 0.729071 vs exhaustive 0.729071 -> search excess -2.220e-16 = -0.00% of the gap at that N
+    ok   C1 exhaustive N=1 scan terminated 
+    N=2: search 0.251979 vs exhaustive 0.251979 -> search excess -5.551e-16 = -0.00% of the gap at that N, 0 degenerate pairs skipped
+    ok   C2 exhaustive N=2 scan terminated 
+
+  [18s] 7/7 checks passed
+
+==============================================================================================
+# summary: N0 against the budget at which Theorem 8's bound first
+# says anything at all (T(N) < 0.5||y||^2)
+
+  target      rho/||y||   L as %half     K     N0   T<half from N=
+  cartoon         0.75      26.332%     7      8       4
+  cartoon         1.00      15.864%    11     12       6
+  cartoon         1.50       5.544%    18     24      16
+  cartoon         2.00       2.564%    44     48      24
+  face            0.75      34.187%    11     12       4
+  face            1.00      23.440%    12     12       6
+  face            1.50      11.908%    22     24      16
+  face            2.00       7.367%    40     48      24
+  inmodel         0.75      26.469%     5      4       4
+  inmodel         1.00      13.599%     5      4       6
+  inmodel         1.50       0.598%     5      4      16
+  inmodel         2.00       0.000%   730      3      24
+
+# 84/84 checks passed overall

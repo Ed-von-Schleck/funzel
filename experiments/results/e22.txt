@@ -1,0 +1,37 @@
+# E22: geometry of the exactly enumerated N=3 optimum
+# dictionary D=248 on 48x48; all C(D,3)=2,511,496 supports enumerated per image
+# dictionary coherence 0.962
+
+  image        err%   max coh   min ctr dist   max|a|/||y||   N*max|a|/mass    mass
+  ascentx1   29.41%    0.294         15.63px          0.602            1.51    21.96
+  facex1      9.49%    0.199         25.51px          0.837            2.03    40.69
+  ascentx2   14.05%    0.649          4.54px          1.123            2.20    43.05
+  facex2     17.80%    0.431         25.16px          0.635            1.65    24.90
+  ascentx1   10.64%    0.723         14.95px          1.017            1.91    28.46
+  facex1      7.67%    0.808          9.77px          1.167            1.61    65.78
+  ascentx2   23.36%    0.632          6.45px          0.994            1.98    38.03
+  facex2      8.44%    0.658          3.75px          0.959            1.96    44.77
+  cartoon     9.35%    0.403         18.35px          0.974            2.27    38.85
+  cartoon     8.35%    0.603         22.50px          0.620            1.59    34.37
+  cartoon    11.42%    0.543         11.86px          0.711            1.45    38.41
+  cartoon    12.00%    0.572         10.53px          1.187            1.99    40.09
+
+  median   max coh 0.588   min dist 13.40px   max|a|/||y|| 0.967   N*max|a|/mass 1.94
+  range    [0.199,0.808]  [3.75,25.51]px  [0.602,1.187]  [1.45,2.27]
+
+  checks
+    ok   C1 the optima are not near-duplicate pairs (worst pair coherence 0.808 against a dictionary coherence of 0.962) -- so some delta admits every optimum here and Theorem 10's family is not empty of the answer
+    ok   C2 blobs are separated by a visible fraction of the image (closest pair 3.75px on 48px)
+    ok   C3 a single blob carries about the whole image's energy, as e8 found on this dictionary (max|a|/||y|| reaches 1.187)
+    ok   C4 the tightest admissible cap leaves the mass budget slack (N*max|a|/mass is 1.45-2.27; e3 measures the mass bound as already vacuous at twice greedy's mass)
+
+  [29s] 4/4 checks passed
+
+  reading: separation is not what closes Theorem 10's route -- the
+  optima are comfortably separated. Amplitude scale is the problem.
+  The tightest cap the relaxation may use is the optimum's own
+  largest amplitude, and the mass budget N*M it implies is roughly
+  twice the mass the optimum spends, which is where e3 already
+  measures the ball as saying nothing. The local cap would have to
+  carry the whole argument on its own, and whether it can is the
+  part Theorem 10 leaves open.

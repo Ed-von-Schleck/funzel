@@ -1,0 +1,78 @@
+# E25: the node bound behind section 9's branch-and-bound paragraph.
+# 48x48 image, e8's parabolic dictionary. M is the largest amplitude
+# in the optimum the search returns -- the tightest cap that still
+# admits its own answer, so the most favourable one that exists here.
+# The bound is informative only where ratio = M*sigma/R falls below 1;
+# M_crit is the cap where that happens and M_prune the smaller cap at
+# which the root bound alone would already certify the incumbent.
+
+# target=cartoon D=248 coherence=0.9615 ||y||=21.16
+   N        M   M/||y||     root R    sigma    ratio   M_crit  M_prune   B&B err%     gap%     nodes
+   4   24.020     1.135     447.81    66.00     3.54    6.785    5.030     6.6895    89.62    200000
+   6   25.356     1.198     447.81    93.05     5.27    4.812    3.724     5.1124   100.00    200000
+
+# target=ascent D=248 coherence=0.9615 ||y||=19.43
+   N        M   M/||y||     root R    sigma    ratio   M_crit  M_prune   B&B err%     gap%     nodes
+   4   17.430     0.897     377.44    50.87     2.35    7.420    4.344    17.1857    40.64    200000
+   6   16.047     0.826     377.44    72.21     3.07    5.227    3.284    13.8108   100.00    200000
+
+# target=face D=248 coherence=0.9615 ||y||=24.40
+   N        M   M/||y||     root R    sigma    ratio   M_crit  M_prune   B&B err%     gap%     nodes
+   4   23.811     0.976     595.18    73.77     2.95    8.068    5.263    12.0859    55.11    200000
+   6   22.691     0.930     595.18   101.84     3.88    5.845    3.922    10.8254   100.00    200000
+
+  the same ratio at the nodes that force in the optimum's own atoms,
+  in the order best-first search would branch on them
+   target  N     |I|=0  |I|=1  |I|=2  |I|=3  |I|=4  |I|=5
+  cartoon  4      3.54   4.39   2.44   1.33              
+  cartoon  6      5.27   7.41   4.99   4.14   3.04   1.61
+   ascent  4      2.35   1.87   1.37   0.80              
+   ascent  6      3.07   2.74   2.48   2.21   1.46   0.64
+     face  4      2.95   2.14   1.33   0.73              
+     face  6      3.88   3.14   2.45   1.97   1.32   0.65
+  the ratio is lowest at the deepest node on 6 of 6 chains and falls below 1
+  on 4, always at |I| = N-1 -- the layer where only one atom is left to choose,
+  so the bound arrives after the branching it would have to prevent.
+
+  the same instances at wider caps, same node budget -- does the gap
+  respond to the cap, or to the search?
+   target  N     1.0x M  1.5x M  2.0x M
+  cartoon  4      89.62  100.00  100.00
+  cartoon  6     100.00  100.00  100.00
+   ascent  4      40.64   95.95  100.00
+   ascent  6     100.00  100.00  100.00
+     face  4      55.11  100.00  100.00
+     face  6     100.00  100.00  100.00
+
+  checks
+    ok   B1 no cap that admits the answer makes the root bound informative (ratio 2.3-5.3 where under 1 is needed; the cap would have to fall to 0.19-0.43 of the optimum's own largest amplitude, which excludes it)
+    FAIL B2 [PRE-REGISTERED, FAILED] the gap is the bound's doing, not a weak incumbent (the certified lower bound reaches 59.36% of the error attained, on 3 of 6 instances; it is not uniformly zero, so on those the bound is doing real work and the gap is partly the search's)
+    ok   B3 a single blob carries the energy of the whole image (largest amplitude / ||y|| ranges 0.83-1.20)
+    FAIL B4 [PRE-REGISTERED, FAILED] 200000 nodes leave the gap open (certified gap 41-100%, node cap reached on 6 of 6; the gap is total at N in [6] and partial elsewhere, so the failure is not uniform)
+    FAIL B5 [PREDICTION, FAILED] the ratio never falls below 1 along the chain (minimum over every prefix node: 0.64; it drops under 1 at the last branching layer, where the bound can no longer prevent any branching)
+    ok   C1 the gap widens with the cap, on every instance (added after the first run; median gap 100% at 1.0x against 100% at 2.0x)
+
+  reading: the bound e8 uses is a cap times a correlation sum against
+  a residual energy. On this dictionary one atom already explains most
+  of the image, so the cap that admits it is of the order of ||y||,
+  and the product overwhelms the residual before the search starts.
+  Making the bound useful rather than merely non-zero would need the
+  cap at 0.15-0.25 of the optimum's largest amplitude.
+
+  3 of the 5 pre-registered claims failed, and they sharpen the
+  result rather than overturning it. The bound is not uniformly
+  vacuous: it drops below 1 at the last branching layer, and at N in
+  [4] it certifies part of the way to the answer. But
+  that is the layer where only one atom is left to choose, so nothing
+  is pruned by it, and the certified fraction falls away at the larger
+  budget. The instrument degrades as N grows, which is the direction
+  an encoder moves in.
+  What it responds to is the cap, not the search: on the same
+  instances at the same node budget, widening the cap never narrows
+  the gap and widens it wherever there is room left to widen.
+
+  Theorem 11 is not what fails -- the polytope really does see N. What
+  fails is that the only handle it gives is an amplitude cap, and on
+  Gaussian blobs the amplitudes have no scale to cap at.
+
+  [948s] 3/6 checks passed
