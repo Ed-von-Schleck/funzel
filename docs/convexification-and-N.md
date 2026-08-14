@@ -478,6 +478,33 @@ budgets 1 to 16, it stops saying anything by $N=4$–8, where it falls to zero. 
 single best blob can be found exactly by direct search so the true
 optimum is known, the bound accounts for only 24–34% of it.
 
+**At a fixed mass budget the same relaxation is exactly tight, at small $N$.**
+`experiments/e16_fixed_mass.py`. The previous measurement lets the budget grow with $N$, which is
+the regime Theorem 10 says nothing about. Holding $\rho$ fixed and sweeping $N$ instead, on the
+$D=768$ dictionary at $32\times32$: the gap between the ball and the best $N$-blob encoding of the
+same mass closes **exactly** — not asymptotically — at $N_0$ between **3 and 48** across twelve
+target-and-budget cells, and at 4 to 12 for the two smaller budgets. On the cartoon target at
+$\rho=\|y\|$ the certified gap runs 17.3%, 4.3%, 1.3%, 0.8%, 0.007% of $\tfrac12\|y\|^2$ at
+$N=1,2,3,4,6$ and is zero by $N=12$. This is not a rate being confirmed. It is the one-line
+argument of Theorem 10's neighbourhood: the ball's own minimiser is a feasible $N$-blob encoding
+once $N$ reaches its support size, so the gap is zero from there on. Theorem 10's bound over the
+same range reads 300%, 191%, 149%, 125%, 98% — it does not fall below the trivial
+$\tfrac12\|y\|^2$ until $N=4$–24, and at that budget the measured gap is already under 0.13% of
+$\tfrac12\|y\|^2$ in all twelve cells. The rate is real and never the binding statement.
+
+The same table forbids reading that as a rehabilitation of the bound. The `free mass` column
+records what the *uncapped* best $N$-blob encoding wants: at $\rho=0.75\|y\|$ on the cartoon it
+rises from 11.5 to 102.6 while $\rho$ is 10.6, so every row where the gap is small is a row where
+the cap is binding hard and the problem is not (P0). Where the cap does not bind — the larger
+budgets, closest to the encoding problem — the gap at $N=1$ is 30.6% rather than 7.3% and $N_0$ is
+48 rather than 8. Tightness and relevance move in opposite directions across the sweep.
+
+One further check on method. On the in-model target at $\rho=2\|y\|$ the ball reaches error zero,
+its minimiser is not unique, and a first-order method returns a dense one: 730 non-zeros. The
+sparsest ball-optimal encoding has three, and $N_0=3$ finds it. Reporting the support size of the
+returned minimiser would have recorded 730 there and been wrong by two orders of magnitude, which
+is why the measured $N_0$ and not that support size is the number above.
+
 **The per-blob cap survives discretisation and is still useless here.**
 `experiments/e8_branch_and_bound.py`. On a finite dictionary Theorem 9 applies, so branch-and-bound
 has something to work with. Implemented on a $48\times48$ image with $D=248$: the node bound is
@@ -501,6 +528,12 @@ $\lambda_2=1$, where the
 reconstruction error has risen by a factor of 2.4–4.3. There is no setting in which the bound is
 tight and the problem is still the one wanted. Two relaxations failing for one shared reason —
 amplitudes at signal scale — points at the dictionary rather than at the choice of relaxation.
+
+The sparse-regression literature reports the same dependence from the other side. With the ridge at
+zero, the optimal perspective relaxation is said to be effective only when the Gram matrix is
+sufficiently diagonally dominant. The coherence here is 0.985, so that condition fails about as
+badly as a dictionary can make it fail, and a loose bound at small $\lambda_2$ is what the
+condition predicts rather than a surprise. From search summaries; not read.
 
 **On a grid, the relaxation is tight only where the dictionary is useless.**
 `experiments/e4_exact_l0.py`, output `results/e4_coherence.txt`. Theorem 9 restores the dependence
@@ -551,8 +584,8 @@ the $N$-blob optimum, and at a fixed mass budget it provably is not.
 
 > **Theorem 10 (how much the mass ball can lose).** Let $b=\max_{\theta\in\Theta}\|\varphi_\theta\|$.
 > For every $\rho>0$, every $\mu\in B_\rho$ and every $N\ge1$ there is $\nu\in
-> \mathcal{F}_{N,\rho/N}$ with $\|\Phi\mu-\Phi\nu\|\le\rho b/\sqrt N$. Consequently
-> $$\inf_{\mathcal{F}_{N,\rho/N}}J\ \le\ \tfrac12\Big(\sqrt{2\inf_{B_\rho}J}\ +\ \rho b/\sqrt N\Big)^{2}.$$
+> \mathcal{F}_N^{\,\rho}$ with $\|\Phi\mu-\Phi\nu\|\le\rho b/\sqrt N$. Consequently
+> $$\inf_{\mathcal{F}_N^{\,\rho}}J\ \le\ \tfrac12\Big(\sqrt{2\inf_{B_\rho}J}\ +\ \rho b/\sqrt N\Big)^{2}.$$
 
 *Proof.* Put $t=|\mu|(\Theta)/\rho\le1$ and let $s=d\mu/d|\mu|\in\{\pm1\}$ be the Hahn sign. Fix
 any $\theta_0$ and let $\pi$ be the distribution on $G=\{\pm\varphi_\theta:\theta\in\Theta\}$ that
@@ -565,9 +598,13 @@ $$\mathbb{E}\big\|\hat g-\Phi\mu/\rho\big\|^2
 =\tfrac1N\Big(\mathbb{E}\|h\|^2-\|\Phi\mu/\rho\|^2\Big)\le b^2/N,$$
 
 so some realisation attains the bound. That realisation is $\Phi\nu/\rho$ for
-$\nu=\tfrac{\rho}{N}\sum_i\varepsilon_i\delta_{\theta_i}$, whose amplitudes all have modulus
-$\rho/N$, so $\nu\in\mathcal{F}_{N,\rho/N}$. The second display follows from
+$\nu=\tfrac{\rho}{N}\sum_i\varepsilon_i\delta_{\theta_i}$, a sum of at most $N$ point masses of total
+mass at most $\rho$, so $\nu\in\mathcal{F}_N^{\,\rho}$. The second display follows from
 $\|\Phi\nu-y\|\le\|\Phi\mu-y\|+\|\Phi\mu-\Phi\nu\|$ applied at a near-minimising $\mu$. $\square$
+
+The conclusion is about $\mathcal{F}_N^{\,\rho}$ and not about $\mathcal{F}_{N,\rho/N}$: two draws can
+land on the same $\theta$, and the merged blob then carries more than $\rho/N$. The total mass is
+what survives, which is the family Theorem 3's second identity is about.
 
 The argument is the standard empirical-approximation one attributed to Maurey, and to Jones and
 Barron; it is written out so that nothing is imported. Expanding the square with
@@ -580,8 +617,11 @@ constraint, not blind to $N$ in value.
 
 Section 9's second measurement sits where Theorem 10 is silent — the budget there is greedy's own
 mass, which grows about linearly in $N$ (1.02, 2.02, 3.02, 4.00 at $N=1,2,3,4$ in-model). So the two
-do not conflict, and the experiment that would separate them is to hold $\rho$ fixed and sweep $N$,
-where Theorem 10 predicts an $N^{-1/2}$ decay. Not run.
+do not conflict. Holding $\rho$ fixed and sweeping $N$ is a different experiment and it has been
+run; Section 9 reports it. The outcome is that the gap closes exactly, at small $N$, by a mechanism
+cruder than the theorem's — the ball's minimiser is itself an $N$-blob encoding once $N$ reaches its
+support size — and that Theorem 10's bound stays orders of magnitude above the measured gap
+throughout. The rate is not wrong; it is never what is doing the work.
 
 **The theorems need blobs to be able to collide.** Theorem 1 needs points of $\Theta$ arbitrarily
 close to one another, and Theorem 3 needs that everywhere. A parameter space of isolated points is
@@ -612,9 +652,12 @@ dictionary and would not hold for, say, a wavelet frame with uniformly bounded a
 untouched, and on a finite dictionary at $N=3$, local search from 100 random starts reached the
 exhaustively verified optimum on 40 of 40 images.
 
-**Not claimed: that the mass-ball relaxation is worthless.** It is a valid lower bound on (P0).
-It is simply blind to $N$, the second measurement above shows how weak that makes it at a budget
-growing with $N$, and Theorem 10 bounds how weak it can be at a budget held fixed.
+**Not claimed: that the mass-ball relaxation is worthless.** It is a valid lower bound on (P0),
+and at a budget held fixed Section 9 measures it as exactly tight from a small $N$ onwards. What it
+is blind to is $N$ as a constraint, and the budget is the thing that has to be known for the bound
+to be used: (P0) fixes the blob count and says nothing about mass, so choosing $\rho$ requires the
+optimum's mass, which is what one does not have. The relaxation is tight for a problem nobody
+posed. That, rather than looseness, is what limits it.
 
 **Not claimed: that no convex formulation exists anywhere.** Corollary 7 covers every convex lift
 whose rendering is linear and whose objective is the error of the rendered image — more than
@@ -624,6 +667,19 @@ Section 9 is not; a lift with a non-convex constraint, which is where the blob c
 moment hierarchy; and the finite dictionary of Section 7. The moment work located in searching
 applies the hierarchy to the dual constraint $|\eta|\le1$ for tractability rather than to the count;
 it was not read.
+
+One formulation in that gap is worth naming, because it settles what the obstruction actually is.
+On a finite dictionary, cardinality-constrained least squares is reported to admit an **exact**
+reformulation as a linear objective over the completely positive cone — a convex cone — with the
+whole of the non-convexity moved into cone membership, which is NP-hard. So a convex formulation
+that sees $N$ exists. It escapes Corollary 7 for a nameable reason: its objective is linear in the
+lifted variable rather than a strictly convex function of a linearly rendered image, so the step
+"the image is convex, and $J$ is minimised over it" has nothing to act on. Convexity alone is
+therefore not what obstructs. What Corollary 7 identifies is narrower — a convex feasible set
+*together with* an objective that is the error of a linearly rendered image — and the completely
+positive formulation buys its way out of exactly that pairing, at the price of an NP-hard cone.
+Whether an analogue exists over $\mathcal{M}(\Theta)$ was not searched. Both statements are from
+search summaries and were not read.
 
 ---
 
@@ -649,4 +705,6 @@ it was not read.
 | Branch-and-bound solvers reaching $10^7$ variables | from search summaries; the sources were never read |
 | Moment hierarchies for the BLASSO target the dual constraint, not the count | from search summaries; not read, not tested |
 | Tractability of the separated relaxation (Theorem 8) | open; neither derived nor tested |
-| Theorem 10's $N^{-1/2}$ decay at fixed mass | not measured; the experiment is named in Section 10 |
+| Prior art for Theorem 8's construction | searching turned up the separation hypothesis only in its recovery role, not as a way of convexifying the count. Per M6 of the companion document a null search result is not novelty, and this row records a failed search, not a claim of priority |
+| Gap closes exactly at $N_0=3$–48 at fixed mass; Theorem 10's bound never binding | measured, `experiments/e16_fixed_mass.py`. $U$ is a search upper bound above $N=2$, so the gap is an upper bound; small values are conclusive, large ones may be the solver |
+| Theorem 10's $N^{-1/2}$ rate itself | not isolated. The measured decay is dominated by the support-size mechanism, so these runs do not test the rate |
