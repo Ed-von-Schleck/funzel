@@ -408,7 +408,21 @@ def run(n=32, k=6, targets=("cartoon", "ascent", "face"),
     log("# LEG C -- same span, same size, coherence removed by orthonormalising.")
     log("# E_LS is identical within a row pair by construction; only the basis")
     log("# differs, so any change in tightness is coherence and nothing else.")
-    wide = max(widths)
+    # The widest atoms are the most coherent, which is what leg C wants, but
+    # past a point they are also numerically linearly dependent -- at D=36 the
+    # widest width here has Gram rank 35. Orthonormalising a rank-deficient
+    # dictionary invents a direction outside its span and the control stops
+    # being a control, so take the widest width that is still full rank.
+    wide = None
+    for cand in sorted(widths, reverse=True):
+        _, Gc = grid_dict(n, k, cand)
+        ev = np.linalg.eigvalsh(Gc @ Gc.T)
+        if int((ev > 1e-10 * ev[-1]).sum()) == len(Gc):
+            wide = cand
+            break
+    if wide is None:
+        wide = min(widths)
+    log(f"  leg C uses sig={wide}px, the widest width whose Gram is full rank")
     for name in targets:
         y = e2b.target(name, n, np.random.default_rng(seed))
         _, Gs = grid_dict(n, k, wide)
