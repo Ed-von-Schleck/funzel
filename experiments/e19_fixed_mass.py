@@ -1,6 +1,6 @@
-"""E19: the fixed-mass sweep Theorem 10 asks for.
+"""E19: the fixed-mass sweep Theorem 8 asks for.
 
-Section 10 of `convexification-and-N.md` proves that at a FIXED mass budget rho
+Section 5.2 of `convexification-and-N.md` proves that at a FIXED mass budget rho
 the mass-ball relaxation is within O(N^{-1/2}) of the best N-blob encoding of
 that same mass:
 
@@ -9,12 +9,12 @@ that same mass:
 with b = max_theta ||phi_theta||. Section 9's e3 measurement cannot test this,
 because it lets the budget grow with N (M_g = 1.02, 2.02, 3.02, 4.00 at
 N = 1..4), which is exactly the regime where the theorem is silent. This
-experiment holds rho fixed and sweeps N, which is the experiment section 10
+experiment holds rho fixed and sweeps N, which is the experiment section 5.2
 names and does not run.
 
 Theorem 3 is what makes the question sharp. For EVERY N, closed-conv F_N^rho is
 the same ball B_rho, so the convex relaxation of the N-blob problem at fixed
-mass does not depend on N at all. Theorem 10 says the VALUES nevertheless
+mass does not depend on N at all. Theorem 8 says the VALUES nevertheless
 separate and converge, at a rate. The quantity to measure is therefore
 
     gap(N) = U(N, rho) - L(rho),
@@ -24,7 +24,7 @@ separate and converge, at a rate. The quantity to measure is therefore
 both at the same rho, against T(N) = rho*b*||y||/sqrt(N) + rho^2 b^2/(2N),
 which is what expanding the square gives using inf_{B_rho} J <= 0.5||y||^2.
 
-FINITE DICTIONARY, DELIBERATELY. Theorem 10's proof samples atoms from a
+FINITE DICTIONARY, DELIBERATELY. Theorem 8's proof samples atoms from a
 distribution on {+-phi_theta} and never uses continuity of Theta, so it holds
 verbatim for a finite atom set. Taking the dictionary as the atom set makes
 L(rho) a convex program that can be solved and CERTIFIED, which the continuum
@@ -374,7 +374,7 @@ def run(name, n=32, mass_mult=1.0,
     log("")
     log("  gap(N) = U(N,rho) - L(rho), both at the same mass budget.")
     log("  gap+cert is the certified upper bound on the true gap.")
-    log("  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.")
+    log("  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.")
     log("  free mass is the mass the UNCAPPED best N-atom encoding wants; where")
     log("  it exceeds rho, that row is not the (P0) comparison -- see (iii).")
     log("")
@@ -436,7 +436,7 @@ def run(name, n=32, mass_mult=1.0,
     check("T1 gap >= 0 at every N (F_N^rho is inside B_rho)",
           all(r["U"] >= L - cert - 1e-9 for r in rows),
           f"(min U-L={min(r['U'] for r in rows)-L:.2e})")
-    check("T2 Theorem 10's bound holds at every N",
+    check("T2 Theorem 8's bound holds at every N",
           all(r["gap"] <= r["T"] + 1e-9 for r in rows))
     check("T3 mass never exceeds rho", all(r["mass"] <= rho * (1 + 1e-9)
                                            for r in rows))
@@ -481,7 +481,7 @@ def main(targets=("cartoon", "face", "inmodel"),
         print(*a, file=stream)
         stream.flush()
 
-    log("# E19: fixed-mass sweep for Theorem 10 of convexification-and-N.md")
+    log("# E19: fixed-mass sweep for Theorem 8 of convexification-and-N.md")
     log("# rho is HELD FIXED while N varies. Section 9's e3 lets it grow with")
     log("# N, which is why that measurement cannot test the theorem.")
     log("# Read the module docstring for what this can and cannot show; in")
@@ -494,7 +494,7 @@ def main(targets=("cartoon", "face", "inmodel"),
             all_ok += r["checks"]
 
     log(f"\n{'='*94}")
-    log("# summary: N0 against the budget at which Theorem 10's bound first")
+    log("# summary: N0 against the budget at which Theorem 8's bound first")
     log("# says anything at all (T(N) < 0.5||y||^2)")
     log("")
     log("  target      rho/||y||   L as %half     K     N0   T<half from N=")

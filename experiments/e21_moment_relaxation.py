@@ -1,8 +1,8 @@
-"""E21: the moment relaxation, the last convex route section 11 left untested.
+"""E21: the moment relaxation, the last convex route the document left untested.
 
-Section 10 of `convexification-and-N.md` proves (Corollary 7) that no convex
+Section 5.1 of `convexification-and-N.md` proves (Corollary 7) that no convex
 lift beats the mass ball while its objective is the error of a LINEARLY
-rendered image, and (Theorem 11) that lifting to second moments removes the gap
+rendered image, and (Theorem 9) that lifting to second moments removes the gap
 entirely at the cost of any description of the feasible set. Between those two
 sits the practical question: what does a TRACTABLE outer approximation of that
 lift buy? That is the Shor / doubly-nonnegative relaxation, and nothing in this
@@ -119,7 +119,7 @@ WHAT THIS CANNOT SHOW.
         levels, problem-specific valid inequalities. A loose bound here is a
         statement about Shor and Shor+DNN+RLT, not about every moment method.
   (ii)  D <= 81 and N <= 3, set by what an interior-point SDP solver can do.
-        Nothing here scales to section 10's budgets.
+        Nothing here scales to the budgets an encoder would use.
   (iii) tightness is an over-estimate (see above), so it bounds the method's
         performance from ABOVE only.
   (iv)  Leg A changes the dictionary's approximation power as it changes

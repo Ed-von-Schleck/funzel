@@ -48,7 +48,7 @@ WHAT THIS CANNOT SHOW.
         strengthen with.
   (ii)  It covers relaxations that strengthen via a separable quadratic. A lift
         that escapes Corollary 7 by some other route is untouched -- the
-        completely positive reformulation of section 10 is one, and it is not
+        completely positive reformulation of section 5.2 is one, and it is not
         of this form.
   (iii) One dictionary, one image size. The mechanism named below -- rank
         deficiency of the Gram -- is a property of a redundant dictionary of
