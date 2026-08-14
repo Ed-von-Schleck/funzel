@@ -535,8 +535,8 @@ normalization effect of §9.5.
 #### 9.1.1 Replicated, and the column that was missing (U18)
 
 **[V]** The table above is not reproducible — its parameters were never recorded (§9 preamble).
-So it was re-run on a fresh instance at parameters written down in full
-(`results/u18_e2.txt`: $n=128$, $K=4$, $u_{px}=4$, `n_restarts=2`, `seed=0`, every ratio verified
+So it was re-run on a fresh instance (`experiments/u18_rerun.py`) at parameters written down in
+full (`results/u18_e2.txt`: $n=128$, $K=4$, $u_{px}=4$, `n_restarts=2`, `seed=0`, every ratio verified
 in-frame by the new guard):
 
 | $r$ (widths) | 30 | 15 | 8 | 4 | 2 | 1 |
@@ -977,7 +977,7 @@ half price), scales to 64 splats on $64^2$ images, and refines both sides identi
 **[V] Refinement itself cuts error by 50–65%**, far more than any dictionary choice at any budget.
 
 **[A] So the honest claim is narrow:** structure buys a better *starting point* at small budgets,
-not a better answer. An earlier draft of this section claimed a 36–52% improvement from a mixed
+not a better answer (raw output `results/e4_mixed.txt`). An earlier draft of this section claimed a 36–52% improvement from a mixed
 dictionary; that was the splat-accounting error, and with correct accounting mixed and parabolic
 are level and both wash out. Withdrawn — Appendix A.
 
@@ -1056,7 +1056,8 @@ initialisation consistently and hurts greedy initialisation, which is already we
 gets dragged off it by the coarse stages.
 
 **[V] But the schedule above is nearly the worst one available, and that was not checked before
-concluding** (`e10_schedule_sweep.py`, U22, three targets × two budgets × two initialisations,
+concluding** (`e10_schedule_sweep.py`, raw output `results/e10.txt`, U22, three targets × two
+budgets × two initialisations,
 medians over seeds, handicap allocation throughout):
 
 | schedule $\sigma$ (px) | median vs direct | better | worse |
@@ -1927,10 +1928,15 @@ resting on hypothesis. **[A]** U15 deserves priority among them: it is the only 
 absolute statement at realistic $N$ that does not wait on U5, because §10.2's bound is valid
 whether or not any solver converged.
 
-**P5 — geometry-informed initialization.** Structure tensor or $|H|$ → density law →
-semi-discrete OT placement → Hessian-derived covariances. **[A]** Motivated by §7.2, not implied
-by it — those guarantees are for a surrogate objective. The incumbent to beat is matched-filter
-placement, not random initialization.
+**P5 — ~~geometry-informed initialization~~, largely done and the answer is known.** The proposal
+was: structure tensor or $|H|$ → density law → semi-discrete OT placement → Hessian-derived
+covariances. §10.14 built the structure-tensor half (a variance quadtree with edge-aligned
+covariances) and §10.16 built the density half (Lloyd's algorithm on a blurred gradient density,
+which is semi-discrete OT in the quantisation limit). Both work: at matched atom size the
+deterministic encoder beats a scale-tuned random baseline by +0.8 to +0.9 dB, inside its seed
+spread. Neither buys stability — §10.16 and §10.17 measure why. What remains untried from the
+original proposal is Hessian-derived rather than gradient-derived covariances, which is a small
+variation on a question now answered.
 
 **Reference points.** **[V]** `papers/tip2006.pdf` — matching pursuit over translated, rotated,
 anisotropically-scaled atoms, reported comparable to JPEG2000 and SPIHT at low rates.
@@ -1962,6 +1968,52 @@ experiment: the most-agreed solution is not the best one in 7 of 8 rows. The ref
 partly *already in §10.11* — its part B had measured a wide, stable basin around a solution 31%
 worse than the global optimum, which is exactly a case of agreement and optimality pointing in
 opposite directions. Hence M12.
+
+### The verification apparatus
+
+**[V] Two standing suites, and per-experiment checks.** The reversals above are the ones that were
+caught by later evidence. The concern they raise is the ones that were not — a wrong number that
+happens to look plausible is never questioned. Everything below exists because of that.
+
+**`experiments/verify_primitives.py`, 10 checks on the code every result shares.** The rule is that
+a check must reach the same number by a *different route*, or assert an identity that holds
+analytically. Re-running the same function is not a check. So `atoms()` is recomputed through
+scipy's `multivariate_normal` density from $\Sigma=(M^\top M)^{-1}$ rather than through the internal
+Cholesky expression; `loss_grad`'s analytic gradient is compared against central finite differences;
+`_extend()` is compared against `itertools.combinations`; `omega()`'s water-filling closed form
+against brute-force minimisation over $z$; the low-pass filter against Parseval and against
+$\exp(-2\pi^2\sigma^2f^2)$ on pure cosines. **[A] The load-bearing one is the gradient**, at 2e-07
+against finite differences: every fit in this document is a descent on it, and a wrong gradient
+degrades results silently rather than crashing.
+
+**[A] One check is deliberately one-sided.** `sup_corr()` is asserted to be $\ge$ a dense
+brute-force scan rather than equal to it. Understating a supremum would make the certificate look
+satisfied when it is not, which is the error that would matter; overstating it only costs work.
+
+**`experiments/verify_experiments.py`, 14 known-answer checks** on E5, E6 and E7 — cases where the
+right answer is known in advance, so a wrong implementation cannot hide. On a target that is an
+exact sum of dictionary atoms, least squares on the true support must give exactly 0, refinement
+must hold it there, and continuation with a trivial schedule must reproduce direct fitting exactly.
+The wavelet coefficient-to-position mapping is checked against the basis functions it claims to
+index, exact to 0.00 px on Haar.
+
+**[V] Every experiment from E3 on also carries its own numbered checks** — 3 in E3, 1 in E9, 10 in
+E14, 4 each in E15, E16 and E17, 3 in E18 — asserting invariants specific to that experiment, and
+they run before its numbers are printed. They have caught: a support enumeration that let an atom be
+"replaced" by itself and so reported a zero margin for every support (E16 C14); a relaxation that
+exceeded the quantity it relaxes (E9 C5); and greedy scoring worse than its own starting point
+(E8, from masking with $-\infty$ and then taking an absolute value).
+
+**[A] The most useful thing the suites taught is about the tests, not the code.** On first run, four
+of five failures in `verify_experiments` were the test's own fault: a db4 boundary wraparound
+inventing a 26 px error, a 1-D array passed where 2-D was needed, and two tests demanding that OMP
+recover a support it never claims to recover. In `verify_primitives`, `ray_bound`'s check failed
+against a grid whose step was coarse relative to the quantity being measured. **A failing check is
+at least as likely to be a broken check as a broken primitive** — its value is in forcing the
+question, not in its verdict. **[A]** The corollary is that a check which cannot fail is worse than
+none: E17 initially asserted a property of a variant that was known to break, which would have put a
+permanent failure in the output and made the failure list useless for spotting real breakage. It is
+now logged as a measurement instead.
 
 **M1 — Instrument before interpretation.** *Cost of violating:* a solver bug (§7.1.1)
 invalidated two complete sweeps and three interpretations; the one-run sanity check that
