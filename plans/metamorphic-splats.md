@@ -3,7 +3,9 @@
 An experiment design. Self-contained and independent of the documents in `docs/` — it shares no
 premises with them and none of their conclusions are assumed here.
 
-**Status: planned, not run.** Nothing below is a result.
+**Status: sanity phase run (`pilot/`); main grid not run.** §4's redundancy notes and §5's
+birth rules incorporate the sanity phase's measurements; everything else is design, not
+result.
 
 ---
 
@@ -123,7 +125,13 @@ absorb; consequence for the optimizer: intra-atom curvature coupling, which is t
 per-atom block preconditioning if diagonal Adam stalls (recorded as a fallback, not a plan).
 The redundancy becomes total in the limit: as $\omega\to0$ the quadrature block collapses onto
 first-order Hermite ($d\,\sin(\omega^\top u)\approx(d\,\omega)^\top u$) — an exact collinearity
-diagonal Adam cannot handle. Hence a **frequency-separation rule**, binding at birth and unlock
+diagonal Adam cannot handle. A third overlap is translation itself: the order-1 basis is
+proportional to $\partial f/\partial\mu$, so an order-1 atom has a **Taylor-absorbed twin** — a
+plain Gaussian shifted onto its dominant lobe reproduces it to first order — and the twin is a
+measured secondary basin (rel. error ~9% on the sanity cell, `pilot/results/`) whose catchment
+contains the very residual peak where a spawn naturally lands. Births of enriched atoms
+therefore select their pose over a candidate set (§5); when a birth lands in the twin anyway,
+its leftover residual is visible to the population loop, which is the systemic backstop. Hence a **frequency-separation rule**, binding at birth and unlock
 alike: a carrier is assigned only when its image-space frequency exceeds the atom's own
 envelope bandwidth; slower modulation is representable — and better conditioned — as Hermite
 structure, and a proposal for it is rejected. Besides conditioning, this keeps A2a honest: on
@@ -156,7 +164,10 @@ of the representation. Loss is plain $L^2$; accumulation additive.
 One global parameter pool $P$. At each growth round, enumerate candidate **moves**:
 
 - **spawn** a blunt atom at a residual hotspot (cost 6): gain estimated by a closed-form
-  amplitude solve for an atom at the hotspot with §6's shared shape-init rule;
+  amplitude solve over a small joint candidate set (position ring at the init scale ×
+  rotations, §6's shape rule) — single-point birth at the residual peak lands enriched atoms
+  in the Taylor-twin catchment (§4), and the sanity phase measured the candidate set
+  recovering most but not all of that loss;
 - **unlock order $m{+}1$** (cost per §4): gain exact *given everything else frozen* — least
   squares of the residual against the new basis functions on the atom's support (numerical, so
   it needs nothing about the envelope to be Gaussian);

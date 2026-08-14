@@ -164,6 +164,51 @@ def spectrogram_birth(target, pos, sigma, k_min=0.12 * math.pi, patch=32, gen=No
     return torch.stack(ks)
 
 
+def candidate_birth(atom, target, order, with_sin, ss=2, r_frac=0.6, n_ang=8,
+                    rots=(0.0, math.pi / 4, math.pi / 2, 3 * math.pi / 4)):
+    """Matched-filter birth over a joint (position, rotation) candidate set, selected
+    by closed-form LS residual.
+
+    Rationale: the order-1 basis is proportional to dG/dmu, so an order-1 atom has a
+    Taylor-absorbed twin -- a plain Gaussian shifted onto its dominant lobe reproduces
+    it to first order -- and the twin is a genuine secondary basin whose catchment
+    contains the |target| peak, i.e. the natural spawn point. Selecting the birth pose
+    over candidates escapes the twin in most cases (17/20 vs 12/20 single-candidate on
+    the sanity cell); the remainder are left to population dynamics, which see the
+    twin's ~9% leftover residual. See pilot/results/sanity_e2_diagnosis.txt."""
+    with torch.no_grad():
+        B, H, W = target.shape
+        sigma = torch.exp(atom["log_s"][:, 0])
+        offs = [torch.zeros(B, 2)]
+        for a in range(n_ang):
+            ang = 2 * math.pi * a / n_ang
+            offs.append(r_frac * sigma[:, None] *
+                        torch.tensor([math.cos(ang), math.sin(ang)]))
+        best = None
+        for off in offs:
+            for r in rots:
+                geom = {"mu": atom["mu"].detach() + off,
+                        "log_s": atom["log_s"].detach(),
+                        "rot": torch.full((B,), r)}
+                if "beta_raw" in atom:
+                    geom["beta_raw"] = atom["beta_raw"].detach()
+                if with_sin:
+                    geom["omega"] = atom["omega"].detach()
+                sol = ls_coeffs(geom, target, order, with_sin, ss)
+                T = atom_terms(geom, H, W, order, with_sin, ss)
+                res = ((torch.einsum("bn,bnhw->bhw", sol, T) - target) ** 2).sum((1, 2))
+                if best is None:
+                    best = {"res": res, "mu": geom["mu"], "rot": geom["rot"]}
+                else:
+                    m = res < best["res"]
+                    best["res"] = torch.where(m, res, best["res"])
+                    best["mu"] = torch.where(m[:, None], geom["mu"], best["mu"])
+                    best["rot"] = torch.where(m, geom["rot"], best["rot"])
+        atom["mu"] = best["mu"].clone().requires_grad_()
+        atom["rot"] = best["rot"].clone().requires_grad_()
+    return atom
+
+
 def image_freq(atom):
     """k = R (w / s), the image-space carrier of a fitted atom."""
     with torch.no_grad():

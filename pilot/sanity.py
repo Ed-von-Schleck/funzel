@@ -34,8 +34,8 @@ import time
 
 import torch
 
-from atoms import (LRS, atom_frame_omega, beta_raw_init, fit, image_freq,
-                   ls_coeffs, moments_init, render, spectrogram_birth)
+from atoms import (LRS, atom_frame_omega, beta_raw_init, candidate_birth, fit,
+                   image_freq, ls_coeffs, moments_init, render, spectrogram_birth)
 
 H = W = 64
 B = 20  # seeds per cell
@@ -131,12 +131,16 @@ def run():
     atom = finish(atom, tgt, 0, False)
     report("E1 gauss / random-pos", fit(atom, tgt, IT))
 
-    # E2: order-1 Hermite, moments init + LS
+    # E2: order-1 Hermite. Birth policy is candidate-set LS (see atoms.candidate_birth
+    # and results/sanity_e2_diagnosis.txt): single-candidate birth at the |target|
+    # peak lands in the Taylor-twin basin 8/20 times. The pre-registered floor
+    # (>=18/20) is unchanged; the cell reports against it honestly.
     gen = g(2)
     with torch.no_grad():
         tgt = render(plant_hermite(gen), H, W)
-    atom = finish(geom_init(tgt, gen), tgt, 1, False)
-    report("E2 hermite / moments+LS", fit(atom, tgt, IT))
+    atom = candidate_birth(geom_init(tgt, gen), tgt, 1, False)
+    atom = finish(atom, tgt, 1, False)
+    report("E2 hermite / candidate-birth", fit(atom, tgt, IT))
 
     # E3: beta=5 plant, beta unlocked from 2
     gen = g(3)
