@@ -34,9 +34,14 @@ THREE INITIALISATIONS, of which two are deterministic:
              variance until there are N cells, one atom per cell, oriented along
              the edge direction from the cell's structure tensor.
 
-All three get the same scale prior, sigma ~ 1/sqrt(N), so the comparison is
-about PLACEMENT and not about a lucky scale range -- section 10.5 was confounded
-exactly that way once.
+A FOURTH INITIALISATION IS A CONTROL, not an idea. The random and lattice inits
+put atoms at sigma ~ 1/sqrt(N), but the quadtree's cells concentrate where the
+image has detail, so its atoms start about five times smaller. Small atoms and
+adaptive placement would otherwise be the same measurement. 'lattice-fine' is
+the plain lattice at the quadtree's atom size, which separates them: if it
+matches structure, the win is atom size; if it matches lattice, the win is
+placement. Section 10.5 was confounded in exactly this way once, by a scale cap
+that differed between the arms being compared.
 
 QUALITY IS REPORTED AS PSNR, at two step counts, 1000 and 4000. The second
 number matters as much as the first: if a difference at 1000 steps is gone by
@@ -106,7 +111,7 @@ def psnr(err, P):
 # ------------------------------------------------------------ initialisations
 def init_random(y, N, n, rng):
     """The standard recipe: uniform centres, isotropic-ish random scales."""
-    s = 1.0 / np.sqrt(N)                       # scale prior, shared by all inits
+    s = 1.0 / np.sqrt(N)                  # same atom size as the plain lattice
     th = []
     for i in range(N):
         cx, cy = rng.uniform(0.05, 0.95, 2)
@@ -115,10 +120,9 @@ def init_random(y, N, n, rng):
     return np.array(th)
 
 
-def init_lattice(y, N, n):
-    """Deterministic and image-INDEPENDENT: the null control."""
+def _lattice(N, scale):
     k = int(np.ceil(np.sqrt(N)))
-    s = 1.0 / np.sqrt(N)
+    s = scale / np.sqrt(N)
     ax = (np.arange(k) + 0.5) / k
     th = []
     for i in range(k):
@@ -126,6 +130,22 @@ def init_lattice(y, N, n):
             if len(th) < N:
                 th.append(theta_from_axes(ax[j], ax[i], 0.0, s, s))
     return np.array(th)
+
+
+def init_lattice(y, N, n):
+    """Deterministic and image-INDEPENDENT: the null control."""
+    return _lattice(N, 1.0)
+
+
+def init_lattice_fine(y, N, n):
+    """The same lattice at the structure init's atom size.
+
+    The quadtree concentrates cells where the image has detail, so its atoms
+    start about five times smaller than a 1/sqrt(N) lattice: median 2.07px
+    against 10.67px at N=36, and 1.01 against 5.33 at N=144, a ratio of 0.19 at
+    both budgets. Without this control, 'adaptive placement wins' and 'small
+    atoms win' are the same measurement."""
+    return _lattice(N, 0.19)
 
 
 def init_structure(y, N, n):
@@ -171,7 +191,10 @@ def init_structure(y, N, n):
 
 
 INITS = {"random": init_random, "lattice": init_lattice,
-         "structure": init_structure}
+         "lattice-fine": init_lattice_fine, "structure": init_structure}
+
+# stability is measured on the three distinct ideas, not on the scale control
+STAB = ["random", "lattice", "structure"]
 
 
 # ------------------------------------------------------------------ optimiser
@@ -264,7 +287,7 @@ def run_stability(imgs, n, N, steps, log=print):
         f"{'dPSNR':>8}")
     rng0 = np.random.default_rng(7)
     rows = []
-    for name in INITS:
+    for name in STAB:
         acc = {}
         for (nm, y) in imgs:
             th0 = (INITS[name](y, N, n, np.random.default_rng(600))
