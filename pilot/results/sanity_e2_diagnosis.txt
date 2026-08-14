@@ -1,0 +1,32 @@
+E2 (hermite recovery) came in at 12/20 against a pre-registered floor of >=18/20.
+Per the pre-registration, treated as a harness bug until proven otherwise. Probes:
+
+  base cell (jitter 3px, 3000 iters)                12/20   failures all at rel 0.0863
+  zero jitter                                       16/20   still fails -> not (only) birth position error
+  9000 iters (3x)                                   13/20   iteration-invariant -> true basin, not slow crawl
+  gauge-fix recentering at birth                    11/20   worse -> recentering moves INTO the trap
+  rotation candidates at birth (4)                  12/20
+  position candidates at birth (ring 0.6*sigma x8)  17/20   mechanism confirmed
+  denser positions (2 radii x 12 angles)            17/20   same 3 seeds trapped
+  joint position x rotation candidates (36)         17/20   same 3 seeds trapped
+
+Mechanism (from inspecting stuck solutions in the planted frame): every failure is the
+SAME configuration -- linear coefficients ~0.07 (near zero), position shifted ~(+0.42,
+-0.47) sigma onto the planted atom's bright lobe, scales slightly shrunk. That is the
+Taylor-absorbed twin: G(u)(c0 + c.u) ~ c0 G(u - c/c0) to first order, because the
+order-1 basis is proportional to dG/dmu. The twin is a genuine secondary basin at
+rel 0.0863, and its catchment contains the peak of |target| -- the natural spawn
+point. Recentering by the linear coefficients moves toward the twin, not away.
+
+Verdict: NOT a harness bug (other cells 20/20 with exact recovery; failure is one
+characterized, reproducible basin). It is a real landscape property of the order-1
+knob at N=1. Candidate-set LS birth (now in atoms.py) recovers 5 of 8 lost seeds;
+the remaining 3 fail because the LS comparison at birth is scored under a wrong
+(isotropic, unrotated-scale) envelope, which handicaps the true-center candidate and
+not the twin. Escalation stopped here rather than tuned until the floor passed.
+
+Calibration lesson, recorded not retro-fitted: the >=18/20 floor treated single-atom
+recovery as the unit, but the twin's failure mode leaves an 8.6% residual in plain
+view -- exactly what the population loop (allocator sees leftover residual, can
+unlock order-1 again from the new position, or spawn) is designed to absorb. The
+final E2 number is reported against the original floor and marked as a miss.
