@@ -8,11 +8,13 @@
       budget     method   PSNR@1000   PSNR@4000  vs random  seed spread
           36     random      23.588      26.200     +0.000     0.167 dB
           36    lattice      24.125      26.874     +0.674  0 (determ.)
+          36 lattice-fine      26.527      28.222     +2.021  0 (determ.)
           36  structure      28.026      28.611     +2.410  0 (determ.)
          144     random      25.100      27.380     +0.000     1.193 dB
          144    lattice      26.381      28.519     +1.139  0 (determ.)
+         144 lattice-fine      30.723      31.445     +4.064  0 (determ.)
          144  structure      32.169      32.815     +5.435  0 (determ.)
-  [2017s]
+  [2729s]
 
 ## B. Stability: does a small change in the image move the atoms?
   matched atom displacement under perturbation, N=36, 4000 Adam steps
@@ -26,6 +28,6 @@
        structure     noise 30dB       2.94 px   -0.238
        structure      shift 1px       2.58 px   +0.015
        structure    scale x1.01       0.71 px   +0.025
-  [428s]
+  [471s]
 
 # checks failed: none

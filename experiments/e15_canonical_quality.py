@@ -23,25 +23,33 @@ densification and pruning. It is reimplemented here rather than taken from a
 paper, so the comparison is internal -- same images, same budget, same optimiser,
 same step count -- and no claim is made about matching published numbers.
 
-THREE INITIALISATIONS, of which two are deterministic:
-  random     uniform centres. The baseline. Run at two seeds, which also
-             measures how much the standard recipe moves between runs.
-  lattice    a regular grid of identical atoms. Deterministic and completely
-             image-independent -- a NULL CONTROL for the whole idea. If this
-             matches the baseline, initialisation does not matter at this budget
-             and canonicity is free for the taking.
-  structure  deterministic and image-adaptive: a binary quadtree split on cell
-             variance until there are N cells, one atom per cell, oriented along
-             the edge direction from the cell's structure tensor.
+FIVE ARMS, arranged so that each difference isolates one thing. Two are ideas,
+three are controls, and the controls exist because the first run of this
+experiment measured two effects at once and credited both to the wrong one.
 
-A FOURTH INITIALISATION IS A CONTROL, not an idea. The random and lattice inits
-put atoms at sigma ~ 1/sqrt(N), but the quadtree's cells concentrate where the
-image has detail, so its atoms start about five times smaller. Small atoms and
-adaptive placement would otherwise be the same measurement. 'lattice-fine' is
-the plain lattice at the quadtree's atom size, which separates them: if it
-matches structure, the win is atom size; if it matches lattice, the win is
-placement. Section 10.5 was confounded in exactly this way once, by a scale cap
-that differed between the arms being compared.
+  random        uniform centres, atom size sigma ~ 1/sqrt(N). The baseline,
+                run at two seeds, which also measures how far the standard
+                recipe moves between runs.
+  lattice       a regular grid of identical atoms at the same size.
+                Deterministic and completely image-INDEPENDENT. Against random
+                it isolates determinism alone, with placement made as dumb as
+                it can be.
+  structure     deterministic and image-adaptive: a binary quadtree split on
+                cell variance until there are N cells, one atom per cell,
+                oriented along the edge direction from the cell's structure
+                tensor.
+  lattice-fine  the plain lattice at structure's atom size. The quadtree
+                concentrates cells where the image has detail, so its atoms
+                start about five times smaller -- median 2.07px against 10.67px
+                at N=36. Against lattice this isolates atom SIZE; against
+                structure it isolates adaptive PLACEMENT at matched size.
+  random-fine   the baseline at that same atom size. Atom size turned out to be
+                the largest single effect, and it is a setting the baseline can
+                adopt as readily as anything else, so leaving it out would make
+                the comparison unfair in the deterministic methods' favour.
+
+Section 10.5 was confounded in exactly this way once, by a scale cap that
+differed between the arms being compared.
 
 QUALITY IS REPORTED AS PSNR, at two step counts, 1000 and 4000. The second
 number matters as much as the first: if a difference at 1000 steps is gone by
@@ -109,15 +117,29 @@ def psnr(err, P):
 
 
 # ------------------------------------------------------------ initialisations
-def init_random(y, N, n, rng):
-    """The standard recipe: uniform centres, isotropic-ish random scales."""
-    s = 1.0 / np.sqrt(N)                  # same atom size as the plain lattice
+def _random(N, rng, scale):
+    s = scale / np.sqrt(N)
     th = []
     for i in range(N):
         cx, cy = rng.uniform(0.05, 0.95, 2)
         sL, sW = s * rng.uniform(0.5, 2.0, 2)
         th.append(theta_from_axes(cx, cy, rng.uniform(0, np.pi), sL, sW))
     return np.array(th)
+
+
+def init_random(y, N, n, rng):
+    """The standard recipe: uniform centres, isotropic-ish random scales."""
+    return _random(N, rng, 1.0)
+
+
+def init_random_fine(y, N, n, rng):
+    """The standard recipe with the atom size the controls showed matters.
+
+    Without this arm the comparison is unfair in the deterministic methods'
+    favour: initial atom size turned out to be the largest single effect, and it
+    is a setting the random baseline can adopt as easily as anything else. This
+    is the baseline given that setting."""
+    return _random(N, rng, 0.19)
 
 
 def _lattice(N, scale):
@@ -190,8 +212,11 @@ def init_structure(y, N, n):
     return np.array(th)
 
 
-INITS = {"random": init_random, "lattice": init_lattice,
-         "lattice-fine": init_lattice_fine, "structure": init_structure}
+INITS = {"random": init_random, "random-fine": init_random_fine,
+         "lattice": init_lattice, "lattice-fine": init_lattice_fine,
+         "structure": init_structure}
+
+STOCHASTIC = ("random", "random-fine")
 
 # stability is measured on the three distinct ideas, not on the scale control
 STAB = ["random", "lattice", "structure"]
@@ -251,10 +276,10 @@ def run_quality(imgs, n, budgets, steps, seeds=2, log=print):
         per = {}
         for name in INITS:
             got = []
-            for s in range(seeds if name == "random" else 1):
+            for s in range(seeds if name in STOCHASTIC else 1):
                 for (nm, y) in imgs:
                     rng = np.random.default_rng(600 + 17 * s)
-                    th0 = (INITS[name](y, N, n, rng) if name == "random"
+                    th0 = (INITS[name](y, N, n, rng) if name in STOCHASTIC
                            else INITS[name](y, N, n))
                     r = adam(th0, y, X, Y, n, steps)
                     got.append({k: (psnr(v[0], P), v[1]) for k, v in r.items()})
@@ -264,7 +289,7 @@ def run_quality(imgs, n, budgets, steps, seeds=2, log=print):
             g = per[name]
             p1 = np.mean([q[steps[0]][0] for q in g])
             p2 = np.mean([q[steps[-1]][0] for q in g])
-            if name == "random" and seeds > 1:
+            if name in STOCHASTIC and seeds > 1:
                 per_img = np.array([q[steps[-1]][0] for q in g]).reshape(
                     seeds, len(imgs))
                 spread = f"{per_img.std(axis=0).mean():.3f} dB"
@@ -291,7 +316,7 @@ def run_stability(imgs, n, N, steps, log=print):
         acc = {}
         for (nm, y) in imgs:
             th0 = (INITS[name](y, N, n, np.random.default_rng(600))
-                   if name == "random" else INITS[name](y, N, n))
+                   if name in STOCHASTIC else INITS[name](y, N, n))
             ref = adam(th0, y, X, Y, n, steps)[steps[-1]]
             sig = np.sqrt((y @ y) / len(y) * 1e-3)          # 30 dB
             for label, y1, shift in [
@@ -301,7 +326,7 @@ def run_stability(imgs, n, N, steps, log=print):
                 ("scale x1.01", y * 1.01, (0, 0)),
             ]:
                 th1 = (INITS[name](y1, N, n, np.random.default_rng(600))
-                       if name == "random" else INITS[name](y1, N, n))
+                       if name in STOCHASTIC else INITS[name](y1, N, n))
                 e1, thp = adam(th1, y1, X, Y, n, steps)[steps[-1]]
                 thc = thp.copy()
                 thc[:, 0] -= shift[0] / n        # undo the known shift first
@@ -336,8 +361,8 @@ def main(out=None):
     log("")
     # instrument checks before interpretation
     for name, fn in INITS.items():
-        th = (fn(imgs[0][1], 36, n, np.random.default_rng(0)) if name == "random"
-              else fn(imgs[0][1], 36, n))
+        th = (fn(imgs[0][1], 36, n, np.random.default_rng(0))
+              if name in STOCHASTIC else fn(imgs[0][1], 36, n))
         check(f"C1 {name} init returns 36 finite atoms",
               th.shape == (36, NP_ATOM) and np.isfinite(th).all())
     y0 = imgs[0][1]
