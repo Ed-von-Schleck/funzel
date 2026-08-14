@@ -288,8 +288,13 @@ reading (H6).
   of a class (and across all 24 for pooled statements), one-sided wherever the reading is
   directional, medians with IQR. No means of PSNRs.
 - Sanity phase before the grid: planted-atom recovery, one test per knob, from each arm's own
-  init policy. A2b is expected to fail high-$\omega$ recovery; that predicted failure validates
-  the landscape mechanism cheaply before the GPU-days.
+  init policy. **Run — results in `pilot/results/`.** As pre-registered: spectrogram birth
+  recovers 20/20 with zero frequency error at both tested carriers; the A2b policy (random
+  $\omega$) fails high-$\omega$ recovery (6/20 vs 20/20), and descent from a near-zero carrier
+  reaches a near carrier (20/20 at $0.25\pi$) but never a far one (0/20 at $0.6\pi$) — the
+  landscape mechanism, measured. Two deviations: the Hermite cell missed its floor (17/20
+  after candidate-set birth; the Taylor-twin basin of §4), and the polar-parametrization cell
+  showed **no gap at $N{=}1$** (see H6/H7).
 
 ## 8. Pre-registered readings
 
@@ -320,10 +325,17 @@ invitation to read noise.
   may sit on the floor for every arm.
 - **H6 (seed variance).** IQR ordering: A2b > A4d > A3 ≈ A2a ≈ A1. The landscape story in one
   line — descended nonlinear parameters produce spread, informed birth and linear enrichment
-  remove it. If A4d matches A3's IQR, the quadrature trick buys nothing measurable.
+  remove it. If A4d matches A3's IQR, the quadrature trick buys nothing measurable. *Prior
+  update from the sanity phase, thresholds unchanged: the $N{=}1$ preview measured no
+  Cartesian–polar gap at all (20/20 both, both frequencies), so A4d's predicted excess spread
+  now rests entirely on population-scale effects — interacting atoms, moving positions,
+  repeated births.*
 - **H7 (quadrature, median).** A3 > A4d by ≥0.2 dB class median, or a paired signed-rank win
   — an unmargined "≥" would be satisfiable by rounding error. H6+H7 together are the test of
-  the one design principle this document actually invented.
+  the one design principle this document actually invented — and after the sanity phase's
+  $N{=}1$ null they are its *last* chance: a null here too kills the quadrature principle
+  cleanly, and the honest expectation going in is now closer to even than the original
+  prediction.
 - **H8.** A6 closes less than half of the A3−A1 gap. If it closes most of it, the result is a
   spawn heuristic for plain Gaussians — publish that instead.
 - **Kill condition.** At the primary cell, at matched $P$ *and* matched wall-clock: A1 ≥ A2a
@@ -348,7 +360,9 @@ knob mask (a few bits per atom) is charged to the representation there.
 
 Run matrix: core triangle 3 arms × 24 images × 3 budgets × 5 seeds = 1,080 fits; attribution
 arms 7 × 24 × 1 × 5 = 840; sanity + tuning ≈ 100. **≈ 2,000 fits** at ~2–4 min each on one
-modern GPU → **4–5 GPU-days**, embarrassingly parallel. Implementation ~1,400 lines of PyTorch;
+modern GPU → **4–5 GPU-days**, embarrassingly parallel; measured CPU throughput (4-core box,
+PyTorch autograd) puts a fit at ~15 min, so the first cut below is roughly a day there and
+the full grid stays GPU work. Implementation ~1,400 lines of PyTorch;
 the nonstandard machinery is §5's move scoring (windowed-FFT measurement, closed-form
 projections, calibration log) and §4's analytic pixel filter. Recommended first cut: sanity
 phase plus the core triangle on four **pilot images drawn outside the 24 evaluation images**
