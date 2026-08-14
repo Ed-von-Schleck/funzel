@@ -183,13 +183,19 @@ def part_b(imgs, n, N, log=print):
     X, Y = _grid(n)
     rng = np.random.default_rng(11)
     log(f"  N={N}: re-encode the perturbed image from the CLEAN image's "
-        f"converged solution")
+        f"converged solution. The 'none' row is the floor for both columns.")
     log(f"      {'perturbation':>14} {'cold start':>12} {'warm start':>12} "
         f"{'PSNR cold':>10} {'PSNR warm':>10}")
     acc = {}
     for (nm, y) in imgs:
         th_ref = encode(y, N, n, X, Y)          # once per image, not once per row
-        for (label, y1, sh) in perturbations(y, n, rng):
+        # the 'none' row is the floor. Cold start re-runs a deterministic
+        # encoder on an unchanged image, so it must read 0.00 px exactly. Warm
+        # start re-runs Adam from its own converged point with fresh moment
+        # estimates, which does NOT sit still -- without this row the warm
+        # numbers below have nothing to be compared against.
+        for (label, y1, sh) in ([("none", y, 0.0)]
+                                + perturbations(y, n, rng)):
             th_cold = encode(y1, N, n, X, Y)
             th_warm = encode(y1, N, n, X, Y, th0=th_ref)
             row = []

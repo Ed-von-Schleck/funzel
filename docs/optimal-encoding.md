@@ -87,6 +87,8 @@ optimal.
 | **But it is unreachable from $N\approx6$ up, and unrecognisable** | **[V]** §10.12 — 60 restarts give up to 60 distinct optima; the most-agreed solution is not the best in 7/8 rows, and costs 4–25% |
 | **A deterministic encoder costs nothing in quality** | **[V]** §10.14 — against a scale-tuned random baseline it scores +0.8/+0.9 dB, inside the baseline's own seed spread. Canonicity is free |
 | **But no encoder here is stable** | **[V]** §10.14 — 30dB noise moves the atoms 2.7–3.3 px on a 64px image, against 0.00 px for the grid optimum in §10.10 |
+| Quantisation cannot rescue it | **[V]** §10.15 — matching 3/4 of the centres costs 16.4 dB; the full atom code never matches above 13% |
+| The instability is the *initialisation*, not the optimum | **[V]** §10.15 — warm-started encodings sit at the 1.47 px restart floor while cold starts land at 5.01 px |
 | **No cheap property of a solution certifies it either** | **[V]** §10.13 — 12 features over 178 distinct local optima: the best reads 0.645 where a null control reads 0.363, and flagging every optimum means flagging 178 of 178 solutions |
 | On the grid at $N{=}3$, local search simply solves it | **[V]** §10.13 — 1-swap descent reaches the enumerated optimum on 40/40 images; only 2–5 local optima exist. Discretising buys a problem that is easy and wrong (§10.11) |
 | But the optimum is often *found* anyway | **[V]** §10.8 — greedy+swap attains the exhaustively verified optimum in 4/8 cells, and at $N{=}4$ matches enumeration over 153.8M supports |
@@ -1587,6 +1589,76 @@ stability is the half that "comparable across images" actually needs.
 densification or pruning. The baseline is a reimplementation and no claim is made about matching
 published numbers. The seed count is the weakest part and is what U28 asks for.
 
+### 10.15 Quantisation does not buy stability; the initialisation is the culprit
+
+`experiments/e16_quantised_stability.py`, raw output `results/e16.txt`.
+
+§10.14 left the canonical encoder free on quality and unstable under perturbation. §10.10 measured
+the enumerated *grid* optimum as completely unmoved by the same perturbation — 0.00px under 30dB
+noise. The difference between them is quantisation: a discrete argmin cannot move a little. So snap
+the converged continuous atoms onto a grid, and two nearby images should produce the same code. The
+question is what that costs.
+
+**[V] It costs far more than it buys.** Snapping centres onto a grid of step $q$, refitting
+amplitudes, and measuring both the PSNR paid and the fraction of atoms landing on identical cells
+for an image and its 30dB-noise version:
+
+| $q$ (px) | $N{=}36$: PSNR cost | code match | $N{=}144$: PSNR cost | code match |
+|---|---|---|---|---|
+| 0.25 | −0.10 | 0.01 | −0.93 | 0.04 |
+| 1.0 | −1.39 | 0.07 | −6.36 | 0.17 |
+| 2.0 | −3.78 | 0.17 | −10.11 | 0.31 |
+| 4.0 | −7.88 | 0.32 | −14.23 | 0.53 |
+| 8.0 | −9.06 | 0.54 | −16.42 | 0.76 |
+
+At $N=144$, matching three quarters of the centres costs **16.4 dB**. At the other end, a
+quantisation cheap enough to be free (0.25px, −0.93 dB) matches 4% of them. There is no useful
+point on this curve.
+
+**[A] And there was never going to be, for a geometric reason worth stating.** An atom displaced by
+$d$ on a grid of step $q$ keeps its cell only if the displacement does not cross a boundary, which
+for a uniformly placed atom happens with probability about $(1-d/q)^2$ in two dimensions. With
+$d\approx3$px measured in §10.14, $q=8$ predicts about 39% retention against 54% observed — the
+right order. Getting retention near 1 needs $q\gg d$, and the PSNR cost grows with $q$ throughout.
+The two requirements move in opposite directions, which is the same shape as §10.9's ridge
+trade-off and has the same conclusion.
+
+**[V] The full code is worse still.** A discrete representation needs scales and orientations
+quantised too, not just centres. Quantising the whole atom to an integer tuple — centre cell, axis
+lengths on a 1.25 ratio ladder, orientation in 8 sectors — the match never exceeds **0.08** at
+$N=36$ or **0.13** at $N=144$, at any $q$. Centres are the *most* stable part of the encoding.
+
+**[V] Part B locates the instability, and this is the useful half.** The encoder is deterministic,
+so the movement comes either from the quadtree's split decisions flipping under the perturbation,
+or from the optimum itself moving. Re-encoding the perturbed image starting from the *clean*
+image's converged solution separates them, read against a floor row that re-runs on the unperturbed
+image:
+
+| perturbation | cold start | warm start | interpretation |
+|---|---|---|---|
+| none (floor) | 0.00 px | 1.47 px | the encoder is deterministic; Adam does not sit still when restarted |
+| 30dB noise | 5.01 px | **1.90 px** | at the floor |
+| 1px shift | 2.96 px | **1.84 px** | at the floor |
+| ×1.01 scale | 0.35 px | 1.58 px | already stable cold |
+
+**[A] Warm-started encodings sit at the restart floor.** The local optimum near the clean solution
+survives the perturbation and can be re-found; a cold start lands 3.4× further away because the
+initialisation changed. **So the instability is in the initialisation and the optimisation path,
+not in the location of the optimum.** That is a considerably more hopeful diagnosis than the
+alternative, and it points at a specific culprit: the quadtree makes *discrete* split decisions,
+and a decision that flips under imperceptible noise moves an atom a long way. A placement rule
+that varies continuously with the image would not have that failure mode. U30.
+
+**[A] A byproduct that qualifies §10.14 and this section both.** The floor row exists because
+re-running Adam from its own converged point moves the solution 1.47px — and *improves* PSNR every
+time, by 0.28 to 0.46 dB across three images. Four thousand steps is not convergence. Some part of
+every displacement reported in §10.14 and here is therefore continued optimisation rather than
+response to the perturbation, which makes these stability numbers upper bounds.
+
+**[A] Scope.** $64\times64$, three images, $N=36$ and 144, one optimiser, one quantiser design. The
+warm start is a diagnostic and not a proposal: an encoder that needs the unperturbed image's
+solution in order to encode the perturbed one is not an encoder.
+
 ## 11. Open questions, and what would settle each
 
 | | question | what would settle it | cost |
@@ -1605,7 +1677,8 @@ published numbers. The seed count is the weakest part and is what U28 asks for.
 | **U27** | Does the *exact* certificate value behave differently from §10.13's grid approximation? `cos_next` maximizes $|\eta(\theta)|$ over 248 atoms; §6's quantity is a supremum over continuous $\theta$ | Recompute `cos_next` with the shape-bank plus Nelder-Mead refinement §9 already uses, on the same 178 solutions, and rescore. The one follow-up §10.13's negative result actually invites | days |
 | ~~U25~~ | ~~Is *any* practically computable quantity correlated with global optimality?~~ | **Resolved, negatively — §10.13.** Twelve dimensionless features over 178 distinct local optima on 12 images: the best reads pooled AUC 0.645 where an information-free null control reads 0.363, the $\lambda=0$ certificate value reads 0.560, and the held-out winner reads 0.772 / 0.533 / 0.710 across three image sets. A logistic regression over all twelve reaches 0.751 held out — a weak real signal — but flagging every optimum still requires flagging 178 of 178 solutions, and 146 of 146 on a fresh set | done |
 | **U28** | Is §10.14's +0.9 dB for adaptive placement real, or seed noise? At $N{=}144$ it is smaller than the baseline's own 1.107 dB spread over two seeds, and it shrinks from 1.470 dB at 1000 steps to 0.898 at 4000 | Re-run §10.14's quality leg at 8 seeds and a third checkpoint at 16000 steps, on 8 images. Cheap, and it decides whether the deterministic encoder is *better* or merely *equal* — the second still answers the question that motivated it | days |
-| **U29** | Can any encoder be made stable? §10.14 shows continuous optimisation is not: noise moves atoms 2.7–3.3 px where the grid optimum moved 0.00. Quantisation is the visible cause | Test whether snapping the converged atoms to a fine grid restores stability without costing PSNR, and whether stability improves when the perturbed image is encoded from the *unperturbed* solution as a warm start. Stability, not quality, is what the canonical programme now rests on | days |
+| **U30** | Would a *continuously varying* placement rule be stable? §10.15 shows the instability is in the initialisation, and the quadtree's split decisions are discrete — one flip under imperceptible noise moves an atom far | Replace the quadtree with a placement that varies continuously with the image (weighted centroids of a fixed soft partition, or Lloyd iterations on an image-derived density), re-run §10.14's stability leg, and read it against §10.15's 1.47 px restart floor | days |
+| ~~U29~~ | ~~Can quantisation restore stability?~~ §10.14 shows continuous optimisation is not: noise moves atoms 2.7–3.3 px where the grid optimum moved 0.00. Quantisation is the visible cause | Test whether snapping the converged atoms to a fine grid restores stability without costing PSNR, and whether stability improves when the perturbed image is encoded from the *unperturbed* solution as a warm start. **Resolved, negatively — §10.15.** Snapping to a grid buys code agreement only at $q\gg$ the displacement, which costs 9–16 dB. The warm-start half of the question is answered positively and became U30 | done |
 | **U26** | Does the grid's tractability at $N{=}3$ (§10.13: local search solves 40/40) survive larger $N$, and can a *sequence* of grids beat one? The grid is easy and wrong; the continuous problem is right and hard | Re-run §10.13's descent leg at $N=4,5$ where enumeration is still affordable; then test grid-refinement — solve on a coarse grid, refine the dictionary around the solution, repeat — against continuous restarts at matched cost | days |
 | ~~U22~~ | ~~Does §10.7's verdict on frequency continuation depend on the blur schedule?~~ | **Resolved — yes, §10.7.** The schedule used was among the worst of five swept. A mild $[1,0]$ schedule gives −2.87% median, better in 9/12 cells, against +0.82% for the one originally used; the trend is monotone in schedule aggressiveness. The gain is small and requires the handicap allocation, so continuation is still not a route to the optimum, but the original verdict was too strong | done |
 | ~~U22-old~~ | ~~superseded~~ A known-answer test shows continuation losing a handed-in optimum by 4e-4% to 27%, erratically across schedules and instances, so the single schedule §10.7 used may not be representative | Re-run §10.7 sweeping the schedule (number of stages, coarsest $\sigma$), medians over $\ge5$ seeds since single draws demonstrably reverse | days |
