@@ -85,6 +85,8 @@ optimal.
 | **The optimum is canonical — unique off-grid and stable** | **[V]** §10.10, §10.11 — 1 support in 2.5M within 1%; independent restarts agree to 0.01px |
 | Reaching it needs restarts; the grid actively misleads | **[V]** §10.11 — the grid optimum is 38–43% worse and refines into a basin 31% worse than the global one |
 | **But it is unreachable from $N\approx6$ up, and unrecognisable** | **[V]** §10.12 — 60 restarts give up to 60 distinct optima; the most-agreed solution is not the best in 7/8 rows, and costs 4–25% |
+| **A deterministic encoder costs nothing in quality** | **[V]** §10.14 — against a scale-tuned random baseline it scores +0.8/+0.9 dB, inside the baseline's own seed spread. Canonicity is free |
+| **But no encoder here is stable** | **[V]** §10.14 — 30dB noise moves the atoms 2.7–3.3 px on a 64px image, against 0.00 px for the grid optimum in §10.10 |
 | **No cheap property of a solution certifies it either** | **[V]** §10.13 — 12 features over 178 distinct local optima: the best reads 0.645 where a null control reads 0.363, and flagging every optimum means flagging 178 of 178 solutions |
 | On the grid at $N{=}3$, local search simply solves it | **[V]** §10.13 — 1-swap descent reaches the enumerated optimum on 40/40 images; only 2–5 local optima exist. Discretising buys a problem that is easy and wrong (§10.11) |
 | But the optimum is often *found* anyway | **[V]** §10.8 — greedy+swap attains the exhaustively verified optimum in 4/8 cells, and at $N{=}4$ matches enumeration over 153.8M supports |
@@ -1504,6 +1506,87 @@ the honest statement is that **the certificate value maximized over a 248-atom d
 nothing — not that the exact supremum would fail. Testing the exact version would cost a
 Nelder-Mead refinement per solution and is the one clearly worthwhile follow-up here.
 
+### 10.14 A canonical encoder costs nothing in quality, and is not stable
+
+`experiments/e15_canonical_quality.py`, raw output `results/e15.txt`.
+
+§10.13 closed "know you have the global optimum". It did not close what the global optimum was
+wanted *for*. The motivation was that the optimum is a function of the image alone, hence
+reproducible and comparable across images — and **that needs determinism and stability, not
+optimality**. A deterministic encoder is reproducible by construction. So the question becomes
+whether it costs anything, measured against the recipe everyone actually uses: uniform-random
+placement followed by Adam on every parameter, which is GaussianImage's method without
+densification or pruning, reimplemented here rather than taken from a paper.
+
+**[V] Five arms on $64\times64$ images at 36 and 144 splats, PSNR after 4000 Adam steps**, three
+images, two seeds for the stochastic arms. 144 splats on $64^2$ is one atom per 28 pixels, the
+density published results work at, though the absolute scale is far below them.
+
+| budget | random | random-fine | lattice | lattice-fine | structure |
+|---|---|---|---|---|---|
+| 36 | 26.200 | 27.793 | 26.874 | 28.222 | **28.611** |
+| 144 | 27.380 | 31.917 | 28.519 | 31.445 | **32.815** |
+
+`lattice` is a regular grid of identical atoms — deterministic and completely *image-independent*.
+`structure` is deterministic and adaptive: a variance quadtree, one atom per cell, oriented along
+the edge direction from the cell's structure tensor. The `-fine` arms are the same two placements
+at a five-times-smaller initial atom size.
+
+**[V] The decomposition, and it is not what the first run appeared to show:**
+
+| | $N{=}36$ | $N{=}144$ |
+|---|---|---|
+| initial atom size, on random placement | **+1.593** | **+4.537** |
+| determinism, at the original atom size | +0.674 | +1.139 |
+| determinism, at the smaller atom size | +0.429 | **−0.472** |
+| adaptive placement, at matched atom size | +0.389 | +1.370 |
+| **structure vs. the scale-tuned baseline** | **+0.818** | **+0.898** |
+| the baseline's own seed-to-seed spread | 0.238 | 1.107 |
+
+**[A] The largest effect is a hyperparameter of the baseline.** Initial atom size is worth 1.6–4.5
+dB and has nothing to do with canonical encoding; it is a setting the random recipe adopts as
+easily as any other. An earlier version of this experiment omitted that control and would have
+reported adaptive placement as worth 5.4 dB. It is worth 1.4.
+
+**[A] Determinism itself is free, and that is the result that matters here.** Against a baseline
+tuned to the same atom size, the image-independent lattice scores +0.429 and −0.472 — a wash — and
+the adaptive encoder scores +0.818 and +0.898. **A canonical encoder is not meaningfully worse
+than the standard recipe. At these budgets it is very slightly better.** Two caveats keep this from
+being stronger. At $N=144$ the +0.898 advantage is *smaller than the baseline's own 1.107 dB
+seed-to-seed spread*, so with two seeds it is not separated from noise. And it shrinks with
+optimisation: structure leads the tuned baseline by 1.470 dB at 1000 steps and 0.898 dB at 4000, so
+part of it is convergence speed rather than final quality, and at some larger step count it may be
+nil. Nil would still answer the question asked.
+
+**[V] Stability is where it fails.** Determinism gives identical output for identical input, which
+is trivial. A canonical representation needs more: a small change in the image must produce a small
+change in the atoms, or two similar images cannot be compared. Re-encoding perturbed images at
+$N=36$ and matching atoms:
+
+| perturbation | random | lattice | structure |
+|---|---|---|---|
+| 30dB noise | 2.66 px | 3.30 px | 2.94 px |
+| 1px shift (undone before matching) | 5.13 px | 5.78 px | **2.58 px** |
+| intensity ×1.01 | 0.37 px | 0.77 px | 0.71 px |
+
+**[A] Three pixels of movement under 30dB noise, on a 64-pixel image, is not a stable map.** Mean
+atom spacing at $N=36$ is about 10.7 px, so the atoms move roughly a quarter of the way to their
+neighbours in response to noise that is barely visible. Set against §10.10, where the *grid*
+optimum was unmoved to 0.00 px by the same perturbation, the cause is visible: the grid optimum is
+a discrete argmin, and quantisation is what made it stable. A continuous local optimum reached by
+Adam has no such quantisation and inherits the optimiser's path dependence — the same instability
+§10.12 measured as 16 to 60 distinct optima per image. The adaptive encoder is the best of the
+three under a shift, at half the displacement, and the only one whose PSNR does not degrade under
+perturbation, but 2.58 px is still not small.
+
+**[A] So the answer splits.** On quality, canonicity is free: this is the first result in this
+document that says a reproducible encoder costs nothing to have. On stability it fails, and
+stability is the half that "comparable across images" actually needs.
+
+**[A] Scope.** $64\times64$, two budgets, three images, two seeds, one optimiser, 4000 steps, no
+densification or pruning. The baseline is a reimplementation and no claim is made about matching
+published numbers. The seed count is the weakest part and is what U28 asks for.
+
 ## 11. Open questions, and what would settle each
 
 | | question | what would settle it | cost |
@@ -1521,6 +1604,8 @@ Nelder-Mead refinement per solution and is the one clearly worthwhile follow-up 
 | ~~U24~~ | ~~Does the restart-agreement hit rate survive larger $N$?~~ | **Resolved, negatively — §10.12.** No. Distinct solutions in 60 restarts grow 16 → 60 across $N=3..8$; at $N=8$ on ascent every restart found its own optimum. The most-agreed solution is not the best in 7/8 rows and costs 4–25% in error, so agreement is not merely unavailable but actively misleading | done |
 | **U27** | Does the *exact* certificate value behave differently from §10.13's grid approximation? `cos_next` maximizes $|\eta(\theta)|$ over 248 atoms; §6's quantity is a supremum over continuous $\theta$ | Recompute `cos_next` with the shape-bank plus Nelder-Mead refinement §9 already uses, on the same 178 solutions, and rescore. The one follow-up §10.13's negative result actually invites | days |
 | ~~U25~~ | ~~Is *any* practically computable quantity correlated with global optimality?~~ | **Resolved, negatively — §10.13.** Twelve dimensionless features over 178 distinct local optima on 12 images: the best reads pooled AUC 0.645 where an information-free null control reads 0.363, the $\lambda=0$ certificate value reads 0.560, and the held-out winner reads 0.772 / 0.533 / 0.710 across three image sets. A logistic regression over all twelve reaches 0.751 held out — a weak real signal — but flagging every optimum still requires flagging 178 of 178 solutions, and 146 of 146 on a fresh set | done |
+| **U28** | Is §10.14's +0.9 dB for adaptive placement real, or seed noise? At $N{=}144$ it is smaller than the baseline's own 1.107 dB spread over two seeds, and it shrinks from 1.470 dB at 1000 steps to 0.898 at 4000 | Re-run §10.14's quality leg at 8 seeds and a third checkpoint at 16000 steps, on 8 images. Cheap, and it decides whether the deterministic encoder is *better* or merely *equal* — the second still answers the question that motivated it | days |
+| **U29** | Can any encoder be made stable? §10.14 shows continuous optimisation is not: noise moves atoms 2.7–3.3 px where the grid optimum moved 0.00. Quantisation is the visible cause | Test whether snapping the converged atoms to a fine grid restores stability without costing PSNR, and whether stability improves when the perturbed image is encoded from the *unperturbed* solution as a warm start. Stability, not quality, is what the canonical programme now rests on | days |
 | **U26** | Does the grid's tractability at $N{=}3$ (§10.13: local search solves 40/40) survive larger $N$, and can a *sequence* of grids beat one? The grid is easy and wrong; the continuous problem is right and hard | Re-run §10.13's descent leg at $N=4,5$ where enumeration is still affordable; then test grid-refinement — solve on a coarse grid, refine the dictionary around the solution, repeat — against continuous restarts at matched cost | days |
 | ~~U22~~ | ~~Does §10.7's verdict on frequency continuation depend on the blur schedule?~~ | **Resolved — yes, §10.7.** The schedule used was among the worst of five swept. A mild $[1,0]$ schedule gives −2.87% median, better in 9/12 cells, against +0.82% for the one originally used; the trend is monotone in schedule aggressiveness. The gain is small and requires the handicap allocation, so continuation is still not a route to the optimum, but the original verdict was too strong | done |
 | ~~U22-old~~ | ~~superseded~~ A known-answer test shows continuation losing a handed-in optimum by 4e-4% to 27%, erratically across schedules and instances, so the single schedule §10.7 used may not be representative | Re-run §10.7 sweeping the schedule (number of stages, coarsest $\sigma$), medians over $\ge5$ seeds since single draws demonstrably reverse | days |
@@ -1601,6 +1686,13 @@ support in 2.5M within 1%), stable under 30dB noise, and unique off-grid (restar
 best error agree to 0.01px). §10.12 then shows it is operationally unreachable from about six
 atoms up — not findable, and not recognisable once found. §10.13 then closes the last route tested: no cheap property of a solution
 identifies it as optimal either, including the certificate value itself.
+
+**[A] §10.14 then answers the question the whole strand was for, and the answer is half good.** A
+*deterministic* encoder — which is canonical by construction, without needing the global optimum —
+costs nothing in quality: against a scale-tuned random baseline it scores +0.8 to +0.9 dB, inside
+the baseline's own seed-to-seed spread. But it is not stable: 30dB of noise moves its atoms 2.7–3.3
+pixels on a 64-pixel image, where the grid optimum of §10.10 did not move at all. Reproducibility
+is free; stability is not, and stability is what comparing two images requires.
 
 **[A] So the canonical-encoder programme, as a programme aimed at *knowing* you have the optimum,
 is closed by measurement rather than left open.** Every route this document could test has been
