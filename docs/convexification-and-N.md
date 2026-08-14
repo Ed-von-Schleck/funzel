@@ -82,10 +82,10 @@ minimiser. (P0) admits no such test.
 The hope is then: solve (P$\lambda$), obtain a certified global optimum, and tune $\lambda$ until
 the answer happens to use about $N$ blobs.
 
-One handle on the count survives. A representer theorem gives (P$\lambda$) a minimiser supported
-on at most $P$ points, $P$ the number of measurements. It is the only bound on the blob count
-convexification leaves standing, and it is set by the data rather than by $\lambda$ — for an image
-$P$ is the pixel count, so it is true and idle.
+One handle on the count survives. A representer theorem gives (P$\lambda$) a minimiser supported on
+at most $P$ points, one per pixel. It is the only bound on the blob count that convexification
+leaves standing, and it is fixed by the image size rather than by $\lambda$, so for any $N$ worth
+encoding at it is true and idle.
 
 Notice what was traded. (P0) constrains the **number** of blobs. (P$\lambda$) penalises the
 **total mass** and lets the number fall out of $\lambda$. The rest of this document is about what
@@ -450,10 +450,19 @@ $\mathcal{F}_{N,M}$ from $B_{NM}$, and it does not: $\mathcal{F}_{N,M}$ contains
 in one ball. It sees $N$ only on the separated family — separation is a hypothesis on the
 encodings, not a better penalty.
 
-Three things are owed. The relaxed problem is a different one, over separated encodings, and
-whether a good encoding of an image has separated blobs is unknown. The containment is one-way, so
-how much smaller the hull is has not been computed. And nothing here says the programme is
-tractable.
+Three things are owed, and `experiments/e19_optimum_separation.py` settles the first. At the
+exactly enumerated $N=3$ optimum on a $D=248$ dictionary of coherence 0.962, the chosen blobs are
+not near-duplicates: their largest pairwise coherence runs 0.199–0.808 and their closest centres
+3.8–25.5 pixels apart on a 48-pixel image. Some $\delta$ admits the optimum, so the separated
+family is not empty of the answer. The same measurement shows where the route is likely to fail
+instead. The cap $M$ must be at least the optimum's largest amplitude, which reaches 1.19 times
+$\|y\|$ — the single-blob-carries-the-image effect the fourth measurement in Section 9 reports —
+and the mass budget $NM$ that implies is 1.45–2.27 times the mass the optimum actually spends,
+which is where the second measurement finds the ball already saying nothing. The local cap would
+have to carry the argument by itself.
+
+The other two stand. The containment is one-way, so how much smaller the hull is has not been
+computed, and nothing here says the resulting programme is tractable.
 
 **Point out that the BLASSO's own solutions are sparse.** They are: for a fixed $\lambda$ the
 minimiser of (P$\lambda$) is generically a finite sum of point masses, and under a separation
@@ -550,8 +559,9 @@ by Theorem 3, the convexification of the $N$-blob family for *every* $N$ at once
 
 ## 9. What the measurements show
 
-Six results from this repository. Each is described here in enough detail to be read without the
-other document.
+Eight results from this repository, each described in enough detail to be read without the other
+document. The first three concern the mass-ball relaxation, the next three the amplitude caps that
+a finite dictionary allows, and the last two the dictionary's coherence and the certificate.
 
 **The gap is real with both problems solved exactly.** `experiments/e4_exact_l0.py`. Shrink the
 problem until neither side can be blamed on a solver: a $32\times32$ image, a dictionary of $D=768$
@@ -619,8 +629,7 @@ images. It only applies to a modified problem carrying an extra penalty $\lambda
 amplitudes. Where that penalty is small enough to leave the problem essentially unchanged
 ($\lambda_2\le10^{-3}$, reconstruction identical to four decimals) the gap between the bound and
 the true optimum, before any branching has happened, is **64–86%**. It closes only at
-$\lambda_2=1$, where the
-reconstruction error has risen by a factor of 2.4–4.3. There is no setting in which the bound is
+$\lambda_2=1$, where the reconstruction error has risen by a factor of 2.4–4.3. There is no setting in which the bound is
 tight and the problem is still the one wanted. Two relaxations failing for one shared reason —
 amplitudes at signal scale — points at the dictionary rather than at the choice of relaxation.
 
@@ -666,8 +675,8 @@ approximating.
 `experiments/e14_certifiable.py`. Section 8 says the certificate cannot *prove* (P0) optimality.
 Its numerical value might still correlate with being optimal and serve as a heuristic, which is a
 separate question. Across 178 distinct local optima on 12 images at $N=3$, the certificate value at
-$\lambda=0$ separates the best solution from the
-rest with AUC **0.560**, 95% bootstrap interval over images **[0.467, 0.666]** — the probability
+$\lambda=0$ separates the best solution from the rest with AUC **0.560**, 95% bootstrap interval
+over images **[0.467, 0.666]** — the probability
 that it ranks the best solution ahead of a randomly chosen worse one, where 0.5 is chance. The
 interval contains chance, so on this population the experiment does not distinguish the certificate
 from a coin. An information-free control drawn from a random number generator reads 0.363,
@@ -754,6 +763,7 @@ it was not read.
 | Certificate value not separable from chance on the restart population | measured, `experiments/e14_certifiable.py`; the bootstrap interval is the claim, not the point estimate |
 | Branch-and-bound solvers reaching $10^7$ variables | from search summaries; the sources were never read |
 | Moment hierarchies for the BLASSO target the dual constraint, not the count | from search summaries; not read, not tested |
+| Optima are separated, but the cap they force leaves the mass budget 1.45–2.27× slack | measured, `experiments/e19_optimum_separation.py` |
 | Tractability of the separated relaxation (Theorem 10) | open; neither derived nor tested |
 | Prior art for Theorem 10's construction | searching turned up the separation hypothesis only in its recovery role, not as a way of convexifying the count. Per M6 of the companion document a null search result is not novelty, and this row records a failed search, not a claim of priority |
 | Gap closes exactly at $N_0=3$–48 at fixed mass; Theorem 8's bound never binding | measured, `experiments/e16_fixed_mass.py`. $U$ is a search upper bound above $N=2$, so the gap is an upper bound; small values are conclusive, large ones may be the solver |
