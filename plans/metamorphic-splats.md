@@ -3,7 +3,8 @@
 An experiment design. Self-contained and independent of the documents in `docs/` — it shares no
 premises with them and none of their conclusions are assumed here.
 
-**Status: planned, not run.** Nothing below is a result.
+**Status: planned, not run.** Nothing below is a result. Revision 2, after an adversarial pass;
+the substantive corrections are listed in Appendix A so they are not silently absorbed.
 
 ---
 
@@ -11,15 +12,20 @@ premises with them and none of their conclusions are assumed here.
 
 2D Gaussian splatting represents an image as $\sum_i c_i\,G(\mu_i,\Sigma_i)$ — many cheap
 primitives, 6 parameters each, fit by random init + Adam. The question: at a **fixed total
-parameter budget** $P = N \times k$, is it better to spend $P$ on more atoms ($N\uparrow$,
-$k=6$) or on richer atoms ($k\uparrow$, $N\downarrow$)?
+parameter budget** $P$, is it better to spend $P$ on more atoms ($N\uparrow$, $k=6$) or on
+richer atoms ($k\uparrow$, $N\downarrow$)?
 
-Framing that makes the question non-trivial: the curve from $(N{=}10^6, k{=}3)$ — pixels — to
-$(N{=}1, k{=}10^6)$ — an implicit neural representation — passes through Gaussian splatting near
-the cheap end. Whether the distortion-at-budget curve dips in the middle is content-dependent:
-an edge wants many cheap anisotropic atoms, a texture patch wants one rich oscillatory one, a
-sky wants one enormous smooth one. So the object under test is not a single richer primitive
-but an **allocation policy** that decides, per location, where on the $N$-vs-$k$ curve to sit.
+Framing that makes the question non-trivial: the curve from (many atoms, $k{=}1$) — pixels — to
+(one atom, $k{=}10^6$) — an implicit neural representation — passes through Gaussian splatting
+near the cheap end. Whether the distortion-at-budget curve dips in the middle is
+content-dependent: an edge wants many cheap anisotropic atoms, a texture patch wants one rich
+oscillatory one, a sky wants one enormous smooth one. So the design tests not a single richer
+primitive but an **allocation policy** deciding, per location, where on the $N$-vs-$k$ curve to
+sit.
+
+**The core comparison is the triangle A1 / A2a / A3** (§6): incumbent Gaussians, uniformly rich
+atoms, adaptively rich atoms — all at matched $P$. Every other arm exists to attribute a win or
+a loss, not to answer the question. Fixes and controls below must not displace that triangle.
 
 ## 2. Why "random init + Adam" works, and what it filters out
 
@@ -43,17 +49,21 @@ design principles fall out:
 - **Enrich linearly where possible.** Parameters that enter linearly (coefficients over a
   per-atom basis) are nearly free: given pose, they are one least-squares solve. Nonlinear
   parameters (frequency, sharpness, warp) are what wreck landscapes.
-- **Every atom is born a Gaussian.** Each enrichment gets a blunting value at which the atom is
-  a plain Gaussian, and moves off it only when the gradient (or the allocator) demands.
-- **Domain knowledge enters at birth, not during descent.** Nonlinear parameters that cannot be
-  found by descent (a carrier frequency, by the uncertainty principle: capture radius in space
-  $\sigma$ times capture radius in frequency $1/\sigma$ is pinned at $\sim 1$, so position and
+- **Every atom is born a Gaussian**, and every knob has a blunt value at which the atom *is* a
+  plain Gaussian — with **no dormant parameters attached**. A parameter exists only from the
+  moment it can receive gradient (see §4; the first draft violated this).
+- **Domain knowledge enters at birth, not during descent.** Nonlinear parameters that descent
+  cannot find (a carrier frequency: capture radius in space $\sigma$ times capture radius in
+  frequency $1/\sigma$ is pinned at $\sim1$ by the uncertainty principle, so position and
   frequency cannot both have wide basins) are set by a matched-filter measurement of the
-  residual at spawn time. Adam polishes; birth places.
+  residual at unlock time. Adam polishes; birth places.
 
 ## 3. Prior art, briefly
 
 The kernel-swap literature is active but fragmented; none of it tests the allocation question.
+*Citation depth caveat: the works below are known from abstracts, project pages, and search
+summaries, not full readings; before running, the two closest (3DGabSplat, Gaussian–Hermite)
+should be read in full to steal their failure notes.*
 
 - **Real Gabor splats.** Gabor Splatting for gigapixel images (SIGGRAPH 2024 poster,
   [doi:10.1145/3641234.3671081](https://dl.acm.org/doi/10.1145/3641234.3671081)); 3D Gabor
@@ -68,7 +78,7 @@ The kernel-swap literature is active but fragmented; none of it tests the alloca
   complex-exponential modulation, [arXiv:2603.05681](https://arxiv.org/abs/2603.05681)) and
   holography (Gaussian Wave Splatting, [arXiv:2505.06582](https://arxiv.org/abs/2505.06582);
   complex-valued 2D Gaussians, [arXiv:2511.15022](https://arxiv.org/abs/2511.15022)). Nobody
-  uses complex amplitude as an *optimization device* for ordinary photographs.
+  uses quadrature amplitude as an *optimization device* for ordinary photographs.
 - **Other kernel swaps**: GES's learnable exponent
   ([arXiv:2402.10128](https://arxiv.org/abs/2402.10128)), Gaussian–Hermite splatting
   ([arXiv:2408.16982](https://arxiv.org/abs/2408.16982)) — which needed a coarse-to-fine
@@ -77,112 +87,175 @@ The kernel-swap literature is active but fragmented; none of it tests the alloca
 
 ## 4. The unified atom
 
-$$f(x) \;=\; \mathrm{Re}\!\left[\,P_c(u)\;e^{i\,\omega^\top u}\right]\cdot e^{-\frac12\|u\|^{\beta}},
-\qquad u = A(x-\mu)$$
+Written in real form so that parameter accounting is honest — a parameter appears below exactly
+when it exists and can receive gradient:
 
-with $A$ the usual anisotropic pose (2 log-scales + rotation), $\mu$ position, and $P_c$ a
-**complex-coefficient** polynomial in the Hermite basis of order $m$. Three knobs, each with a
-blunt zero; at all-blunt the atom is exactly a plain Gaussian with 6 parameters (grayscale).
+$$f(x) \;=\;
+\Big[\underbrace{\textstyle\sum_{|\alpha|\le m} c_\alpha H_\alpha(u)}_{\text{always present}}\Big]
+\cos(\omega^\top u)\;+\;
+\Big[\underbrace{\textstyle\sum_{|\alpha|\le m} d_\alpha H_\alpha(u)}_{\text{exists only if }\omega\text{ unlocked}}\Big]
+\sin(\omega^\top u),
+\quad\text{all}\times\; e^{-\frac12\|u\|^{\beta}},\quad u=A(x-\mu).$$
 
-| knob | blunt value | unlocked cost | serves | sieve status |
+$A$ is the usual anisotropic pose (2 log-scales + rotation), $H_\alpha$ the Hermite basis.
+While $\omega$ is locked at $0$, the $\sin$ block and all $d_\alpha$ **do not exist** — they
+are not stored at zero, they are absent, so the blunt atom is exactly a 6-parameter Gaussian
+with no dormant freight. Unlocking $\omega$ creates the carrier *and* one quadrature partner
+$d_\alpha$ per existing $c_\alpha$; from then on the appearance pair $(c_\alpha,d_\alpha)$ is
+the complex coefficient of the earlier discussions, and phase is never a descended parameter.
+The order-0, $\omega$-unlocked atom is precisely the complex Gabor.
+
+| knob | blunt value | unlock cost | serves | sieve status |
 |---|---|---|---|---|
-| polynomial order $m$ | $m=0$ | +2 per complex coeff | edges, ridges, junctions | linear ⇒ free for the optimizer; marginal gain exact by projection |
-| carrier $\omega$ | $\omega=0$ | +2 | periodic texture | nonlinear ⇒ set by spectrogram birth (§2) |
-| envelope exponent $\beta$ | $\beta=2$ | +1 | region boundaries, flat fills | nonlinear but demonstrated trainable (GES) |
+| order $m{:}\,0\to1$ | $m=0$ | +2 if $\omega$ locked; +4 if unlocked | edges, ridges, junctions | linear ⇒ marginal gain exact by projection (rest frozen) |
+| carrier $\omega$ | absent ($\equiv0$) | +2 + one $d_\alpha$ per existing $c_\alpha$ (= +3 at $m{=}0$) | periodic texture | nonlinear ⇒ set by spectrogram measurement at unlock |
+| exponent $\beta$ | $\beta=2$ | +1, range $[1,8]$ | region boundaries, flat fills | nonlinear but demonstrated trainable (GES) |
 
-Complex coefficients generalize the quadrature trick: phase never becomes a descended parameter
-at any order — the appearance half of the atom stays linear given pose, $\omega$, $\beta$.
-Hermite order and carrier are complementary, not redundant: order $m$ buys $m$ structured
-wiggles for $O(m)$ parameters (right for edges); $\omega$ buys unlimited periodic cycles for 2
-(right for texture). That division of labor is itself a testable prediction (H3).
+Hermite order and carrier are complementary, not redundant in *role*: order $m$ buys $m$
+structured wiggles for $O(m)$ parameters (edges); $\omega$ buys unlimited periodic cycles for
+2–3 (texture). They are, however, partially redundant in *value*: the order-1 subspace overlaps
+$\partial_\omega$ of the carrier (both look like $u\cdot(\text{carrier})\cdot G$), and for an
+isotropic envelope the pose rotation is redundant with the direction of $\omega$. Consequence
+for the allocator: unlock gains for these knobs double-count, which §5's calibration exists to
+absorb; consequence for the optimizer: intra-atom curvature coupling, which is the case for
+per-atom block preconditioning if diagonal Adam stalls (recorded as a fallback, not a plan).
 
-$|\omega|$ is capped at Nyquist. Rendering is additive accumulation; loss is plain $L^2$.
+**Re-locking.** Every unlock is reversible: when a knob's contribution decays below threshold
+($\|(c,d)\|$ beyond order 0, $|\omega|$, $|\beta-2|$), the knob re-locks and its parameters
+return to the pool. Continuous death applies to knobs, not only atoms — without it, early bad
+unlocks strand budget permanently.
 
-## 5. The allocator — the object under test
+**Anti-aliasing, analytic.** The family is closed under convolution with a Gaussian pixel
+filter: polynomial × Gaussian stays polynomial × Gaussian, and a carrier passes through with
+amplitude attenuation $e^{-\sigma_p^2\|\omega\|^2/2}$ plus an envelope correction. So render
+the *filtered* atom (EWA-style) rather than point-sampling — exact, cheap, and removes a bias
+that would otherwise punish high-$\omega$ atoms for an artifact of sampling rather than of the
+representation. $\|\omega\\|$ capped at $0.8\pi$. Loss is plain $L^2$; accumulation additive.
+
+## 5. The allocator — instrumental, and itself under test
 
 One global parameter pool $P$. At each growth round, enumerate candidate **moves**:
 
-- **spawn** a blunt atom at a residual hotspot (cost 6);
-- **unlock order $m{+}1$** on an existing atom (cost ~4 at order 1): marginal gain is exact —
-  project the residual onto the new basis functions in the atom's frame;
-- **unlock $\omega$** (cost 2, amplitudes retuned): gain estimated from the windowed residual
-  spectrum under the atom's envelope; $(a,b)$ by least squares;
+- **spawn** a blunt atom at a residual hotspot (cost 6): gain estimated by a closed-form
+  amplitude solve for a default-shape atom at the hotspot;
+- **unlock order $m{+}1$** (cost per §4): gain exact *given everything else frozen* — project
+  the residual onto the new basis functions in the atom's frame;
+- **unlock $\omega$** (cost per §4): gain estimated from the windowed residual spectrum under
+  the atom's envelope; $(c,d)$ by least squares;
 - **unlock $\beta$** (cost 1): gain from a 1-D probe along the envelope's radial profile.
 
-Rank all moves by **Δloss per parameter**, execute the top batch, iterate to the budget. This
-is matching pursuit over a move space that contains "sharpen an existing atom" alongside "add
-an atom"; the most common move's gain is computed exactly rather than guessed, which is what
-the linearity principle buys. The v1 allocator is deliberately greedy with no lookahead — arms
-A2 and A4 bracket it, so allocator sophistication can come later if the bracket says it is
-worth having.
+Rank by **Δloss per parameter**, execute the top batch, polish, iterate to budget.
+
+**Estimator calibration — required, not optional.** Linear-unlock gains are exact-at-freeze;
+spawn and $\omega$ gains are estimates. Ranking exact numbers against estimates biases the
+allocator toward whichever estimator is systematically optimistic (plausibly: perpetual
+under-spawning). Two safeguards: (a) track the realized/predicted gain ratio per move type
+(measured after the following polish interval) and rescale scores by its running median;
+(b) a spawn floor — at least 25% of each batch's parameters go to spawns regardless of scores.
+The calibration log is a deliverable: it is the direct measurement of how wrong each estimator
+is, and doubles as the check on §4's double-counting.
+
+The v1 allocator is deliberately greedy with no lookahead — A2a and the A4 ablations bracket
+it, so allocator sophistication is only worth building if the bracket says so.
 
 ## 6. Arms
 
-All arms share one growth schedule (init 50% of the budget, add the rest in 4 equal batches at
-fixed iterations, spawn at residual-mass hotspots with the same hotspot sampler, prune on
-amplitude modulus and redistribute). The arm determines the *policy*, never the schedule.
+All arms share one growth schedule (init 50% of the parameter pool, add the rest in 4 equal
+parameter-batches at fixed iterations, spawn at residual-mass hotspots with the same hotspot
+sampler, prune on amplitude modulus with parameters returning to the pool). The arm determines
+the *policy*, never the schedule.
+
+**The core triangle** (full grid: every budget, every image, 5 seeds):
+
+| arm | what it is | role |
+|---|---|---|
+| **A1** | plain Gaussians, $N=P/6$, standard recipe | the incumbent corner |
+| **A2a** | fully-unlocked atoms from birth, $\omega$ and $\beta$ set by the same spectral/profile measurements A3 uses, matched $P$ | uniform richness with informed birth — the clean rich corner |
+| **A3** | metamorphic + allocator (§5) | the thesis |
+
+**Attribution arms** (mid budget only, all images, 5 seeds):
 
 | arm | what it is | kills/confirms |
 |---|---|---|
-| **A1** | plain Gaussians, $N=P/6$, standard recipe | the incumbent corner |
-| **A2** | fully-unlocked atoms from birth, matched $P$ | richness *without* adaptivity |
-| **A3** | metamorphic + allocator (§5) | the thesis |
-| **A4a–c** | A3 with one knob disabled (no $\omega$ / no Hermite / no $\beta$) | attribution |
-| **A5** | A3's final per-atom configuration, retrained from scratch, random init | path vs architecture: if A5 ≈ A3, metamorphosis is just architecture search and can be distilled; if A5 < A3, the homotopy matters |
-| **A6** | plain Gaussians, spawn placement using A3's full diagnostics | "the birth heuristic did all the work" control |
+| **A2b** | fully unlocked, $\omega$ random at birth | the landscape claim: richness + uninformed init should *lose* to A1; predicted highest seed variance of any arm |
+| **A4a–c** | A3 with one knob disabled (no $\omega$ / no Hermite / no $\beta$) | which knob carries which class |
+| **A4d** | A3 with descended phase: real coefficients plus per-carrier phase offsets $\varphi$, matched cost | **the quadrature claim** — if A4d ≈ A3 in median *and* seed spread, complex coefficients are dead weight and the real-valued literature was right |
+| **A5** | A3's final per-atom knob configs **and spawn sites** kept; pose/appearance re-randomized around those sites; standard training, no allocator | path vs architecture: keeps the config–location correspondence so the arm is not a strawman. A5 ≈ A3 ⇒ distill the architecture, drop the curriculum; A5 < A3 ⇒ the homotopy itself matters |
+| **A6** | plain Gaussians, spawn density and init scale driven by A3's spectral diagnostics: more, smaller atoms where residual spectral energy is high-frequency, $\sigma \sim 1/\|\omega_{\text{peak}}\|$ | "the measurement did all the work" control, made concrete |
 
 ## 7. Targets, budgets, protocol
 
-**Targets** — three content classes, because every prediction is class-conditional:
+**Targets** — three content classes, **8 images each** (n=4 per class cannot support a
+per-class claim; this was a statistics bug in revision 1):
 
-- Kodak, 8 images, 512² center crops (realism anchor, comparable to published numbers);
-- texture-heavy: 4 crops (grass / fabric / gravel / hair, DTD or Brodatz);
-- cartoon/graphic: 4 flat-color vector-style images.
+- Kodak, 8 images, 512² center crops, converted to luma (BT.601). *Not* comparable to published
+  color full-resolution numbers, and no such comparison will be drawn;
+- texture-heavy: 8 crops (grass, fabric, gravel, hair, bark, water, gravel-far, knit; DTD or
+  Brodatz);
+- cartoon/graphic: 8 flat-color vector-style images.
 
-Grayscale throughout; color is Phase 2 (it adds only accounting disputes — shared vs per-channel
-$\omega$ and coefficients).
+Grayscale throughout; color is Phase 2 (it adds only accounting disputes — shared vs
+per-channel $\omega$ and coefficients).
 
-**Budgets in parameters, not atoms** — the single most common way to fool yourself here:
-$P \in \{6\text{k}, 24\text{k}, 96\text{k}\}$. Report atoms *and* parameters for every arm.
+**Budgets in parameters, not atoms**: $P \in \{6\text{k}, 24\text{k}, 96\text{k}\}$ on 512²
+(≈ 44:1, 11:1, 2.7:1 pixels-per-parameter). **The primary cell is $P=24$k.** At 96k all arms
+may saturate PSNR and compress differences toward zero (ceiling risk, recorded now); at 6k
+nothing may reach acceptable quality on texture. Both remain in the grid as secondary cells and
+for the H5 trend, but every headline reading binds at 24k. Report atoms *and* parameters for
+every arm.
+
+**Metrics** (absent from revision 1): PSNR is primary — $L^2$ is the training loss, so it is
+the only metric an arm can be *selected* on. SSIM and LPIPS are reported, never selected on;
+a PSNR win that inverts under LPIPS is reported as exactly that. Efficiency: iterations and
+wall-clock to reach within 0.5 dB of the arm's own final PSNR (per-class absolute thresholds
+are meaningless: unreachable for texture at 6k, trivial for cartoons). Robustness: across-seed
+IQR per cell, a primary metric with its own reading (H6).
 
 **Protocol:**
 
-- Adam, per-group learning rates. Every arm gets an identical small LR sweep (3 values on its
-  two most sensitive groups) on 2 held-out tuning images. Equal tuning budget per arm — the
-  incumbent's folk-tuning advantage is a confound otherwise.
-- 20k iterations fixed; also record iterations-to-threshold (PSNR 30) and wall-clock. Report at
-  iteration parity *and* wall-clock parity: a rich atom costs more FLOPs but there are fewer,
-  and whether that washes is measured, not asserted.
-- **5 seeds** per (arm × image × budget). Seed variance is a primary metric, not noise: the
-  landscape argument predicts descended-nonlinear arms have high across-seed spread and
-  linear/birth arms low.
-- Statistics: per-image paired differences, Wilcoxon signed-rank across the 16 images, medians
-  with IQR. No means of PSNRs across images.
-- Sanity phase before the grid: planted-atom recovery, one test per knob (can the arm recover a
-  single planted rich atom from its own init policy?). A2-style random init is expected to fail
-  the high-$\omega$ recovery; that failure validates the mechanism cheaply before the GPU-days.
+- Adam, per-group learning rates. Every arm gets an identical LR sweep (3 values × the same two
+  pre-named groups: position LR and appearance LR) on 2 held-out tuning images. Equal tuning
+  budget per arm — the incumbent's folk-tuning advantage is a confound otherwise.
+- 20k iterations; convergence check at the end (loss slope over the last 2k must be < 1% of
+  total decrease, else the cell is flagged and extended once by 10k — flagged cells are
+  reported as such).
+- **5 seeds** per (arm × image × budget in that arm's matrix).
+- Statistics: per-image paired differences against A1, Wilcoxon signed-rank across the 8 images
+  of a class (and across all 24 for pooled statements), medians with IQR. No means of PSNRs.
+- Sanity phase before the grid: planted-atom recovery, one test per knob, from each arm's own
+  init policy. A2b is expected to fail high-$\omega$ recovery; that predicted failure validates
+  the landscape mechanism cheaply before the GPU-days.
 
 ## 8. Pre-registered readings
 
-Fixed before running; a null is a null.
+Fixed before running; a null is a null. All headline readings bind at the primary cell
+($P=24$k) unless stated.
 
-- **H1 (headline).** A3 > A1 at matched $P$ on **all three** classes — the family, unlike a
-  Gabor-only enrichment, covers edges and regions too, so a texture-only win is a *failure* of
-  the family framing (it would mean the family collapses to "Gaussians + one texture knob").
-  Margin to care about: ≥1 dB median on texture, ≥0.3 dB elsewhere.
-- **H2.** A3 > A2: adaptivity beats uniform richness. If A2 ≥ A3, the allocator is dead weight —
-  unlock everything and skip §5.
-- **H3 (attribution).** The spending map is content-locked: $\omega$ unlocks concentrate on
-  texture, Hermite on edges/junctions, $\beta$ on region boundaries. Deliverable: knob-type
-  overlay maps per image. If the spending map reads as an unsupervised structure segmentation,
-  that is a result in its own right.
+- **H1 (headline).** A3 > A1 on **all three** classes — the family, unlike a Gabor-only
+  enrichment, covers edges and regions too, so a texture-only win is a *failure of the family
+  framing* (it collapses to "Gaussians + one texture knob"). Margins: ≥1 dB class-median on
+  texture, ≥0.3 dB on Kodak and cartoon.
+- **H2.** A3 > A2a: adaptivity beats uniform richness *with birth policy held equal* — A2a, not
+  A2b, is the comparator, else richness is confounded with init (revision-1 bug). If A2a ≥ A3,
+  the allocator is dead weight: unlock everything, skip §5.
+- **H3 (attribution, exploratory).** The spending map is content-locked: $\omega$ unlocks
+  concentrate on texture, Hermite on edges/junctions, $\beta$ on region boundaries. Deliverable:
+  knob-type overlay maps. Explicitly exploratory — no threshold, and a suggestive map is a
+  hypothesis for a later experiment, not a finding of this one.
 - **H4.** A5 < A3 confirms path-dependence; A5 ≈ A3 is the useful negative — distill the
   architecture, drop the curriculum.
-- **H5.** A6 closes less than half the A3−A1 gap. If it closes most of it, publish the birth
-  heuristic and not the primitive.
-- **Kill condition.** A1 ≥ {A2, A3} on every class at matched $P$ *and* matched wall-clock:
-  at these budgets the richer-family program loses to "just add more Gaussians," and count is
-  the only knob that matters below ~100k parameters.
+- **H5.** The A3−A1 gap is larger at 6k than at 96k (richness matters most when atoms are
+  scarce). Trend read across the full grid; ceiling-flagged cells excluded.
+- **H6 (seed variance).** IQR ordering: A2b > A4d > A3 ≈ A2a ≈ A1. The landscape story in one
+  line — descended nonlinear parameters produce spread, informed birth and linear enrichment
+  remove it. If A4d matches A3's IQR, the quadrature trick buys nothing measurable.
+- **H7 (quadrature, median).** A3 ≥ A4d in class medians. H6+H7 together are the test of the
+  one design principle this document actually invented.
+- **H8.** A6 closes less than half of the A3−A1 gap. If it closes most of it, the result is a
+  spawn heuristic for plain Gaussians — publish that instead.
+- **Kill condition.** At the primary cell, at matched $P$ *and* matched wall-clock: A1 ≥ A2a
+  and A1 ≥ A3 on every class → the richer-family program loses to "just add more Gaussians" at
+  these budgets, and count is the only knob that matters below ~100k parameters.
 
 ## 9. Out of scope, deliberately
 
@@ -200,8 +273,44 @@ knob mask (a few bits per atom) is charged to the representation there.
 
 ## 10. Cost
 
-6 arm-families × 16 images × 3 budgets × 5 seeds ≈ 1,700 fits at ~2–4 min each on one modern
-GPU → **2–4 GPU-days**, embarrassingly parallel. Implementation ~1,200 lines of PyTorch; the
-only nonstandard machinery is the move-scoring of §5 (windowed-FFT birth sampler, closed-form
-projections). Recommended first cut: sanity phase plus A1/A2/A3 on four images at one budget —
-an afternoon-scale run that decides whether the full grid is worth its GPU-days.
+Run matrix: core triangle 3 arms × 24 images × 3 budgets × 5 seeds = 1,080 fits; attribution
+arms 7 × 24 × 1 × 5 = 840; sanity + tuning ≈ 100. **≈ 2,000 fits** at ~2–4 min each on one
+modern GPU → **4–5 GPU-days**, embarrassingly parallel. Implementation ~1,400 lines of PyTorch;
+the nonstandard machinery is §5's move scoring (windowed-FFT measurement, closed-form
+projections, calibration log) and §4's analytic pixel filter. Recommended first cut: sanity
+phase plus the core triangle on four images at the primary budget — an afternoon-scale run that
+decides whether the full grid is worth its GPU-days.
+
+---
+
+## Appendix A: revision history
+
+**Revision 2** — after an adversarial pass. Substantive corrections, kept visible on the
+principle that silently absorbed errors get repeated:
+
+1. **Dead-parameter bug.** Revision 1 defined the atom with complex coefficients
+   unconditionally; at $\omega=0$ every imaginary part had zero gradient — dormant freight on
+   exactly the atoms claimed to be "born Gaussian with 6 parameters." The atom is now
+   $\omega$-conditional (§4): quadrature partners exist only once the carrier does.
+2. **Unlock-cost bug.** Costs in the knob table ignored the coupling ("unlock $\omega$: +2" is
+   +3 at order 0, more at higher order; order-1 cost depends on carrier state). The allocator
+   ranks by Δloss/Δparams, so wrong costs corrupted the quantity under test.
+3. **A2 conflation.** "Fully unlocked from birth" left $\omega$-init unspecified, conflating
+   uniform richness with a hostile landscape. Split into A2a (informed birth, the clean corner,
+   now in the core triangle) and A2b (random $\omega$, demoted to a landscape control).
+4. **A5 strawman.** Retraining final knob configs at random *positions* scrambles the
+   config–location correspondence and loses by construction. A5 now keeps spawn sites.
+5. **Untested core claim.** The quadrature principle had no arm. Added A4d (descended-phase
+   twin) with readings H6/H7.
+6. **Estimator bias.** Exact linear gains ranked against estimated nonlinear gains bias the
+   allocator systematically. Added per-move-type calibration and a spawn floor (§5).
+7. **Statistics.** Per-class claims rested on n=4 images; now 8 per class. Seed variance was
+   called primary but had no reading; now H6.
+8. **Aliasing.** Point-sampled high-$\omega$ atoms would be punished for a sampling artifact.
+   Now rendered through the family's closed-form Gaussian pixel filter (§4).
+9. **Scoping.** No primary cell existed; ceiling risk at 96k unstated; PSNR-30 threshold was
+   unreachable/trivial by class. Primary cell fixed at 24k; efficiency measured relative to
+   each arm's own final quality; metrics section added; false Kodak-comparability claim
+   removed; irreversible unlocks made reversible (re-locking, §4); knob redundancies
+   (Hermite-1 vs $\partial_\omega$, rotation vs $\omega$-direction) recorded with their
+   consequences.
