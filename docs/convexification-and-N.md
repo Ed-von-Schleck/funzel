@@ -6,6 +6,15 @@ blob of amplitude $2M$ become the same object. This document proves that, identi
 places where it does not happen, bounds the damage at a fixed mass budget, and measures what the
 loss is worth in practice.
 
+The collapse is not a fact about convexity alone. It needs four things together: a convex feasible
+set, a continuum of blob parameters, a rendering linear in the encoding, and an objective that sees
+the encoding only through the rendered image. Remove any one and the count survives. A fixed
+dictionary removes the continuum (Section 7). Requiring an encoding's blobs to stay apart removes
+the collision the continuum allows (Section 6). Lifting to second moments removes the objective's
+form, and convexification then costs nothing at all (Section 5.2). Each escape is paid for — with a
+grid, with a hypothesis about which encodings count, or with any usable description of the feasible
+set — and which of those is the real price is most of what follows.
+
 It is self-contained. The experiments it cites are in this repository under `experiments/`; the
 companion document `optimal-encoding.md` has their full write-ups. Section 11 lists which claims
 are proved here, which are measured here, and which are neither.
@@ -257,8 +266,8 @@ $\operatorname{conv}\{c:\|c\|_0\le k,\ \|c\|_2\le1\}$ is the $k$-support norm ba
 $k$. That dependence does not survive collision.
 
 > **Corollary 5 (no convex penalty separates).** Let $R$ be convex and weak-\* lower
-> semicontinuous. If $R\le c$ everywhere on $\mathcal{F}_{N,M}$, then $R\le c$ everywhere on
-> $B_{NM}$.
+> semicontinuous, meaning each sublevel set $\{R\le c\}$ is weak-\* closed. If $R\le c$ everywhere
+> on $\mathcal{F}_{N,M}$, then $R\le c$ everywhere on $B_{NM}$.
 
 *Proof.* $\{R\le c\}$ is convex and weak-\* closed, so it contains
 $\overline{\operatorname{conv}}\,\mathcal{F}_{N,M}=B_{NM}$. $\square$
@@ -308,6 +317,11 @@ Containing the $N$-blob encodings is what makes a relaxation a relaxation, and a
 convex set is convex. So the collapse does not come from having chosen $\mathcal{M}(\Theta)$: extra
 variables cannot escape it, at any level of any hierarchy, as long as the feasible set is convex and
 the rendered image is linear in them. No topology enters.
+
+The hypothesis to attack is $\Phi\mathcal{F}_{N,M}\subseteq L(C)$. A bounding scheme that does not
+contain the $N$-blob encodings is outside the statement as written — a Lagrangian dual, for
+instance, is not obtained by enlarging the feasible set, and nothing here computes what one
+returns.
 
 Two exclusions, both real. A lift whose objective is not a function of the rendered image alone —
 the perspective relaxation of Section 9, which carries $\lambda_2\|c\|^2$ on the amplitudes. And a
@@ -377,6 +391,10 @@ An affine functional has the same infimum over a set as over its convex hull, be
 $\ell(\sum_i\lambda_iu_i)=\sum_i\lambda_i\ell(u_i)\ge\min_i\ell(u_i)$, and the same infimum over the
 closure by continuity. $\square$
 
+The argument is trivial and is meant to be. What it contributes is not the lemma but the
+identification: of Corollary 7's hypotheses, the one carrying the weight is the shape of the
+objective, and this is what removing it costs and buys.
+
 So the $N$-blob family has a convex relaxation with no gap, for every $N$. This does not contradict
 Theorem 3. $\Lambda$ is quadratic in $\mu$, so it does not commute with $\operatorname{conv}$, and
 the collision that collapses $\Phi\mathcal{F}_{N,M}$ leaves $\Lambda\mathcal{F}_{N,M}$ alone. Along
@@ -434,12 +452,15 @@ is empty and there is nothing to relax.
 *Proof.* A ball of radius $\delta/3$ has diameter below $\delta$, so an element of
 $\mathcal{S}_\delta$ places at most one blob in it and gives it mass at most $M$. Total variation is
 subadditive, so $|\nu|(U)\le M$ for every $\nu\in\operatorname{conv}\mathcal{S}_\delta$. For $U$
-open, $|\mu|(U)=\sup\{\int f\,d\mu:\ f\in C_c(U),\ |f|\le1\}$, and each such integral is a limit of
-integrals against elements of $\operatorname{conv}\mathcal{S}_\delta$, hence at most $M$.
+open, $|\mu|(U)=\sup\{\int f\,d\mu:\ f\in C_c(U),\ |f|\le1\}$, where $C_c(U)$ is the continuous
+functions vanishing outside a compact subset of $U$; each such integral is a limit of integrals
+against elements of $\operatorname{conv}\mathcal{S}_\delta$, hence at most $M$.
 $\square$
 
-So the separated hull lies in $B_{NM}$ under a cap on *local* mass, and that depends on $N$ and $M$
-separately: halve $N$ and double $M$ and $NM$ is unchanged while the local cap doubles. Separation
+Theorem 10 is a possibility result. It shows the count can survive in the continuum, not that the
+surviving structure can be used. So the separated hull lies in $B_{NM}$ under a cap on *local* mass,
+and that depends on $N$ and $M$ separately: halve $N$ and double $M$ and $NM$ is unchanged while the
+local cap doubles. Separation
 restores in the continuum what Section 7 restores by discretising. That $\mathcal{S}_\delta$ is not
 convex is no objection — neither is $\mathcal{F}_{N,M}$, and relaxation is the taking of a convex
 hull.
@@ -562,6 +583,11 @@ by Theorem 3, the convexification of the $N$-blob family for *every* $N$ at once
 Eight results from this repository, each described in enough detail to be read without the other
 document. The first three concern the mass-ball relaxation, the next three the amplitude caps that
 a finite dictionary allows, and the last two the dictionary's coherence and the certificate.
+
+Every number below comes from images of 32 to 64 pixels a side and dictionaries of 59 to 768 blobs,
+at $N\le4$ where the optimum is enumerated exactly and $N\le64$ where it is searched. That is three
+orders of magnitude below the budgets an encoder uses. The theory does not depend on scale; none of
+these figures should be quoted as though it does.
 
 **The gap is real with both problems solved exactly.** `experiments/e4_exact_l0.py`. Shrink the
 problem until neither side can be blamed on a solver: a $32\times32$ image, a dictionary of $D=768$
@@ -719,6 +745,12 @@ convex penalty; it does not predict the gap's *size*, and the sizes reported are
 Gaussian blobs on small images, not universal constants. In particular "a single blob carries the
 energy of the whole image" is a fact about this dictionary and would not hold for, say, a wavelet
 frame with uniformly bounded atom amplitudes.
+
+**Not claimed: that the blob count is the right budget.** Section 1 takes it as given, because
+(P0) does. Amplitudes here reach the scale of the image norm, so under a real quantiser their
+precision costs bits that a count does not measure. Every result below the budget line — what the
+relaxation loses, and what that loss is worth — is stated in blobs. Whether it survives being
+restated in bits is untested, and it is the assumption most likely to change the picture.
 
 **Not claimed: that (P0) is unsolvable.** The result is about convexification. Direct methods are
 untouched, and on a finite dictionary at $N=3$, local search from 100 random starts reached the
