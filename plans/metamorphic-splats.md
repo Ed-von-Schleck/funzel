@@ -121,6 +121,14 @@ isotropic envelope the pose rotation is redundant with the direction of $\omega$
 for the allocator: unlock gains for these knobs double-count, which §5's calibration exists to
 absorb; consequence for the optimizer: intra-atom curvature coupling, which is the case for
 per-atom block preconditioning if diagonal Adam stalls (recorded as a fallback, not a plan).
+The redundancy becomes total in the limit: as $\omega\to0$ the quadrature block collapses onto
+first-order Hermite ($d\,\sin(\omega^\top u)\approx(d\,\omega)^\top u$) — an exact collinearity
+diagonal Adam cannot handle. Hence a **frequency-separation rule**, binding at birth and unlock
+alike: a carrier is assigned only when its image-space frequency exceeds the atom's own
+envelope bandwidth; slower modulation is representable — and better conditioned — as Hermite
+structure, and a proposal for it is rejected. Besides conditioning, this keeps A2a honest: on
+smooth content a spectral peak near zero would otherwise mint collinear parameters wholesale,
+and H2 would then measure a numerics pathology instead of allocation.
 
 **Re-locking.** Every unlock is reversible, and the criterion is **blunting cost**, not
 parameter magnitude: evaluate the atom with the knob at its blunt value (rest frozen) — exact
@@ -153,7 +161,8 @@ One global parameter pool $P$. At each growth round, enumerate candidate **moves
   squares of the residual against the new basis functions on the atom's support (numerical, so
   it needs nothing about the envelope to be Gaussian);
 - **unlock $\omega$** (cost per §4): gain estimated from the windowed residual spectrum under
-  the atom's envelope; $(c,d)$ by least squares;
+  the atom's envelope; $(c,d)$ by least squares; proposals violating §4's frequency-separation
+  rule are rejected;
 - **unlock $\beta$** (cost 1): gain from a 1-D probe along the envelope's radial profile.
 
 Rank by **Δloss per parameter**, execute the top batch, polish, iterate to budget.
@@ -178,21 +187,28 @@ it, so allocator sophistication is only worth building if the bracket says so.
 
 ## 6. Arms
 
-All arms share one growth schedule (init 50% of the parameter pool, add the rest in 4 equal
-parameter-batches at fixed iterations, growth frozen for the final half of training, prune on
-amplitude modulus with parameters returning to the pool and end-phase pruning compensated by
-respawn so every arm is measured within 2% of $P$ live parameters). Two schedule details are
-load-bearing: the hotspot sampler is **stochastic** (sample ∝ residual mass) and seeded — a
-deterministic argmax sampler would fake low seed-variance in the grown arms and corrupt H6 —
-and the spawn shape init (scale from the local residual autocorrelation) is one shared rule
-across all arms. The arm determines the *policy*, never the schedule.
+All grown arms share one growth schedule: init 50% of the parameter pool, add the rest in 4
+equal parameter-batches at fixed iterations, growth *and pruning* frozen for the final half of
+training. Matched $P$ means matched **capacity**: an atom that fades to zero amplitude keeps
+its slot and its parameters still count — no end-phase respawning to satisfy accounting, which
+would inject barely-polished atoms and contradict the freeze. Two schedule details are
+load-bearing: the hotspot sampler is **stochastic** (sample ∝ locally smoothed squared
+residual) and seeded — a deterministic argmax sampler would fake low seed-variance in the
+grown arms and corrupt H6 — and the spawn shape init (scale from the local residual
+autocorrelation) is one shared rule. The arm determines the *policy*, never the schedule.
+
+**Exception, in the incumbent's favor:** A1 is not forced into the grown schedule for
+symmetry's sake. The pilot runs A1 both ways — all atoms from the start (the recipe as
+actually practiced) and the staged schedule — and the main grid uses whichever is stronger. A
+thesis that beats a handicapped incumbent is worthless; the shared-schedule constraint exists
+so the *grown* arms do not differ among themselves.
 
 **The core triangle** (full grid: every budget, every image, 5 seeds):
 
 | arm | what it is | role |
 |---|---|---|
-| **A1** | plain Gaussians, $N=P/6$, standard recipe | the incumbent corner |
-| **A2a** | fully-unlocked atoms from birth, $\omega$ and $\beta$ set by the same spectral/profile measurements A3 uses, matched $P$ | uniform richness with informed birth — the clean rich corner |
+| **A1** | plain Gaussians, $N=P/6$, in its best-known configuration (schedule chosen in its own favor at the pilot — see above) | the incumbent corner |
+| **A2a** | fully-unlocked atoms from birth, $\omega$ and $\beta$ set by the same spectral/profile measurements A3 uses, subject to §4's frequency-separation rule (atoms whose local spectrum offers no admissible carrier stay carrier-free — uniform richness cannot mean degenerate carriers), matched $P$ | uniform richness with informed birth — the clean rich corner |
 | **A3** | metamorphic + allocator (§5) | the thesis |
 
 **Attribution arms** (mid budget only, all images, 5 seeds):
@@ -200,8 +216,8 @@ across all arms. The arm determines the *policy*, never the schedule.
 | arm | what it is | kills/confirms |
 |---|---|---|
 | **A2b** | fully unlocked, $\omega$ random at birth | the landscape claim: richness + uninformed init should *lose* to A1; predicted highest seed variance of any arm |
-| **A4a–c** | A3 with one knob disabled (no $\omega$ / no Hermite / no $\beta$) | which knob carries which class |
-| **A4d** | A3 with descended phase: real coefficients plus per-carrier phase offsets $\varphi$, matched cost | **the quadrature claim** — if A4d ≈ A3 in median *and* seed spread, complex coefficients are dead weight and the real-valued literature was right |
+| **A4a–c** | A3 with one knob disabled, **budget-compensated**: the allocator spends the freed parameters on its remaining moves, not leaves them unspent | which knob carries which class. Interpretive guard for A4c: sharp-$\beta$ plateaus do not tile under *additive* blending, so a $\beta$-null on cartoon reads "$\beta$ needs occlusion compositing (§9)", not "$\beta$ useless" |
+| **A4d** | A3 with the appearance pairs in **polar form**: per-component magnitudes and descended phases $(r_\alpha,\varphi_\alpha)$ in place of Cartesian $(c_\alpha,d_\alpha)$ — the same function space at the same cost at every order, differing only in parametrization. (A single shared phase per carrier would *not* cost-match at order ≥ 1; per-component phases do, and are exactly polar coordinates) | **the quadrature claim in its purest form**: Cartesian-vs-polar is precisely "phase linear" vs "phase descended". If A4d ≈ A3 in median *and* seed spread, the quadrature principle is dead weight and the real-valued literature was right |
 | **A5** | A3's final per-atom knob configs **and spawn sites** kept; pose/appearance re-randomized around those sites; nonlinear knobs initialized by the same measurement policy at those sites ($\omega$ from the local spectrum, $\beta$ from the profile probe) — random $\omega$ would conflate path with birth, the confound the A2 split exists to avoid; standard training, no allocator | path vs architecture: keeps the config–location correspondence so the arm is not a strawman. A5 ≈ A3 ⇒ distill the architecture, drop the curriculum; A5 < A3 ⇒ the homotopy itself matters |
 | **A6** | plain Gaussians, spawn density and init scale driven by the same spectral measurement A3 uses, computed on A6's **own** residual (never another arm's trajectory): more, smaller atoms where residual spectral energy is high-frequency, $\sigma \sim 1/\|\omega_{\text{peak}}\|$ | "the measurement did all the work" control, made concrete |
 
@@ -213,7 +229,8 @@ claim under a paired signed-rank test):
 - Kodak, 8 images, 512² center crops, converted to luma (BT.601). *Not* comparable to published
   color full-resolution numbers, and no such comparison will be drawn;
 - texture, **oriented/quasi-periodic by construction**: 8 crops (fabric weave, knit, stripes,
-  bark, hair, brick, wood grain, halftone; DTD or Brodatz). Stochastic textures — gravel,
+  bark, hair, brick, wood grain, corduroy; DTD or Brodatz), each with dominant frequency below
+  $0.6\pi$ — content at or above §4's carrier cap would test the renderer's cap, not the arms. Stochastic textures — gravel,
   foliage, water — are excluded from the class and from H1, with the reason stated in advance:
   pointwise $L^2$ against a stochastic texture is near-hopeless for *every* sparse model, so
   including them would dilute a real effect with variance no arm can reduce. Two stochastic
@@ -233,12 +250,15 @@ only because it is named in advance. Both extreme budgets remain in the grid as 
 cells, and every headline reading binds at 24k. Report atoms *and* parameters for every arm.
 
 **Metrics**: PSNR is primary — $L^2$ is the training loss, so it is
-the only metric an arm can be *selected* on. SSIM and LPIPS are reported, never selected on;
+the only metric an arm can be *selected* on. SSIM and LPIPS are reported, never selected on
+(LPIPS on channel-replicated luma is off-label for a network trained on color; reported with
+that caveat);
 a PSNR win that inverts under LPIPS is reported as exactly that. Efficiency: iterations and
 wall-clock to reach within 0.5 dB of the arm's own final PSNR (per-class absolute thresholds
 are meaningless: unreachable for texture at 6k, trivial for cartoons); wall-clock **includes
 all allocator overhead** — probes, FFTs, calibration — A3 does not get its measurements for
-free. Robustness: across-seed IQR per cell, a primary metric with its own reading (H6).
+free. Robustness: across-seed IQR per cell — a first-class metric with its own secondary
+reading (H6).
 
 **Protocol:**
 
@@ -248,11 +268,14 @@ free. Robustness: across-seed IQR per cell, a primary metric with its own readin
   Identical *groups* across arms would be false fairness: A1 has no $\omega$ to tune. Equal
   budget is the invariant; the incumbent's folk-tuning advantage is a confound otherwise.
 - 20k iterations; convergence check at the end (loss slope over the last 2k must be < 1% of
-  total decrease, else the cell is flagged and extended once by 10k — flagged cells are
-  reported as such).
+  total decrease, else the cell is flagged and extended once by 10k). Extension is available
+  to every cell by the same rule; quality readings bind on the post-extension state, and the
+  compute cost of slow convergence is captured by the efficiency metric — never hidden inside
+  the quality one. Flagged cells are reported as such.
 - **5 seeds** per (arm × image × budget in that arm's matrix).
 - Statistics: per-image paired differences against A1, Wilcoxon signed-rank across the 8 images
-  of a class (and across all 24 for pooled statements), medians with IQR. No means of PSNRs.
+  of a class (and across all 24 for pooled statements), one-sided wherever the reading is
+  directional, medians with IQR. No means of PSNRs.
 - Sanity phase before the grid: planted-atom recovery, one test per knob, from each arm's own
   init policy. A2b is expected to fail high-$\omega$ recovery; that predicted failure validates
   the landscape mechanism cheaply before the GPU-days.
@@ -268,7 +291,9 @@ invitation to read noise.
 - **H1 (headline).** A3 > A1 on **all three** classes — the family, unlike a Gabor-only
   enrichment, covers edges and regions too, so a texture-only win is a *failure of the family
   framing* (it collapses to "Gaussians + one texture knob"). Margins: ≥1 dB class-median on
-  texture, ≥0.3 dB on Kodak and cartoon.
+  texture, ≥0.3 dB on Kodak and cartoon. Statistically H1 is an intersection–union test: each
+  class's one-sided signed-rank must individually reject at $\alpha$, and the conjunction is
+  then level-$\alpha$ with no internal correction.
 - **H2.** A3 > A2a: adaptivity beats uniform richness *with birth policy held equal* — A2a, not
   A2b, is the comparator, else richness is confounded with init. If A2a ≥ A3, the allocator is
   dead weight: unlock everything, skip §5.
@@ -315,5 +340,10 @@ arms 7 × 24 × 1 × 5 = 840; sanity + tuning ≈ 100. **≈ 2,000 fits** at ~2�
 modern GPU → **4–5 GPU-days**, embarrassingly parallel. Implementation ~1,400 lines of PyTorch;
 the nonstandard machinery is §5's move scoring (windowed-FFT measurement, closed-form
 projections, calibration log) and §4's analytic pixel filter. Recommended first cut: sanity
-phase plus the core triangle on four images at the primary budget — an afternoon-scale run that
-decides whether the full grid is worth its GPU-days.
+phase plus the core triangle on four **pilot images drawn outside the 24 evaluation images**
+at the primary budget — an afternoon-scale run. The pilot's gate is pre-registered: proceed to
+the full grid iff pilot-A3 beats pilot-A1 by ≥0.3 dB median, or a mechanism failure forces a
+redesign, in which case the redesign is re-piloted rather than patched mid-grid. Every
+allocator hyperparameter (batch size, spawn floor, separation and re-lock thresholds,
+cooldowns) freezes when the pilot ends; tuning the thesis arm's knobs on evaluation images
+would bias the confirmatory readings.
