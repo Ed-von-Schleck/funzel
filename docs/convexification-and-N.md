@@ -622,9 +622,10 @@ by Theorem 3, the convexification of the $N$-blob family for *every* $N$ at once
 
 ## 9. What the measurements show
 
-Eight results from this repository, each described in enough detail to be read without the other
+Ten results from this repository, each described in enough detail to be read without the other
 document. The first three concern the mass-ball relaxation, the next three the amplitude caps that
-a finite dictionary allows, and the last two the dictionary's coherence and the certificate.
+a finite dictionary allows, then the moment relaxation, then the dictionary's coherence and where
+it comes from, and last the certificate. Section 6 cites one more, on the geometry of the optimum.
 
 Every number below comes from images of 32 to 64 pixels a side and dictionaries of 59 to 768 blobs,
 at $N\le4$ where the optimum is enumerated exactly and $N\le64$ where it is searched. That is three
@@ -756,6 +757,52 @@ which is large and holds on all three targets: the relaxation becomes tight in t
 there is nothing worth approximating. The claim that it does so *monotonically* is not supported.
 Both sides here are the mass-capped $\ell_0$ described above.
 
+**The moment relaxation is exact where the dictionary is useless and loose where it is not.**
+`experiments/e18_moment_relaxation.py`. The one convex route Corollary 7 does not cover by the
+objective's shape, and the only one that needs no amplitude cap at all: lift the problem so that
+$\|Ac\|^2$ is carried by a matrix variable, impose the count by complementarity rather than by
+big-$M$, and relax. Tightness here means the share of the distance from the free least-squares
+bound to the exact optimum that the relaxation recovers, and it is reported as an upper bound, so a
+low value is conclusive and a high one is a ceiling.
+
+Holding the dictionary size and the atom positions fixed and sweeping only the atom width, which is
+what moves coherence: tightness is **1.000** at coherence 0.062 and **0.24–0.48** at coherence
+0.943, on both targets. The low-coherence rows return a rank-one solution, which is a genuine
+feasible point of the original problem and therefore certifies exactness in both directions rather
+than bounding it. Over the same sweep the exact optimum moves from 84% of the image energy to 10%:
+the relaxation is exact precisely where the dictionary explains nothing and near-useless where it
+explains most. A partial run over a finer width sweep, committed as `e18_legA_partial.txt` before
+the solver died, puts the coherent end lower still, at 0.08–0.30.
+
+Two qualifications, both against the experiment. Its paired rows, which vary coherence at matched
+dictionary size to separate the two, favour coherence in three of four cases and invert in the
+fourth. And its sharpest control — an orthonormal basis of the same span, same size, same
+least-squares value — could only be run at the width where the dictionary is already incoherent,
+because the wider dictionaries are numerically singular, so it confirms exactness at the easy end
+and says nothing at the hard one. 15 of 16 checks pass; the one that fails is the margin between
+the contrast and the solver spread.
+
+**Where the coherence comes from, and what does not fix it.** `experiments/e21_atom_shape.py`.
+Coherence drives every result above, so it is worth knowing what causes it. Three measurements on
+the $D=248$ dictionary. The pairs that are actually coherent — those above 0.9 — sit 1.13 pixels
+apart against 16.5 typical, are the **same size** to two decimals, and differ by 30° of
+orientation. So the redundancy is orientation at fixed size and position: an elongated bump rotated
+about nearly the same centre still shares most of its mass with the original, because a positive
+bump has nothing to cancel against.
+
+That excludes the explanation this experiment was written to confirm, which was cross-scale
+nesting, and it excludes the other obvious one by direct test: projecting the constant out of every
+atom leaves the maximum coherence at 0.956 against 0.962 and the separable share at 0.072% against
+0.076%. Removing the image's mean brightness from the atoms does nothing, because a constant offset
+is spread over the whole image and cannot separate two bumps in the same place.
+
+What does work is a localised negative surround. A difference of two concentric Gaussians — which
+is two splats with opposite signs, inside the model the renderer already implements — keeps **172**
+atoms at coherence 0.6 where the Gaussian lattice keeps **59**, and 133 against 43 at 0.5. This is
+a statement about the geometry of the dictionary and not about encoding cost: a DoG atom is charged
+two splats, and the companion document's M10 records an earlier comparison that survived only
+because it was budgeted in dictionary atoms instead.
+
 **The certificate's value does not indicate (P0) optimality either.**
 `experiments/e14_certifiable.py`. Section 8 says the certificate cannot *prove* (P0) optimality.
 Its numerical value might still correlate with being optimal and serve as a heuristic, which is a
@@ -773,6 +820,33 @@ enumeration and the comparison is against the 200 lowest-error supports, the sam
 different question from the one a restart-based procedure faces. And the experiment maximises the
 certificate over a 248-blob dictionary rather than over all of $\Theta$, so it measures a lower
 bound on the true certificate value.
+
+**What the ten measurements amount to.** They were taken separately and they have one shape. Every
+convex route fails on this dictionary, and each failure is the same fact seen from a different
+side.
+
+A relaxation needs a cap on how strong a blob may be, or it has nothing to constrain. The tightest
+cap that still admits the answer is the answer's own largest amplitude, and on this dictionary that
+is the size of the whole image — amplitude 24 against an image norm of 21, and 1.19 times $\|y\|$
+at the enumerated optimum. So every cap is too loose before it is imposed: the big-$M$ node bound
+is off by 5.7–8.9×, the mass-ball solution already satisfies the per-blob cap at 0.745 of it, and
+Theorem 10's local version buys 1.6%. The one relaxation that needs no cap, the moment relaxation,
+fails instead through the second face of the same fact.
+
+That second face is coherence. Blobs that resemble each other can cancel, which is what lets a
+single blob carry the image and what makes the coefficients large and opposed. It is also what the
+relaxations cannot tolerate: they are exact at coherence 0.06 and near-useless at 0.94, only 0.15%
+of the quadratic can be made separable, and the $\ell_1$–$\ell_0$ gap closes as the dictionary is
+decorrelated. But the same overlap is what lets a few blobs approximate a picture at all —
+decorrelating to 0.448 quadruples the error. The two requirements are the same quantity pulling in
+opposite directions, so the convex methods become reliable exactly where the dictionary stops being
+worth using.
+
+And the coherence is not incidental to splatting. It comes from near-coincident atoms of equal size
+at different orientations, which a dictionary must carry to fit edges, and which cannot be
+decorrelated by moving them or by removing the image's mean. What decorrelates them is giving each
+atom a localised negative surround, which the model already permits and which nothing here has
+priced.
 
 ---
 
@@ -825,9 +899,10 @@ a convex feasible set and an objective that is the error of a linearly rendered 
 gives up the second and the gap disappears. Three things therefore sit outside Corollary 7: a lift
 whose objective is not a function of the rendered image alone, as the perspective relaxation of
 Section 9 is not; a lift with a non-convex constraint, which is where the blob count lives in a
-moment hierarchy; and the finite dictionary of Section 7. The moment work located in searching
-applies the hierarchy to the dual constraint $|\eta|\le1$ for tractability rather than to the count;
-it was not read.
+moment hierarchy; and the finite dictionary of Section 7. The tractable outer approximation of that
+hierarchy is no longer untested — Section 9 measures it, and it fails on this dictionary for the
+coherence reason rather than for a cap. The moment work located in searching applies the hierarchy
+to the dual constraint $|\eta|\le1$ for tractability rather than to the count; it was not read.
 
 ---
 
@@ -854,7 +929,9 @@ it was not read.
 | Big-$M$ node bound figures (5.7–8.9×, the 24.0 amplitude, 200,000 nodes) | **the raw output of `e8_branch_and_bound.py` is not committed.** The numbers are quoted from a run that left no artifact in this repository, which by the standard applied everywhere else here is not good enough. e19 corroborates the amplitude scale independently, on a different enumeration; the rest is uncorroborated until the run is repeated and its output committed |
 | Certificate value not separable from chance on the restart population | measured, `experiments/e14_certifiable.py`; the bootstrap interval is the claim, not the point estimate |
 | Branch-and-bound solvers reaching $10^7$ variables | from search summaries; the sources were never read |
-| Moment hierarchies for the BLASSO target the dual constraint, not the count | from search summaries; not read, not tested |
+| Shor / doubly-nonnegative moment relaxation: exact at coherence 0.06, 0.24–0.48 at 0.94 | measured, `experiments/e18_moment_relaxation.py`, 15/16 checks. Reported tightness is an upper bound, so the low values are the conclusive ones; the failing check is the margin between the contrast and the solver spread |
+| Coherence comes from equal-size near-coincident atoms at different orientations; removing the mean does not help; a localised negative surround packs 2.9× better | measured, `experiments/e21_atom_shape.py`, 2/3 checks. The failing check is this file's own pre-registered prediction, which said the binding pairs would be cross-scale and was wrong |
+| Moment hierarchies for the BLASSO target the dual constraint, not the count | from search summaries; not read |
 | Optima are separated, but the cap they force leaves the mass budget 1.45–2.27× slack | measured, `experiments/e19_optimum_separation.py` |
 | Theorem 10's programme is a QP on a grid, and recovers $\le1.6\%$ of the distance from the mass ball to the truth | measured, `experiments/e20_local_mass.py`, at the tightest admissible $\delta$ and $M$ and the widest valid ball radius. Big-$M$ recovers 0.0% on the same instances |
 | How much smaller the *continuum* separated hull is | open; e20 measures only the grid restriction |

@@ -1,0 +1,43 @@
+# E21: what makes a splatting dictionary coherent
+# same lattice, 32x32; a DoG atom is two splats with opposite signs,
+# so it changes the parameterisation and not the model class.
+
+  1. profiles
+  Gaussian               D= 248  rank@1e-10= 248  max coh=0.9616  median=0.0026  pairs>0.9:  0.08%  separable=0.0759%
+  DoG                    D= 248  rank@1e-10= 248  max coh=0.8750  median=0.0983  pairs>0.9:  0.00%  separable=0.5425%
+  Gaussian, DC removed   D= 248  rank@1e-10= 248  max coh=0.9562  median=0.0830  pairs>0.9:  0.05%  separable=0.0715%
+
+  2. packing ladder: atoms surviving a prune to pairwise coherence <= mu
+     mu            0.99    0.90    0.80    0.70    0.60    0.50    0.40    0.30
+     Gaussian       248     225     148      94      59      43      31      23
+     DoG            248     248     238     206     172     133      93      53
+     DC removed     248     235     157     103      66      46      36      28
+     DoG/Gauss     1.00    1.10    1.61    2.19    2.92    3.09    3.00    2.30
+
+  3. the pairs that actually bind, on the Gaussian dictionary
+     threshold    pairs   med centre dist   med size ratio   med |angle|
+     coh > 0.9       26            1.13px             1.00        30.0 deg
+     coh > 0.8      175            1.70px             1.00        22.5 deg
+     coh > 0.7      473            2.61px             1.00        22.5 deg
+     all pairs    30628           16.46px             1.00        45.0 deg
+
+  checks
+    ok   S1 the DoG lattice packs more atoms at equal coherence (at mu=0.6: 172 against 59, 2.9x)
+    ok   S2 removing the constant does NOT decorrelate the dictionary (max coherence 0.9616 -> 0.9562, separable share 0.0759% -> 0.0715%)
+    FAIL S3 [PREDICTION, FAILED] the binding pairs are concentric atoms of different sizes (their median size ratio is 1.00 -- the pairs are the SAME size. They sit 1.13px apart against 16.46px overall and differ by 30 degrees of orientation against 45 overall, and none of them shares a shape. The redundancy is ORIENTATION at fixed size and position, not scale nesting)
+
+  reading. Two explanations are excluded and one survives.
+  Not the mean: projecting the constant out of every atom leaves the
+  maximum coherence and the separable share where they were.
+  Not scale nesting: the pairs above 0.9 are the same size to two
+  decimals, which refutes the prediction this file was written with.
+  What they are is near-coincident atoms of equal size at different
+  ORIENTATIONS -- an elongated bump rotated by 30 degrees about almost
+  the same centre still shares most of its mass with the original,
+  because a positive bump has nothing to cancel against. That is why
+  a localised negative surround helps and a constant offset does not,
+  and it is a property of positive bumps that no choice of lattice
+  removes: the orientations have to be there for the dictionary to fit
+  edges at all.
+
+  [0s] 2/3 checks passed
