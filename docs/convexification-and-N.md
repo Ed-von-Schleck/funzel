@@ -2,8 +2,9 @@
 
 An image is to be written as a sum of $N$ Gaussian blobs. The standard way of turning that into a
 convex problem destroys the number $N$: after convexification, two blobs of amplitude $M$ and one
-blob of amplitude $2M$ become the same object. This document proves it, identifies the single
-setting where it does not happen, and reports what the loss costs in measurements.
+blob of amplitude $2M$ become the same object. This document proves it, identifies the two settings
+where it does not happen, bounds what it costs at a fixed mass budget, and reports what the loss
+costs in measurements.
 
 It is self-contained. The experiments it cites are in this repository under `experiments/`; the
 companion document `optimal-encoding.md` has their full write-ups. Section 11 lists which claims
@@ -77,6 +78,11 @@ minimiser. (P0) admits no such test.
 The hope is then: solve (P$\lambda$), obtain a certified global optimum, and tune $\lambda$ until
 the answer happens to use about $N$ blobs.
 
+One handle on the count survives. A representer theorem gives (P$\lambda$) a minimiser supported
+on at most $P$ points, $P$ the number of measurements. It is the only bound on the blob count
+convexification leaves standing, and it is set by the data rather than by $\lambda$ — for an image
+$P$ is the pixel count, so it is true and idle.
+
 Notice what was traded. (P0) constrains the **number** of blobs. (P$\lambda$) penalises the
 **total mass** and lets the number fall out of $\lambda$. The rest of this document is about what
 that substitution costs.
@@ -93,7 +99,9 @@ wants the minimum to be attained, one takes the closure, $\overline{\operatornam
 
 So the best any convex approach can do with "at most $N$ blobs" is determined by the convex hull of
 the set of $N$-blob encodings. **If that hull does not depend on $N$, then no convex method depends
-on $N$** — not this penalty or that one, not a cleverer algorithm.
+on $N$** — not this penalty or that one, not a cleverer algorithm. Corollary 7 extends the same
+conclusion to formulations that introduce new variables, where the hull being taken is not in the
+space of measures at all.
 
 The hull does not depend on $N$. The reason is one picture. Take two blobs, each of amplitude $M$,
 and slide them towards each other. Their masses add. In the limit they are a single blob of
@@ -122,7 +130,9 @@ $\mathcal{M}(\Theta)$ is the space of finite signed measures on $\Theta$. It car
 topology: $\mu_k\to\mu$ means $\int f\,d\mu_k\to\int f\,d\mu$ for every continuous $f$. This is the
 notion of convergence in which a point mass can slide — $\delta_{\theta_k}\to\delta_\theta$ when
 $\theta_k\to\theta$ — and it is also the one in which bounded sets are compact, so that minimising
-sequences have limits.
+sequences have limits. $\Theta$ is compact metric, so $C(\Theta)$ is separable and the weak-\*
+topology is metrisable on bounded sets; every closure below is taken inside a bounded set, so
+sequences suffice to compute it.
 
 Write
 
@@ -147,6 +157,11 @@ Both are sums of at most $N$ point masses — some $a_i$ may be zero — with no
 they are the $N$-blob encodings in the sense (P0) means. $\mathcal{F}_{N,M}$ limits **each** blob's
 amplitude to $M$; $\mathcal{F}_N^{\,\tau}$ limits only the **total**.
 
+A cap is needed for there to be anything to prove. (P0) lets $a$ range over $\mathbb{R}^N$, so its
+$N$-blob family contains $\pm\rho\,\delta_\theta$ for every $\rho$, and Lemma 2 then puts every
+$B_\rho$ in its closed convex hull: the hull is all of $\mathcal{M}(\Theta)$, vacuous for every $N$
+at once. These two families are the simplest caps; Theorem 4 covers the rest.
+
 ---
 
 ## 5. The theorems
@@ -166,8 +181,9 @@ limit does not survive.**
 > **Lemma 2 (point masses generate the ball).** For any $\rho>0$,
 > $\overline{\operatorname{conv}}\{\pm\rho\,\delta_\theta:\theta\in\Theta\}=B_\rho$.
 
-*Proof.* ($\subseteq$) $B_\rho$ is convex, weak-\* closed, and contains every
-$\pm\rho\delta_\theta$.
+*Proof.* ($\subseteq$) $B_\rho$ is convex and contains every $\pm\rho\delta_\theta$, and it is
+weak-\* closed because $|\cdot|(\Theta)$ is the dual norm of the sup norm on $C(\Theta)$, hence
+weak-\* lower semicontinuous.
 
 ($\supseteq$) Let $|\mu|(\Theta)\le\rho$. Fix $m$, partition $\Theta$ into Borel pieces
 $B_1,\dots,B_{k_m}$ of diameter below $1/m$, pick $\theta_j\in B_j$, set $a_j=\mu(B_j)$ and
@@ -208,7 +224,32 @@ $\mathcal{F}_1^{\,\tau}\subseteq\mathcal{F}_N^{\,\tau}\subseteq B_\tau$. $\squar
 The hypothesis holds for splatting: $\Theta$ is a product of intervals, so every point has
 neighbours arbitrarily close. It fails for a finite dictionary, which is Section 7.
 
-> **Corollary 4 (no convex penalty separates).** Let $R$ be convex and weak-\* lower
+The $\ell^\infty$ cap in $\mathcal{F}_{N,M}$ is not what drives this. Any cap does the same.
+
+> **Theorem 4 (the shape of the cap does not matter).** Let $A\subseteq\mathbb{R}^N$ be bounded
+> and sign-symmetric — $a\in A$ implies $(\varepsilon_1a_1,\dots,\varepsilon_Na_N)\in A$ for every
+> $\varepsilon\in\{\pm1\}^N$ — and put
+> $$\mathcal{F}_A=\Big\{\sum_{i=1}^{N}a_i\delta_{\theta_i}:\theta_i\in\Theta,\ a\in A\Big\},
+> \qquad \rho(A)=\sup_{a\in A}\|a\|_1 .$$
+> Then, under the hypothesis of Theorem 3, $\overline{\operatorname{conv}}\,\mathcal{F}_A
+> =B_{\rho(A)}$.
+
+*Proof.* ($\subseteq$) Every element has total mass at most $\rho(A)$, and $B_{\rho(A)}$ is convex
+and weak-\* closed. ($\supseteq$) Fix $\theta\in\Theta$ and $\varepsilon>0$, and pick $a\in A$ with
+$\|a\|_1\ge\rho(A)-\varepsilon$. Sign-symmetry lets us take every $a_i\ge0$, so
+$\sum_ia_i=\|a\|_1$. Choose distinct $\theta_1^k,\dots,\theta_N^k\in\Theta$ with
+$\theta_i^k\to\theta$; then $\sum_ia_i\delta_{\theta_i^k}\in\mathcal{F}_A$ converges weak-\* to
+$\|a\|_1\delta_\theta$, and flipping every sign gives $-\|a\|_1\delta_\theta$. Letting
+$\varepsilon\to0$ puts $\pm\rho(A)\delta_\theta$ in the closure for every $\theta$, and Lemma 2 with
+$\rho=\rho(A)$ finishes. $\square$
+
+Theorem 3 is the case $A=\{\|a\|_\infty\le M\}$, with $\rho(A)=NM$; an $\ell^2$ cap $\|a\|_2\le1$
+gives $\sqrt N$, an $\ell^1$ cap gives $\tau$. Each returns a mass ball, differing only in radius.
+The contrast is with the finite setting, where the shape of the cap does change the answer:
+$\operatorname{conv}\{c:\|c\|_0\le k,\ \|c\|_2\le1\}$ is the $k$-support norm ball, which depends on
+$k$. That dependence does not survive collision.
+
+> **Corollary 5 (no convex penalty separates).** Let $R$ be convex and weak-\* lower
 > semicontinuous. If $R\le c$ everywhere on $\mathcal{F}_{N,M}$, then $R\le c$ everywhere on
 > $B_{NM}$.
 
@@ -220,10 +261,10 @@ variant — has a level set that accepts the $N$-blob encodings and rejects a de
 same total mass.
 
 Lower semicontinuity is a real hypothesis: a convex function whose level sets are not closed is not
-covered by Corollary 4. It is not a way around the result, because Corollary 5 reaches the same
+covered by Corollary 5. It is not a way around the result, because Corollary 6 reaches the same
 conclusion about *optimal values* without assuming anything is closed.
 
-> **Corollary 5 (the values collapse too).**
+> **Corollary 6 (the values collapse too).**
 > $\displaystyle\inf_{\mu\in\operatorname{conv}\mathcal{F}_{N,M}}J(\mu)
 > =\inf_{\mu\in B_{NM}}J(\mu)$.
 
@@ -237,9 +278,35 @@ It makes no difference. The *infimum* over that smaller set is already the infim
 ball. Colliding blobs are not an artefact of insisting on closed sets — minimising sequences run
 into them.
 
+Corollary 5 restricts what a penalty on $\mu$ can do. The same collapse restricts what any convex
+reformulation can do, including ones that introduce new variables.
+
+> **Corollary 7 (no convex lift helps).** Let $V$ be a real vector space, $C\subseteq V$ convex,
+> and $L:V\to\mathbb{R}^P$ linear, with $\Phi\mathcal{F}_{N,M}\subseteq L(C)$. Write
+> $j(z)=\tfrac12\|z-y\|^2$. Then
+> $$\inf_{v\in C}\,j(Lv)\ \le\ \inf_{\mu\in B_{NM}}J(\mu).$$
+
+*Proof.* $L(C)$ is convex, being a linear image of a convex set, and it contains
+$\Phi\mathcal{F}_{N,M}$, so it contains $\operatorname{conv}\Phi\mathcal{F}_{N,M}
+=\Phi(\operatorname{conv}\mathcal{F}_{N,M})$. Hence $\inf_{v\in C}j(Lv)=\inf_{z\in L(C)}j(z)
+\le\inf_{\mu\in\operatorname{conv}\mathcal{F}_{N,M}}J(\mu)$, which is $\inf_{B_{NM}}J$ by
+Corollary 6. $\square$
+
+Containing the $N$-blob encodings is what makes a relaxation a relaxation, and a linear image of a
+convex set is convex. So the collapse does not come from having chosen $\mathcal{M}(\Theta)$: extra
+variables cannot escape it, at any level of any hierarchy, as long as the feasible set is convex and
+the rendered image is linear in them. No topology enters.
+
+Two exclusions, both real. A lift whose objective is not a function of the rendered image alone —
+the perspective relaxation of Section 9, which carries $\lambda_2\|c\|^2$ on the amplitudes. And a
+lift with a non-convex constraint, which is where the blob count lives in a moment hierarchy:
+moment-matrix entries are linear in $\mu$, so convex constraints built from them leave a convex lift,
+and cardinality enters as $\operatorname{rank}M_d(\mu)\le N$. Corollary 7 is why that ingredient has
+to be the non-convex one.
+
 ---
 
-## 6. Four ways out, and why each closes
+## 6. Four ways out: three close, one changes the problem
 
 **Limit each blob's amplitude.** This is the natural repair and it is what every mixed-integer
 sparse solver does, under the name big-$M$. Theorem 1 kills it: blobs collide and the limit
@@ -249,18 +316,49 @@ exceeds the cap. Section 7 shows the cap does work when the parameter space is f
 **Change the topology.** Theorem 3 closes in the weak-\* sense, and the choice matters: in the
 total-variation *norm*, $\mu_k\to\mu$ forces $\mu_k(\{\theta\})\to\mu(\{\theta\})$ at each point,
 so the cap would survive and the norm-closed hull would be strictly smaller than the ball. One
-could hope to build a relaxation there. Corollary 5 blocks it, because the collapse it states is
+could hope to build a relaxation there. Corollary 6 blocks it, because the collapse it states is
 about the **un-closed** hull, where no topology appears. Whichever topology is preferred, the best
 value a convex relaxation of the capped $N$-blob problem can return is the value of the plain
 mass-ball problem. (Weak-\* is also the natural choice: bounded sets are weak-\* compact and are not
 TV-compact, so minimising sequences have weak-\* limits and generally no TV limit.)
 
 **Forbid blobs from colliding.** Restricting to encodings whose blobs are at least $\delta$ apart
-does block Theorem 1. That set is not convex: $\delta_0$ and $\delta_{\delta/2}$ are each a single
-blob and trivially "separated", while their average $\tfrac12\delta_0+\tfrac12\delta_{\delta/2}$ has
-two blobs at distance $\delta/2$. Imposing separation is what putting the blobs on a fixed grid
-does, and it does it by leaving the convex setting rather than by finding a better convex set
-inside it.
+blocks Theorem 1, and unlike the other three it is not undone by passing to the limit. Write
+
+$$\mathcal{S}_\delta=\Big\{\sum_{i=1}^{N}a_i\delta_{\theta_i}\in\mathcal{F}_{N,M}:\
+d(\theta_i,\theta_j)\ge\delta\ \text{ for } i\ne j\Big\}$$
+
+with $\delta$ small enough that $N$ such blobs fit in $\Theta$, since otherwise $\mathcal{S}_\delta$
+is empty and there is nothing to relax.
+
+> **Theorem 8 (separation keeps the count).** Every $\mu\in\overline{\operatorname{conv}}\,
+> \mathcal{S}_\delta$ satisfies $|\mu|(U)\le M$ for every open ball $U$ of radius $\delta/3$. Hence
+> for $N\ge2$ the inclusion $\overline{\operatorname{conv}}\,\mathcal{S}_\delta\subseteq B_{NM}$ is
+> strict, $NM\delta_\theta$ being excluded.
+
+*Proof.* A ball of radius $\delta/3$ has diameter below $\delta$, so an element of
+$\mathcal{S}_\delta$ places at most one blob in it and gives it mass at most $M$. Total variation is
+subadditive, so $|\nu|(U)\le M$ for every $\nu\in\operatorname{conv}\mathcal{S}_\delta$. For $U$
+open, $|\mu|(U)=\sup\{\int f\,d\mu:\ f\in C_c(U),\ |f|\le1\}$, and each such integral is a limit of
+integrals against elements of $\operatorname{conv}\mathcal{S}_\delta$, hence at most $M$.
+$\square$
+
+So the separated hull lies in $B_{NM}$ under a cap on *local* mass, and that depends on $N$ and $M$
+separately: halve $N$ and double $M$ and $NM$ is unchanged while the local cap doubles. Separation
+restores in the continuum what Section 7 restores by discretising. That $\mathcal{S}_\delta$ is not
+convex is no objection — neither is $\mathcal{F}_{N,M}$, and relaxation is the taking of a convex
+hull.
+
+The local-mass functional $\mu\mapsto\sup_\theta|\mu|(B(\theta,\delta/3))$ is convex, and weak-\*
+lower semicontinuous as a supremum of such. Corollary 5 therefore forbids it from separating
+$\mathcal{F}_{N,M}$ from $B_{NM}$, and it does not: $\mathcal{F}_{N,M}$ contains $N$ blobs stacked
+in one ball. It sees $N$ only on the separated family — separation is a hypothesis on the
+encodings, not a better penalty.
+
+Three things are owed. The relaxed problem is a different one, over separated encodings, and
+whether a good encoding of an image has separated blobs is unknown. The containment is one-way, so
+how much smaller the hull is has not been computed. And nothing here says the programme is
+tractable.
 
 **Point out that the BLASSO's own solutions are sparse.** They are: for a fixed $\lambda$ the
 minimiser of (P$\lambda$) is generically a finite sum of point masses, and under a separation
@@ -285,7 +383,7 @@ Fix a finite list of $D$ candidate blobs and let the encoding be a coefficient v
 $c\in\mathbb{R}^D$, with $\|c\|_0$ the number of non-zeros. Now blobs cannot collide: the
 candidates sit at fixed, distinct positions.
 
-> **Theorem 6.** Let $1\le N<D$ with $N$ an integer, and $M>0$. Then
+> **Theorem 9.** Let $1\le N<D$ with $N$ an integer, and $M>0$. Then
 > $$\operatorname{conv}\{c:\|c\|_0\le N,\ \|c\|_\infty\le M\}
 > =\{c:\|c\|_1\le NM\}\cap\{c:\|c\|_\infty\le M\}=:P_{N,M},$$
 > and for $N\ge2$ this is strictly smaller than $\{c:\|c\|_1\le NM\}$.
@@ -318,9 +416,12 @@ and its continuum counterpart collapses to a plain mass ball.
 
 **A compact space in which every point is isolated is finite.** So a compact parameter space with
 no isolated points falls under Theorem 3 and one with only isolated points is finite and falls under
-Theorem 6. Spaces that mix the two are not treated here and do not arise in this work. Whether the
-blob count can be represented convexly is a property of the shape of the parameter space, not of the
-penalty, the dictionary, or the image.
+Theorem 9. Spaces that mix the two are not treated here and do not arise in this work.
+
+The blob count is representable convexly when the parameter space keeps blobs apart, and Theorem 8
+gets the same from keeping the *encodings* apart on a space that would not. What decides it either
+way is whether two blobs can be driven together, not which penalty, dictionary or image is in play.
+A finite dictionary is the cheap way to obtain that and the one measured here, not the only one.
 
 The same separation hypothesis appears in the recovery theory for the BLASSO, where the true blobs
 must be a minimum distance apart for exact recovery to be provable. The requirement here is
@@ -378,7 +479,7 @@ single best blob can be found exactly by direct search so the true
 optimum is known, the bound accounts for only 24–34% of it.
 
 **The per-blob cap survives discretisation and is still useless here.**
-`experiments/e8_branch_and_bound.py`. On a finite dictionary Theorem 6 applies, so branch-and-bound
+`experiments/e8_branch_and_bound.py`. On a finite dictionary Theorem 9 applies, so branch-and-bound
 has something to work with. Implemented on a $48\times48$ image with $D=248$: the node bound is
 informative only when a certain ratio falls below 1, and at the tightest cap the search may legally
 use — $M$ set to the largest amplitude in the best solution found so far, below which that solution
@@ -402,7 +503,7 @@ tight and the problem is still the one wanted. Two relaxations failing for one s
 amplitudes at signal scale — points at the dictionary rather than at the choice of relaxation.
 
 **On a grid, the relaxation is tight only where the dictionary is useless.**
-`experiments/e4_exact_l0.py`, output `results/e4_coherence.txt`. Theorem 6 restores the dependence
+`experiments/e4_exact_l0.py`, output `results/e4_coherence.txt`. Theorem 9 restores the dependence
 on $N$ but says nothing about how *tight* the resulting relaxation is. Pruning the dictionary by
 greedy decorrelation and re-solving both problems exactly at $N=3$ on a $32\times32$ image:
 
@@ -425,12 +526,18 @@ approximating.
 Its numerical value might still correlate with being optimal and serve as a heuristic, which is a
 separate question. Across 178 distinct local optima
 on 12 images at $N=3$, the certificate value at $\lambda=0$ separates the best solution from the
-rest with AUC **0.560** — the probability that it ranks the best solution ahead of a randomly
-chosen worse one, where 0.5 is chance — against **0.363** for a control drawn from a random number
-generator, which carries no information by construction. Both sit about 0.14 from chance, so the
-signal is the size of the noise. One qualification: that experiment maximises the certificate over a 248-blob
-dictionary rather than over all of $\Theta$, so it measures a lower bound on the true certificate
-value.
+rest with AUC **0.560**, 95% bootstrap interval over images **[0.467, 0.666]** — the probability
+that it ranks the best solution ahead of a randomly chosen worse one, where 0.5 is chance. The
+interval contains chance, so on this population the experiment does not distinguish the certificate
+from a coin. An information-free control drawn from a random number generator reads 0.363,
+[0.234, 0.523]; with 12 images the intervals are too wide for either to be separable from 0.5.
+
+Two qualifications. The verdict is population-specific: in a leg where the optimum is known by
+enumeration and the comparison is against the 200 lowest-error supports, the same quantity reads
+0.650, [0.578, 0.724], above chance. Those supports are mostly not local optima, so that leg asks a
+different question from the one a restart-based procedure faces. And the experiment maximises the
+certificate over a 248-blob dictionary rather than over all of $\Theta$, so it measures a lower
+bound on the true certificate value.
 
 ---
 
@@ -438,19 +545,59 @@ value.
 
 The proofs are self-contained, so what is exposed is the hypotheses and the measurements.
 
+**The collapse is about the feasible set, and at fixed mass it costs a bounded amount in value.**
+Theorem 3 says the mass ball cannot see $N$. It does not say the ball's optimal *value* is far from
+the $N$-blob optimum, and at a fixed mass budget it provably is not.
+
+> **Theorem 10 (how much the mass ball can lose).** Let $b=\max_{\theta\in\Theta}\|\varphi_\theta\|$.
+> For every $\rho>0$, every $\mu\in B_\rho$ and every $N\ge1$ there is $\nu\in
+> \mathcal{F}_{N,\rho/N}$ with $\|\Phi\mu-\Phi\nu\|\le\rho b/\sqrt N$. Consequently
+> $$\inf_{\mathcal{F}_{N,\rho/N}}J\ \le\ \tfrac12\Big(\sqrt{2\inf_{B_\rho}J}\ +\ \rho b/\sqrt N\Big)^{2}.$$
+
+*Proof.* Put $t=|\mu|(\Theta)/\rho\le1$ and let $s=d\mu/d|\mu|\in\{\pm1\}$ be the Hahn sign. Fix
+any $\theta_0$ and let $\pi$ be the distribution on $G=\{\pm\varphi_\theta:\theta\in\Theta\}$ that
+draws $s(\theta)\varphi_\theta$ with $\theta$ distributed as $|\mu|/|\mu|(\Theta)$ with probability
+$t$, and $+\varphi_{\theta_0}$ or $-\varphi_{\theta_0}$ with probability $(1-t)/2$ each. Its mean is
+$t\,\Phi\mu/|\mu|(\Theta)=\Phi\mu/\rho$. Draw $h_1,\dots,h_N$ independently from $\pi$ and set
+$\hat g=\tfrac1N\sum_ih_i$. Then $\mathbb{E}\hat g=\Phi\mu/\rho$ and
+
+$$\mathbb{E}\big\|\hat g-\Phi\mu/\rho\big\|^2
+=\tfrac1N\Big(\mathbb{E}\|h\|^2-\|\Phi\mu/\rho\|^2\Big)\le b^2/N,$$
+
+so some realisation attains the bound. That realisation is $\Phi\nu/\rho$ for
+$\nu=\tfrac{\rho}{N}\sum_i\varepsilon_i\delta_{\theta_i}$, whose amplitudes all have modulus
+$\rho/N$, so $\nu\in\mathcal{F}_{N,\rho/N}$. The second display follows from
+$\|\Phi\nu-y\|\le\|\Phi\mu-y\|+\|\Phi\mu-\Phi\nu\|$ applied at a near-minimising $\mu$. $\square$
+
+The argument is the standard empirical-approximation one attributed to Maurey, and to Jones and
+Barron; it is written out so that nothing is imported. Expanding the square with
+$\inf_{B_\rho}J\le J(0)=\tfrac12\|y\|^2$ bounds the gap by $\rho b\|y\|/\sqrt N+\rho^2b^2/2N$.
+
+The fixed budget is the hypothesis that limits it. At $\rho=NM$, the budget matching Theorem 3's own
+family, the error term is $Mb\sqrt N$ and the theorem says nothing. At fixed $\rho$ it says the
+ball's value is within $O(N^{-1/2})$ of the best $N$-blob encoding of that mass: blind to $N$ as a
+constraint, not blind to $N$ in value.
+
+Section 9's second measurement sits where Theorem 10 is silent — the budget there is greedy's own
+mass, which grows about linearly in $N$ (1.02, 2.02, 3.02, 4.00 at $N=1,2,3,4$ in-model). So the two
+do not conflict, and the experiment that would separate them is to hold $\rho$ fixed and sweep $N$,
+where Theorem 10 predicts an $N^{-1/2}$ decay. Not run.
+
 **The theorems need blobs to be able to collide.** Theorem 1 needs points of $\Theta$ arbitrarily
 close to one another, and Theorem 3 needs that everywhere. A parameter space of isolated points is
-the finite-dictionary case of Section 7, where the conclusion reverses. Every claim here about the
-continuum is a claim about a parameter space in which blobs can be placed arbitrarily close
-together. That is what continuous placement means, but it is an assumption and is stated as one.
+the finite-dictionary case of Section 7, where the conclusion reverses; a parameter space that is
+continuous but whose *encodings* are required to be separated is Theorem 8, where it also reverses.
+Every claim here about the continuum is a claim about a parameter space in which blobs can be
+placed arbitrarily close together, and about encodings free to do so. That is what continuous
+placement means, but it is an assumption and is stated as one.
 
-**They need $\varphi$ continuous on $\Theta$.** Corollary 5 rests on the weak-\* continuity of $J$,
+**They need $\varphi$ continuous on $\Theta$.** Corollary 6 rests on the weak-\* continuity of $J$,
 which needs $\theta\mapsto\varphi_\theta$ continuous. Widths bounded away from zero give this. At
 zero width the blob degenerates and continuity is lost — a different failure, not covered here.
 
 **A concrete refutation would be** a convex, weak-\* lower semicontinuous $R$ and a level $c$ with
 $R\le c$ on $\mathcal{F}_{N,M}$ and $R>c$ somewhere on $B_{NM}$, for a compact $\Theta$ with no
-isolated points. Corollary 4 says this cannot exist, so exhibiting one would locate an error in
+isolated points. Corollary 5 says this cannot exist, so exhibiting one would locate an error in
 Lemma 2 or Theorem 1.
 
 **The measurements are less secure than the proofs.** All of them are on one dictionary family, at
@@ -466,12 +613,17 @@ untouched, and on a finite dictionary at $N=3$, local search from 100 random sta
 exhaustively verified optimum on 40 of 40 images.
 
 **Not claimed: that the mass-ball relaxation is worthless.** It is a valid lower bound on (P0).
-It is simply blind to $N$, and the second measurement above shows how weak that makes it.
+It is simply blind to $N$, the second measurement above shows how weak that makes it at a budget
+growing with $N$, and Theorem 10 bounds how weak it can be at a budget held fixed.
 
-**Not claimed: that no convex formulation exists anywhere.** The result concerns
-$\mathcal{M}(\Theta)$ with the $N$-blob family as the object being relaxed. Moment-based
-hierarchies do encode support size, but through the rank of a moment matrix, which is not a convex
-constraint. That route is neither tested here nor read up on.
+**Not claimed: that no convex formulation exists anywhere.** Corollary 7 covers every convex lift
+whose rendering is linear and whose objective is the error of the rendered image — more than
+$\mathcal{M}(\Theta)$, and a moment relaxation at any level. Three things sit outside it: a lift
+whose objective is not a function of the rendered image alone, as the perspective relaxation of
+Section 9 is not; a lift with a non-convex constraint, which is where the blob count lives in a
+moment hierarchy; and the finite dictionary of Section 7. The moment work located in searching
+applies the hierarchy to the dual constraint $|\eta|\le1$ for tractability rather than to the count;
+it was not read.
 
 ---
 
@@ -479,8 +631,13 @@ constraint. That route is neither tested here nor read up on.
 
 | claim | status |
 |---|---|
-| Theorems 1, 3, 6; Lemma 2; Corollaries 4, 5 | proved above; nothing imported |
+| Theorems 1, 3, 4, 8, 9, 10; Lemma 2; Corollaries 5, 6, 7 | proved above; nothing imported |
 | Extreme points of the total-variation ball are the signed point masses | standard; Lemma 2 proves what is used, so it is not relied on |
+| $\overline{\operatorname{conv}}\,\mathcal{F}_N^{\,\tau}=B_\tau$ (second half of Theorem 3) | proved above, but not new: it is the definition of an atomic-norm ball |
+| Theorem 9 is the convex hull of the big-$M$ sparse set | not new. $\ell_1$ is the convex envelope of $\ell_0$ on the $\ell_\infty$ ball; Kim, Tawarmalani & Richard, *Convexification of Permutation-Invariant Sets*, generalise to any permutation- and sign-invariant norm ball. From search summaries, not read; the proof above is independent |
+| $k$-support norm ball $=\operatorname{conv}\{\|c\|_0\le k,\|c\|_2\le1\}$ | from search summaries, not read. Cited in Section 5 as a contrast; Theorem 4 does not depend on it |
+| Representer theorem: (P$\lambda$) has a minimiser on $\le P$ points | from search summaries, not read. Nothing here rests on it |
+| Maurey / Jones / Barron attribution for Theorem 10 | attribution from search summaries, never read; the proof is given above |
 | BLASSO formulation and its dual certificate | from `papers/1811.06416v1.pdf` |
 | Global convergence of Conic Particle Gradient Descent for (P$\lambda$) | statement from `papers/1907.10300v2.pdf`; its irrelevance here is the argument of Section 8 |
 | $\ell_1$ versus $\ell_0$ at matched $N$, both exact | measured, `experiments/e4_exact_l0.py` |
@@ -488,6 +645,8 @@ constraint. That route is neither tested here nor read up on.
 | Big-$M$ node bound off by 5.7–8.9× | measured, `experiments/e8_branch_and_bound.py` |
 | Perspective relaxation root gap 64–86% | measured, `experiments/e9_perspective.py` |
 | Coherence governs tightness and costs approximation power | measured, `results/e4_coherence.txt` |
-| Certificate value uninformative about (P0) optimality | measured, `experiments/e14_certifiable.py` |
+| Certificate value not separable from chance on the restart population | measured, `experiments/e14_certifiable.py`; the bootstrap interval is the claim, not the point estimate |
 | Branch-and-bound solvers reaching $10^7$ variables | from search summaries; the sources were never read |
-| Moment-based hierarchies | not read, not tested |
+| Moment hierarchies for the BLASSO target the dual constraint, not the count | from search summaries; not read, not tested |
+| Tractability of the separated relaxation (Theorem 8) | open; neither derived nor tested |
+| Theorem 10's $N^{-1/2}$ decay at fixed mass | not measured; the experiment is named in Section 10 |
