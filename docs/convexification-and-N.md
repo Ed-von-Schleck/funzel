@@ -91,10 +91,15 @@ minimiser. (P0) admits no such test.
 The hope is then: solve (P$\lambda$), obtain a certified global optimum, and tune $\lambda$ until
 the answer happens to use about $N$ blobs.
 
-One handle on the count survives. A representer theorem gives (P$\lambda$) a minimiser supported on
-at most $P$ points, one per pixel. It is the only bound on the blob count that convexification
-leaves standing, and it is fixed by the image size rather than by $\lambda$, so for any $N$ worth
-encoding at it is true and idle.
+One handle on the count survives, and it needs nothing beyond Carathéodory's theorem. Take any
+$\mu$ of total mass at most $\rho$ and write it as $s|\mu|$ with $s=\pm1$; then
+$\Phi\mu=|\mu|(\Theta)\,\mathbb{E}[s(\theta)\varphi_\theta]$ lies in $\rho\cdot\operatorname{conv}
+\{\pm\varphi_\theta:\theta\in\Theta\}$, a convex hull of a compact subset of $\mathbb{R}^P$.
+Carathéodory writes any of its points as a convex combination of at most $P+1$ of them, so there is
+a $\nu$ with at most $P+1$ blobs, mass at most $\rho$, and $\Phi\nu=\Phi\mu$ — the same rendered
+image, hence the same error. Some optimum therefore uses at most $P+1$ blobs. That is the only
+bound on the count convexification leaves standing, and it is fixed by the image size rather than by
+$\lambda$: $P$ is the pixel count, so at any $N$ worth encoding at, the bound is true and idle.
 
 Notice what was traded. (P0) constrains the **number** of blobs. (P$\lambda$) penalises the
 **total mass** and lets the number fall out of $\lambda$. The rest of this document is about what
@@ -270,9 +275,11 @@ $\rho=\rho(A)$ finishes. $\square$
 
 Theorem 3 is the case $A=\{\|a\|_\infty\le M\}$, with $\rho(A)=NM$; an $\ell^2$ cap $\|a\|_2\le1$
 gives $\sqrt N$, an $\ell^1$ cap gives $\tau$. Each returns a mass ball, differing only in radius.
-The contrast is with the finite setting, where the shape of the cap does change the answer:
-$\operatorname{conv}\{c:\|c\|_0\le k,\ \|c\|_2\le1\}$ is the $k$-support norm ball, which depends on
-$k$. That dependence does not survive collision.
+The contrast is with the finite setting, where the shape of the cap does change the answer. Take
+$\operatorname{conv}\{c\in\mathbb{R}^D:\|c\|_0\le k,\ \|c\|_2\le1\}$. At $k=1$ the set is the union
+of the coordinate segments $\{te_j:|t|\le1\}$ and its hull is the $\ell^1$ ball; at $k=D$ the set is
+the $\ell^2$ ball already. For $D\ge2$ those differ, so the hull depends on $k$. That dependence
+does not survive collision.
 
 > **Corollary 5 (no convex penalty separates).** Let $R$ be convex and weak-\* lower
 > semicontinuous, meaning each sublevel set $\{R\le c\}$ is weak-\* closed. If $R\le c$ everywhere
@@ -788,9 +795,9 @@ it was not read.
 | Theorems 1, 3, 4, 8, 9, 10, 11; Lemma 2; Corollaries 5, 6, 7 | proved above; nothing imported |
 | Extreme points of the total-variation ball are the signed point masses | standard; Lemma 2 proves what is used, so it is not relied on |
 | $\overline{\operatorname{conv}}\,\mathcal{F}_N^{\,\tau}=B_\tau$ (second half of Theorem 3) | proved above, but not new: it is the definition of an atomic-norm ball |
-| Theorem 11 is the convex hull of the big-$M$ sparse set | not new. $\ell_1$ is the convex envelope of $\ell_0$ on the $\ell_\infty$ ball; Kim, Tawarmalani & Richard, *Convexification of Permutation-Invariant Sets*, generalise to any permutation- and sign-invariant norm ball. From search summaries, not read; the proof above is independent |
-| $k$-support norm ball $=\operatorname{conv}\{\|c\|_0\le k,\|c\|_2\le1\}$ | from search summaries, not read. Cited in Section 5 as a contrast; Theorem 4 does not depend on it |
-| Representer theorem: (P$\lambda$) has a minimiser on $\le P$ points | from search summaries, not read. Nothing here rests on it |
+| Theorem 11 is the convex hull of the big-$M$ sparse set | not new; $\ell_1$ is the convex envelope of $\ell_0$ on the $\ell_\infty$ ball. A search points to Kim, Tawarmalani & Richard, *Convexification of Permutation-Invariant Sets*, for a general treatment; what exactly it covers is from a search summary and the paper was not read. The proof above is independent of both |
+| An $\ell^2$ cap gives a $k$-dependent hull in the finite setting | proved above, by the $k=1$ and $k=D$ cases. It is the ball of the $k$-support norm, which is known, but nothing here needs that |
+| Some optimum of the mass-constrained problem uses $\le P+1$ blobs | proved above from Carathéodory. Representer theorems give sharper versions; none is used |
 | Maurey / Jones / Barron attribution for Theorem 8 | attribution from search summaries, never read; the proof is given above |
 | BLASSO formulation and its dual certificate | from `papers/1811.06416v1.pdf` |
 | Global convergence of Conic Particle Gradient Descent for (P$\lambda$) | statement from `papers/1907.10300v2.pdf`; its irrelevance here is the argument of Section 8 |
