@@ -117,11 +117,11 @@ $\operatorname{conv}S$ — every point reachable as a weighted average of points
 wants the minimum to be attained, one takes the closure, $\overline{\operatorname{conv}}\,S$.
 
 So the best any convex approach can do with "at most $N$ blobs" is determined by the convex hull of
-the set of $N$-blob encodings. **If that hull does not depend on $N$, then no convex method depends
-on $N$** — not this penalty or that one, not a cleverer algorithm. Corollary 7 extends this to
-formulations that introduce new variables, provided the rendering stays linear and the objective
-stays the error of the rendered image. Theorem 9 shows what happens when it does not. Between them
-they mark the edge of what is claimed here.
+the set of $N$-blob encodings. **If that hull does not depend on $N$, then no convex method that
+minimises the error of the rendered image depends on $N$** — not this penalty or that one, not a
+cleverer algorithm, and by Corollary 7 not a reformulation introducing new variables either. The
+qualification is load-bearing rather than decorative: Theorem 9 exhibits a convex problem, with a
+different objective, whose value equals the $N$-blob optimum for every $N$.
 
 The hull does not depend on $N$. The reason is one picture. Take two blobs, each of amplitude $M$,
 and slide them towards each other. Their masses add. In the limit they are a single blob of
@@ -613,11 +613,17 @@ supports, and $\ell_1$ by following its exact solution path as $\lambda$ decreas
 piecewise linear, so it can be computed without approximation — then re-fitting amplitudes on the
 blobs it selects, which removes the shrinkage bias and can only help it. At matched blob count
 $\ell_1$ is
-worse by between **6% and 409%** across four targets and budgets from 2 to 5 blobs. The two agree
+worse by between **6% and 409%** across four targets and budgets from 2 to 4 blobs. The two agree
 only at $N=1$, where the problems coincide. The worst case, 409%, is on a target built as an exact
 sum of three dictionary blobs, at $N=2$: $\ell_0$ reaches error 8.70 and $\ell_1$ 44.25. On a
 cartoon target at $N=2$ the figures are 18.00 and 30.90, and the two answers share no blob at all.
-Theorem 3 says no better convex penalty removes this; the experiment says how large it is when
+One qualification the experiment does not wear on its face: the enumeration is restricted to
+supports whose refitted mass is within twice the larger of greedy's and $\ell_1$'s, a guard against
+near-duplicate pairs with huge cancelling amplitudes. So the $\ell_0$ side is the exact optimum of
+a mass-capped problem, not of the unconstrained one. The direction is safe — dropping the guard can
+only lower the $\ell_0$ error and widen the gap — but "solved exactly" means exactly this problem.
+
+Theorem 3 says no better convex penalty removes the gap; the experiment says how large it is when
 nothing is approximate.
 
 **A mass-constrained bound goes vacuous quickly.** `experiments/e3_absolute_bound.py`. Theorem 3
@@ -625,7 +631,7 @@ says a total-mass constraint is the most any measure-space convexification can s
 bound on (P0) built from one is the best of its kind. Measured on $64\times64$ images against
 budgets 1 to 16, it stops saying anything by $N=4$–8, where it falls to zero. At $N=1$, where the
 single best blob can be found exactly by direct search so the true optimum is known, the bound
-accounts for only 24–34% of it.
+reaches 66–76% of it and leaves 24–34% it cannot exclude.
 
 **At a fixed mass budget the same relaxation is exactly tight, at small $N$.**
 `experiments/e16_fixed_mass.py`. The previous measurement lets the budget grow with $N$, which is
@@ -633,7 +639,7 @@ the regime Theorem 8 says nothing about. Holding $\rho$ fixed and sweeping $N$ i
 $D=768$ dictionary at $32\times32$: the gap between the ball and the best $N$-blob encoding of the
 same mass closes **exactly** — not asymptotically — at $N_0$ between **3 and 48** across twelve
 target-and-budget cells, and at 4 to 12 for the two smaller budgets. On the cartoon target at
-$\rho=\|y\|$ the certified gap runs 17.3%, 4.3%, 1.3%, 0.8%, 0.007% of $\tfrac12\|y\|^2$ at
+$\rho=\|y\|$ the certified gap runs 17.3%, 3.5%, 1.0%, 0.3%, 0.007% of $\tfrac12\|y\|^2$ at
 $N=1,2,3,4,6$ and is zero by $N=12$. No rate is being confirmed. The ball's own minimiser is a
 feasible $N$-blob encoding once $N$ reaches its support size, so the gap is zero from there on, by
 a mechanism cruder than the theorem's. Theorem 8's bound over the same range reads 300%, 191%,
@@ -642,11 +648,14 @@ $\tfrac12\|y\|^2$ until $N=4$–24, and at that budget the measured gap is alrea
 $\tfrac12\|y\|^2$ in all twelve cells. The rate holds and is never what determines the answer.
 
 This is not a rehabilitation of the bound. The `free mass` column records what the *uncapped* best
-$N$-blob encoding wants: at $\rho=0.75\|y\|$ on the cartoon it
-rises from 11.5 to 102.6 while $\rho$ is 10.6, so every row where the gap is small is a row where
-the cap is binding hard and the problem is not (P0). Where the cap does not bind — the larger
-budgets, closest to the encoding problem — the gap at $N=1$ is 30.6% rather than 7.3% and $N_0$ is
-48 rather than 8. Across the sweep, tightness and relevance move in opposite directions.
+$N$-blob encoding wants. At $\rho=0.75\|y\|$ on the cartoon, where $\rho$ is 10.6, it reads 11.5,
+15.8, 17.1, 17.2, 26.4, 32.1 over $N=1$ to 8 — above the cap at every budget — and beyond that it
+becomes erratic (135, 96, 637, 6276) as the unconstrained fit starts cancelling large opposing
+amplitudes on a coherent dictionary. Only the small-$N$ end of that column carries information, and
+there it says the cap binds everywhere, so every row with a small gap is a row where the problem is
+not (P0). Where the cap does not bind — the larger budgets, closest to the encoding problem — the
+gap at $N=1$ is 30.6% rather than 7.3% and $N_0$ is 48 rather than 8. Across the sweep, tightness
+and relevance move in opposite directions.
 
 A note on method. On the in-model target at $\rho=2\|y\|$ the ball reaches error zero, its minimiser
 is not unique, and a first-order method returns a dense one with 730 non-zeros. The sparsest
@@ -670,7 +679,8 @@ generous.
 strengthening from the sparse-regression literature, applied at $D=248$, $N=3$ on $48\times48$
 images. It only applies to a modified problem carrying an extra penalty $\lambda_2\|c\|^2$ on the
 amplitudes. Where that penalty is small enough to leave the problem essentially unchanged
-($\lambda_2\le10^{-3}$, reconstruction identical to four decimals) the gap between the bound and
+($\lambda_2\le10^{-3}$, where the reconstruction moves from 7.6923% to 7.6931% on one target and
+19.4843% to 19.4877% on another) the gap between the bound and
 the true optimum, before any branching has happened, is **64–86%**. It closes only at
 $\lambda_2=1$, where the reconstruction error has risen by a factor of 2.4–4.3. There is no setting in which the bound is
 tight and the problem is still the one wanted. Two relaxations failing for one shared reason —
@@ -705,14 +715,21 @@ greedy decorrelation and re-solving both problems exactly at $N=3$ on a $32\time
 | 0.985 | 768 | 11.86% | **+145%** | 1 of 3 |
 | 0.900 | 470 | 15.23% | +91% | 1 of 3 |
 | 0.750 | 103 | 22.20% | +19% | 2 of 3 |
+| 0.599 | 73 | 33.16% | +29% | 1 of 3 |
 | 0.448 | 59 | **46.61%** | +5% | 2 of 3 |
 
 Coherence is the largest inner product between two normalised dictionary blobs; $\ell_1$ theory
-wants it well below 1 and here it starts at 0.985. Decorrelating the dictionary does close the
-$\ell_1$–$\ell_0$ gap, and it destroys the dictionary's ability to approximate: the error at
-coherence 0.448 is four times the error at 0.985. Near-orthogonal Gaussians cannot represent an
-image in few blobs. The convex relaxation becomes tight in the regime where there is nothing worth
-approximating.
+wants it well below 1 and here it starts at 0.985. Decorrelating the dictionary destroys the
+dictionary's ability to approximate: the error at coherence 0.448 is four times the error at 0.985.
+Near-orthogonal Gaussians cannot represent an image in few blobs.
+
+The gap column is not monotone, and an earlier version of this table omitted the row that shows it
+— the 0.599 row is worse than the 0.750 row above it. The same sweep in the same output file runs
+on two further targets and is less orderly still: on `ascent` the excess falls to zero and stays
+there, on `face` it runs 81%, 62%, 2%, 43%, 8%. What survives is the comparison of the endpoints,
+which is large and holds on all three targets: the relaxation becomes tight in the regime where
+there is nothing worth approximating. The claim that it does so *monotonically* is not supported.
+Both sides here are the mass-capped $\ell_0$ described above.
 
 **The certificate's value does not indicate (P0) optimality either.**
 `experiments/e14_certifiable.py`. Section 8 says the certificate cannot *prove* (P0) optimality.
@@ -808,7 +825,8 @@ it was not read.
 | Perspective relaxation root gap 64–86% | measured, `experiments/e9_perspective.py` |
 | Separable share of the quadratic is 0.15% at $\lambda_2=0$, 57.7% at $\lambda_2=1$ | computed, `experiments/e17_separable_mass.py`; a certified upper bound on the raw material, not on the resulting gap |
 | Theorem 9 | proved above |
-| Coherence governs tightness and costs approximation power | measured, `results/e4_coherence.txt` |
+| Coherence governs tightness and costs approximation power | measured, `results/e4_coherence.txt`, at the endpoints only; the sweep is not monotone and is less so on two of its three targets |
+| Big-$M$ node bound figures (5.7–8.9×, the 24.0 amplitude, 200,000 nodes) | **the raw output of `e8_branch_and_bound.py` is not committed.** The numbers are quoted from a run that left no artifact in this repository, which by the standard applied everywhere else here is not good enough. e19 corroborates the amplitude scale independently, on a different enumeration; the rest is uncorroborated until the run is repeated and its output committed |
 | Certificate value not separable from chance on the restart population | measured, `experiments/e14_certifiable.py`; the bootstrap interval is the claim, not the point estimate |
 | Branch-and-bound solvers reaching $10^7$ variables | from search summaries; the sources were never read |
 | Moment hierarchies for the BLASSO target the dual constraint, not the count | from search summaries; not read, not tested |
