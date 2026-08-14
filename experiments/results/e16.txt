@@ -1,0 +1,39 @@
+  3 images (2 photo crops, 1 cartoons), 0 rejected as too flat (std < 0.08)
+# E16 (U29): does quantisation buy stability, and what does it cost?
+# Section 10.14: continuous fitting moves 2.7-3.3px under 30dB noise.
+# Section 10.10: the enumerated grid optimum moved 0.00px. The
+# difference is quantisation, so this prices it.
+
+
+## A. The trade-off: stability bought against PSNR paid
+  N=36: snap converged atoms onto a grid of step q, refit amplitudes
+       q (px)    PSNR   dPSNR   code match: centres only   all params
+                      vs free      noise / shift / scale        noise
+      [264s of fitting]
+         0.25  28.647  -0.099         0.01 / 0.01 / 0.15         0.00
+         0.50  28.354  -0.393         0.04 / 0.02 / 0.31         0.01
+         1.00  27.354  -1.392         0.07 / 0.06 / 0.45         0.01
+         2.00  24.971  -3.776         0.17 / 0.16 / 0.64         0.02
+         4.00  20.871  -7.876         0.32 / 0.33 / 0.71         0.05
+         8.00  19.683  -9.064         0.54 / 0.55 / 0.89         0.08
+
+  N=144: snap converged atoms onto a grid of step q, refit amplitudes
+       q (px)    PSNR   dPSNR   code match: centres only   all params
+                      vs free      noise / shift / scale        noise
+      [1910s of fitting]
+         0.25  34.428  -0.933         0.04 / 0.01 / 0.13         0.00
+         0.50  32.371  -2.990         0.08 / 0.03 / 0.25         0.01
+         1.00  28.997  -6.364         0.17 / 0.09 / 0.39         0.03
+         2.00  25.252 -10.109         0.31 / 0.26 / 0.57         0.04
+         4.00  21.135 -14.226         0.53 / 0.50 / 0.74         0.09
+         8.00  18.943 -16.418         0.76 / 0.71 / 0.86         0.13
+
+## B. Is the instability in the initialisation or in the optimum?
+  N=36: re-encode the perturbed image from the CLEAN image's converged solution. The 'none' row is the floor for both columns.
+        perturbation   cold start   warm start  PSNR cold  PSNR warm
+                none      0.00 px      1.47 px     29.689     30.152
+          noise 30dB      5.01 px      1.90 px     29.400     29.772
+           shift 1px      2.96 px      1.84 px     29.730     28.824
+         scale x1.01      0.35 px      1.58 px     29.585     30.070
+
+# checks failed: none
