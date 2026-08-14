@@ -91,15 +91,16 @@ minimiser. (P0) admits no such test.
 The hope is then: solve (P$\lambda$), obtain a certified global optimum, and tune $\lambda$ until
 the answer happens to use about $N$ blobs.
 
-One handle on the count survives, and it needs nothing beyond Carathéodory's theorem. Take any
-$\mu$ of total mass at most $\rho$ and write it as $s|\mu|$ with $s=\pm1$; then
-$\Phi\mu=|\mu|(\Theta)\,\mathbb{E}[s(\theta)\varphi_\theta]$ lies in $\rho\cdot\operatorname{conv}
-\{\pm\varphi_\theta:\theta\in\Theta\}$, a convex hull of a compact subset of $\mathbb{R}^P$.
-Carathéodory writes any of its points as a convex combination of at most $P+1$ of them, so there is
-a $\nu$ with at most $P+1$ blobs, mass at most $\rho$, and $\Phi\nu=\Phi\mu$ — the same rendered
-image, hence the same error. Some optimum therefore uses at most $P+1$ blobs. That is the only
-bound on the count convexification leaves standing, and it is fixed by the image size rather than by
-$\lambda$: $P$ is the pixel count, so at any $N$ worth encoding at, the bound is true and idle.
+One handle on the count survives, and Carathéodory's theorem gives it. Take any non-zero $\mu$ and
+write it as $s|\mu|$ with $s=\pm1$. Then $\Phi\mu=|\mu|(\Theta)\,\mathbb{E}[s(\theta)\varphi_\theta]$,
+the expectation taken against $|\mu|/|\mu|(\Theta)$, so $\Phi\mu$ lies in $|\mu|(\Theta)$ times the
+convex hull of $\{\pm\varphi_\theta:\theta\in\Theta\}$, a compact subset of $\mathbb{R}^P$.
+Carathéodory writes any point of that hull as a combination of at most $P+1$ of its points, so some
+$\nu$ with at most $P+1$ blobs has $\Phi\nu=\Phi\mu$ and mass no larger. It renders the same image
+at no greater cost in either term, so it does at least as well in (P$\lambda$), and at least as well
+under any mass budget. Some minimiser therefore uses at most $P+1$ blobs. That is the only bound on
+the count convexification leaves standing, and it is set by the image size rather than by $\lambda$
+— $P$ is the pixel count, so at any $N$ worth encoding at, the bound is true and idle.
 
 Notice what was traded. (P0) constrains the **number** of blobs. (P$\lambda$) penalises the
 **total mass** and lets the number fall out of $\lambda$. The rest of this document is about what
