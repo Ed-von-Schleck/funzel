@@ -1,0 +1,107 @@
+# E5: does E4's dictionary result survive larger N and off-grid refinement?
+# params: n=64 budgets(splats)=(4, 8, 16, 32, 64) targets=('cartoon', 'ascent', 'face')
+
+======================================================================================
+# target=cartoon n=64 0.5||y||^2=397.813
+#   gauss unstructured   D=  768  splats/atom=[1]
+#   gauss parabolic      D=  386  splats/atom=[1]
+#   DoG parabolic        D=  386  splats/atom=[2]
+#   MIXED gauss+DoG      D=  772  splats/atom=[1, 2]
+
+  error as % of 0.5||y||^2, budgeted in SPLATS (a DoG atom costs 2)
+ budget           dictionary    greedy  +refined     lasso  used
+      4   gauss unstructured   11.2870    4.4868   22.0300     4   [2s]
+      4      gauss parabolic    8.7504    3.9046   10.7950     4   [1s]
+      4        DoG parabolic   31.3958    3.5334   36.1005     4   [2s]
+      4      MIXED gauss+DoG    8.7504    3.9046   10.7950     4   [2s]
+                     -> best              gauss parabolic on-grid | DoG parabolic refined
+      8   gauss unstructured    6.4749    2.4114    7.9917     8   [2s]
+      8      gauss parabolic    4.8574    2.0558    5.8522     8   [2s]
+      8        DoG parabolic   10.4328    2.9626   13.5897     8   [2s]
+      8      MIXED gauss+DoG    5.5876    2.3603    6.8939     8   [2s]
+                     -> best              gauss parabolic on-grid | gauss parabolic refined
+     16   gauss unstructured    3.6831    1.6553    4.1248    16   [4s]
+     16      gauss parabolic    2.7164    1.6942    3.4246    16   [3s]
+     16        DoG parabolic    6.0447    2.0123   11.0433    16   [4s]
+     16      MIXED gauss+DoG    3.3136    1.4133    4.1346    16   [4s]
+                     -> best              gauss parabolic on-grid | MIXED gauss+DoG refined
+     32   gauss unstructured    2.6092    1.1971    2.3501    32   [8s]
+     32      gauss parabolic    2.0119    1.0284    2.4254    32   [8s]
+     32        DoG parabolic    3.1769    1.2325    4.9435    32   [8s]
+     32      MIXED gauss+DoG    2.0809    1.0530    2.8193    32   [8s]
+                     -> best              gauss parabolic on-grid | gauss parabolic refined
+     64   gauss unstructured    1.9195    0.7776    1.8431    64   [18s]
+     64      gauss parabolic    1.4739    0.8869    1.6424    64   [20s]
+     64        DoG parabolic    1.8844    1.0339    3.0865    64   [19s]
+     64      MIXED gauss+DoG    1.5257    0.9234    2.0126    64   [19s]
+                     -> best              gauss parabolic on-grid | gauss unstructured refined
+
+======================================================================================
+# target=ascent n=64 0.5||y||^2=338.302
+#   gauss unstructured   D=  768  splats/atom=[1]
+#   gauss parabolic      D=  386  splats/atom=[1]
+#   DoG parabolic        D=  386  splats/atom=[2]
+#   MIXED gauss+DoG      D=  772  splats/atom=[1, 2]
+
+  error as % of 0.5||y||^2, budgeted in SPLATS (a DoG atom costs 2)
+ budget           dictionary    greedy  +refined     lasso  used
+      4   gauss unstructured   23.4334   13.8527   39.7837     4   [2s]
+      4      gauss parabolic   20.4678   13.5873   22.3853     4   [1s]
+      4        DoG parabolic   41.2322   13.2900   43.8239     4   [2s]
+      4      MIXED gauss+DoG   18.2512   13.9187   22.3853     4   [1s]
+                     -> best              MIXED gauss+DoG on-grid | DoG parabolic refined
+      8   gauss unstructured   16.8175   11.0917   24.0186     8   [2s]
+      8      gauss parabolic   15.3059    9.5950   16.7473     8   [2s]
+      8        DoG parabolic   18.8028   10.5575   34.8676     8   [2s]
+      8      MIXED gauss+DoG   15.2212   10.0194   19.3508     8   [2s]
+                     -> best              MIXED gauss+DoG on-grid | gauss parabolic refined
+     16   gauss unstructured   12.8057    7.5116   13.0676    16   [4s]
+     16      gauss parabolic   10.3777    7.5413   13.3101    16   [4s]
+     16        DoG parabolic   14.4749    8.5151   18.7251    16   [6s]
+     16      MIXED gauss+DoG   11.5478    7.5502   14.9457    16   [8s]
+                     -> best              gauss parabolic on-grid | gauss unstructured refined
+     32   gauss unstructured   10.0947    5.8424   10.7217    32   [8s]
+     32      gauss parabolic    8.5032    5.7185    9.7493    32   [7s]
+     32        DoG parabolic   10.5276    6.5159   13.9400    32   [7s]
+     32      MIXED gauss+DoG    9.3730    6.3962   11.9577    32   [8s]
+                     -> best              gauss parabolic on-grid | gauss parabolic refined
+     64   gauss unstructured    7.7865    4.3910    8.1482    64   [17s]
+     64      gauss parabolic    6.7367    4.7339    7.8379    64   [18s]
+     64        DoG parabolic    8.0388    5.3270    9.7548    64   [15s]
+     64      MIXED gauss+DoG    7.8673    4.9951    8.8890    64   [16s]
+                     -> best              gauss parabolic on-grid | gauss unstructured refined
+
+======================================================================================
+# target=face n=64 0.5||y||^2=533.127
+#   gauss unstructured   D=  768  splats/atom=[1]
+#   gauss parabolic      D=  386  splats/atom=[1]
+#   DoG parabolic        D=  386  splats/atom=[2]
+#   MIXED gauss+DoG      D=  772  splats/atom=[1, 2]
+
+  error as % of 0.5||y||^2, budgeted in SPLATS (a DoG atom costs 2)
+ budget           dictionary    greedy  +refined     lasso  used
+      4   gauss unstructured   19.7271   10.1397   29.2123     4   [2s]
+      4      gauss parabolic   13.9177   11.2347   13.1306     4   [2s]
+      4        DoG parabolic   37.2408   10.4952   42.3255     4   [2s]
+      4      MIXED gauss+DoG   12.9449    8.6856   13.2003     4   [2s]
+                     -> best              MIXED gauss+DoG on-grid | MIXED gauss+DoG refined
+      8   gauss unstructured   12.9217    7.5396   17.2981     8   [2s]
+      8      gauss parabolic   11.2242    7.9243   10.8033     8   [2s]
+      8        DoG parabolic   18.8148    8.2176   28.1242     8   [2s]
+      8      MIXED gauss+DoG   11.1662    7.3649   11.3978     8   [2s]
+                     -> best              MIXED gauss+DoG on-grid | MIXED gauss+DoG refined
+     16   gauss unstructured    9.8605    5.1863   12.0112    16   [4s]
+     16      gauss parabolic    8.9326    5.2663    8.9293    16   [4s]
+     16        DoG parabolic   12.1365    6.1482   16.9242    16   [4s]
+     16      MIXED gauss+DoG    8.8815    4.9638    9.7770    16   [4s]
+                     -> best              MIXED gauss+DoG on-grid | MIXED gauss+DoG refined
+     32   gauss unstructured    7.1870    3.5246    7.7063    32   [8s]
+     32      gauss parabolic    7.0740    3.8365    7.7260    32   [8s]
+     32        DoG parabolic    9.1870    4.1633   10.8171    32   [9s]
+     32      MIXED gauss+DoG    7.1393    3.7554    8.9961    32   [8s]
+                     -> best              gauss parabolic on-grid | gauss unstructured refined
+     64   gauss unstructured    5.3669    2.3672    6.1555    64   [16s]
+     64      gauss parabolic    5.6175    2.9509    6.2330    64   [17s]
+     64        DoG parabolic    6.9239    3.4091    8.0475    64   [16s]
+     64      MIXED gauss+DoG    6.0434    2.9955    7.1520    64   [16s]
+                     -> best           gauss unstructured on-grid | gauss unstructured refined

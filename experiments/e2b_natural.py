@@ -27,7 +27,6 @@ stated.
 """
 
 import numpy as np
-from scipy.optimize import minimize
 
 from e2_relaxation_gap import (_grid, atoms, render, fit_fixed_support,
                                shape_bank, eta_sup, NP_ATOM)

@@ -1,0 +1,33 @@
+  3 images (2 photo crops, 1 cartoons), 0 rejected as too flat (std < 0.08)
+# E15: is a canonical (deterministic) encoder worse than the standard
+# random-init recipe? Quality first, then stability.
+
+
+## A. Quality against the standard recipe, at matched splat budget
+  64x64 images, Adam lr=0.01, PSNR at 1000 and 4000 steps; 'random' is the standard recipe at 2 seeds
+      budget     method   PSNR@1000   PSNR@4000  vs random  seed spread
+          36     random      23.588      26.200     +0.000     0.167 dB
+          36    lattice      24.125      26.874     +0.674  0 (determ.)
+          36 lattice-fine      26.527      28.222     +2.021  0 (determ.)
+          36  structure      28.026      28.611     +2.410  0 (determ.)
+         144     random      25.100      27.380     +0.000     1.193 dB
+         144    lattice      26.381      28.519     +1.139  0 (determ.)
+         144 lattice-fine      30.723      31.445     +4.064  0 (determ.)
+         144  structure      32.169      32.815     +5.435  0 (determ.)
+  [2729s]
+
+## B. Stability: does a small change in the image move the atoms?
+  matched atom displacement under perturbation, N=36, 4000 Adam steps
+          method   perturbation  displacement    dPSNR
+          random     noise 30dB       2.66 px   -0.515
+          random      shift 1px       5.13 px   -0.828
+          random    scale x1.01       0.37 px   -0.103
+         lattice     noise 30dB       3.30 px   -1.682
+         lattice      shift 1px       5.78 px   -0.271
+         lattice    scale x1.01       0.77 px   -0.098
+       structure     noise 30dB       2.94 px   -0.238
+       structure      shift 1px       2.58 px   +0.015
+       structure    scale x1.01       0.71 px   +0.025
+  [471s]
+
+# checks failed: none

@@ -1,0 +1,21 @@
+# E4 addendum 3: mixed dictionary (parabolic Gaussians + DoG), as tip2006
+# pairs an oscillatory sub-dictionary with a pure-Gaussian one. DoG atoms
+# are zero-mean and cannot carry an image mean, which is why DoG alone lost.
+# target=cartoon  N=3
+            dictionary     D    coh  l0 exact    greedy  l1 debias | greedy-l0    l1-l0
+       gauss parabolic   386  0.965    9.5646   10.2631    12.4898 |     7.30%   30.58%
+         DoG parabolic   386  0.881   13.9265   17.9352    24.8423 |    28.78%   78.38%
+       MIXED gauss+DoG   772  0.965    8.2430   10.2631    12.4898 |    24.51%   51.52%
+
+# target=ascent  N=3
+            dictionary     D    coh  l0 exact    greedy  l1 debias | greedy-l0    l1-l0
+       gauss parabolic   386  0.965   17.9200   21.1888    24.7184 |    18.24%   37.94%
+         DoG parabolic   386  0.881   26.7515   26.7515    35.0178 |    -0.00%   30.90%
+       MIXED gauss+DoG   772  0.965   14.6608   15.1293    24.7184 |     3.20%   68.60%
+
+# target=face  N=3
+            dictionary     D    coh  l0 exact    greedy  l1 debias | greedy-l0    l1-l0
+       gauss parabolic   386  0.965   11.6530   13.5262    11.6530 |    16.08%   -0.00%
+         DoG parabolic   386  0.881   22.1232   25.3511    30.9032 |    14.59%   39.69%
+       MIXED gauss+DoG   772  0.965   11.3884   11.3884    11.6530 |    -0.00%    2.32%
+

@@ -1,0 +1,10 @@
+# E3 addendum: attribution of the dictionary norm spread (section 7.1.1)
+# analytic norm 113.4; measured min 34.3 med 112.6 max 113.4 (spread 3.30x over 6000 draws)
+# rank correlation of norm/analytic with each candidate cause:
+#   minor axis px      rho = -0.395
+#   major axis px      rho = -0.587
+#   edge distance px   rho = +0.684
+#   |v| shear          rho = -0.082
+#   conditioning on minor axis >= 1px: 5951 atoms, spread 3.30x
+#   conditioning on support clears the edge (edge > 2*major): 1821 atoms, spread 1.00x
+#   conditioning on both: 1794 atoms, spread 1.00x

@@ -1,0 +1,35 @@
+# E12 (U23): is the optimum's uniqueness the problem's, or the grid's?
+
+## A. Do independent continuous restarts converge on one answer?
+  cartoon: grid optimum 7.6923%, best of 40 continuous restarts 4.3556%
+      within  0.1% of the best restart:   3/40 restarts, median atom spread among them  0.01px
+      within  1.0% of the best restart:   3/40 restarts, median atom spread among them  0.01px
+      within  5.0% of the best restart:   6/40 restarts, median atom spread among them  8.56px
+      error spread over all restarts: 4.3556% .. 4.7107% (median) .. 5.2899%
+      best continuous solution sits 21.04px from the grid optimum, and is +43.4% better in error
+  ascent: grid optimum 19.4843%, best of 40 continuous restarts 11.9350%
+      within  0.1% of the best restart:   4/40 restarts, median atom spread among them  0.00px
+      within  1.0% of the best restart:   4/40 restarts, median atom spread among them  0.00px
+      within  5.0% of the best restart:   5/40 restarts, median atom spread among them  0.00px
+      error spread over all restarts: 11.9350% .. 12.9488% (median) .. 13.6847%
+      best continuous solution sits 13.62px from the grid optimum, and is +38.7% better in error
+
+## B. How wide is the basin of the optimum?
+  cartoon: grid optimum refined off-grid to 5.7001% (moved 2.45px)
+      displaced  0.5px: 8/8 returned within 1px, median return distance  0.00px, median error 5.7001%
+      displaced  1.0px: 8/8 returned within 1px, median return distance  0.00px, median error 5.7001%
+      displaced  2.0px: 8/8 returned within 1px, median return distance  0.00px, median error 5.7001%
+      displaced  4.0px: 6/8 returned within 1px, median return distance  0.00px, median error 5.7001%
+      displaced  8.0px: 5/8 returned within 1px, median return distance  0.01px, median error 5.7001%
+
+## C. Does uniqueness degrade with N? (grid, D fixed)
+  cartoon: D=90 held fixed across N
+      N=2:      4,005 supports, best  8.6674%,  within 0.1%/1%/5% of best:    1 /     1 /      1
+      N=3:    117,480 supports, best  7.7779%,  within 0.1%/1%/5% of best:    1 /     2 /      8
+      N=4:  2,555,190 supports, best  6.8894%,  within 0.1%/1%/5% of best:    1 /     2 /      8
+      N=5: 43,949,268 supports, best  6.2950%,  within 0.1%/1%/5% of best:    1 /     4 /     15
+  ascent: D=90 held fixed across N
+      N=2:      4,005 supports, best 23.9333%,  within 0.1%/1%/5% of best:    1 /     1 /      1
+      N=3:    117,480 supports, best 20.1916%,  within 0.1%/1%/5% of best:    1 /     1 /      1
+      N=4:  2,555,190 supports, best 18.3901%,  within 0.1%/1%/5% of best:    1 /     3 /     14
+      N=5: 43,949,268 supports, best 16.7765%,  within 0.1%/1%/5% of best:    1 /     2 /     34

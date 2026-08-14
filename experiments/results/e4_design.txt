@@ -1,0 +1,27 @@
+# E4 addendum 2: does DICTIONARY DESIGN close the gap, and at what cost?
+# All four stay inside the 2D-splatting model: a DoG atom is two splats
+# with opposite-signed coefficients, which Eq. 7 already permits.
+# designed vs random: target=cartoon n=32 N=3
+            dictionary     D    coh  l0 exact    greedy  l1 debias | greedy-l0    l1-l0
+    gauss unstructured   768  0.985   11.8558   16.0699    29.0599 |    35.54%  145.11%
+   gauss decorr mu=0.9   470  0.900   15.2265   17.4988    29.0599 |    14.92%   90.85%
+       gauss parabolic   386  0.965    9.5646   10.2631    12.4898 |     7.30%   30.58%
+         DoG parabolic   386  0.881   13.9265   17.9352    24.8423 |    28.78%   78.38%
+# best ACHIEVED by greedy: gauss parabolic (10.2631%);  by l1: gauss parabolic (12.4898%)
+
+# designed vs random: target=ascent n=32 N=3
+            dictionary     D    coh  l0 exact    greedy  l1 debias | greedy-l0    l1-l0
+    gauss unstructured   768  0.985   22.9376   28.0915    37.9527 |    22.47%   65.46%
+   gauss decorr mu=0.9   470  0.900   27.4826   27.5218    42.6969 |     0.14%   55.36%
+       gauss parabolic   386  0.965   17.9200   21.1888    24.7184 |    18.24%   37.94%
+         DoG parabolic   386  0.881   26.7515   26.7515    35.0178 |    -0.00%   30.90%
+# best ACHIEVED by greedy: gauss parabolic (21.1888%);  by l1: gauss parabolic (24.7184%)
+
+# designed vs random: target=face n=32 N=3
+            dictionary     D    coh  l0 exact    greedy  l1 debias | greedy-l0    l1-l0
+    gauss unstructured   768  0.985   18.1306   23.5250    32.8444 |    29.75%   81.15%
+   gauss decorr mu=0.9   470  0.900   25.5938   26.8405    41.5283 |     4.87%   62.26%
+       gauss parabolic   386  0.965   11.6530   13.5262    11.6530 |    16.08%   -0.00%
+         DoG parabolic   386  0.881   22.1232   25.3511    30.9032 |    14.59%   39.69%
+# best ACHIEVED by greedy: gauss parabolic (13.5262%);  by l1: gauss parabolic (11.6530%)
+

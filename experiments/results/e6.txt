@@ -1,0 +1,125 @@
+# E6: wavelet placement vs searched placement, both refined identically.
+# params: n=64 budgets(splats)=(8, 16, 32, 64) targets=('cartoon', 'ascent', 'face')
+
+================================================================================
+# target=cartoon n=64 0.5||y||^2=397.813
+
+ budget              placement   on init  +refined  place s
+      8    greedy/unstructured    6.4749    2.4118     0.01
+      8       greedy/parabolic    4.8574    2.0571     0.04
+      8           wavelet/haar    8.5474    3.1164     0.00
+      8        wavelet/bior2.2    9.1131    3.2873     0.00
+      8            wavelet/db4    8.9545    2.6928     0.00
+      8           wavelet/sym4    9.1266    2.8028     0.00
+      8    random x5 (control)              2.7733     0.00   [best 2.2007]
+                   -> refined: best wavelet db4 2.6928 vs best greedy 2.0571 (+30.9%), placement 44x cheaper
+
+     16    greedy/unstructured    3.6831    1.6528     0.16
+     16       greedy/parabolic    2.7164    1.6979     0.16
+     16           wavelet/haar    7.6501    2.3126     0.01
+     16        wavelet/bior2.2    7.2150    2.1676     0.00
+     16            wavelet/db4    7.0950    2.2099     0.00
+     16           wavelet/sym4    6.9737    2.2050     0.00
+     16    random x5 (control)              1.8188     0.00   [best 1.7450]
+                   -> refined: best wavelet bior2.2 2.1676 vs best greedy 1.6528 (+31.1%), placement 105x cheaper
+
+     32    greedy/unstructured    2.6092    1.1960     0.17
+     32       greedy/parabolic    2.0119    1.0110     0.16
+     32           wavelet/haar    4.7681    1.6627     0.00
+     32        wavelet/bior2.2    4.1863    2.0796     0.00
+     32            wavelet/db4    4.5462    2.3821     0.00
+     32           wavelet/sym4    5.1718    2.1202     0.00
+     32    random x5 (control)              1.3537     0.00   [best 1.2869]
+                   -> refined: best wavelet haar 1.6627 vs best greedy 1.0110 (+64.5%), placement 109x cheaper
+
+     64    greedy/unstructured    1.9195    0.7621     0.40
+     64       greedy/parabolic    1.4739    0.8930     0.45
+     64           wavelet/haar    3.3402    1.0151     0.00
+     64        wavelet/bior2.2    2.7865    2.1753     0.00
+     64            wavelet/db4    3.0319    2.5423     0.00
+     64           wavelet/sym4    3.0947    1.7921     0.00
+     64    random x5 (control)              1.0981     0.00   [best 1.0870]
+                   -> refined: best wavelet haar 1.0151 vs best greedy 0.7621 (+33.2%), placement 215x cheaper
+
+
+================================================================================
+# target=ascent n=64 0.5||y||^2=338.302
+
+ budget              placement   on init  +refined  place s
+      8    greedy/unstructured   16.8175   11.0851     0.01
+      8       greedy/parabolic   15.3059    9.5871     0.07
+      8           wavelet/haar   22.4159   10.2968     0.00
+      8        wavelet/bior2.2   22.1146   10.9847     0.00
+      8            wavelet/db4   19.8285   10.4926     0.00
+      8           wavelet/sym4   22.1406   11.1563     0.00
+      8    random x5 (control)             10.9294     0.00   [best 10.4141]
+                   -> refined: best wavelet haar 10.2968 vs best greedy 9.5871 (+7.4%), placement 64x cheaper
+
+     16    greedy/unstructured   12.8057    7.5023     0.07
+     16       greedy/parabolic   10.3777    7.5280     0.10
+     16           wavelet/haar   17.0021    9.8424     0.00
+     16        wavelet/bior2.2   15.9468   10.1422     0.00
+     16            wavelet/db4   16.5609   12.7878     0.00
+     16           wavelet/sym4   15.9102   10.0924     0.00
+     16    random x5 (control)              8.3192     0.00   [best 7.7834]
+                   -> refined: best wavelet haar 9.8424 vs best greedy 7.5023 (+31.2%), placement 33x cheaper
+
+     32    greedy/unstructured   10.0947    5.8378     0.16
+     32       greedy/parabolic    8.5032    5.7495     0.15
+     32           wavelet/haar   13.3219    7.7715     0.00
+     32        wavelet/bior2.2   14.3541    8.3839     0.00
+     32            wavelet/db4   14.1189    7.7974     0.00
+     32           wavelet/sym4   13.5107    7.1512     0.00
+     32    random x5 (control)              6.4061     0.00   [best 6.2195]
+                   -> refined: best wavelet sym4 7.1512 vs best greedy 5.7495 (+24.4%), placement 101x cheaper
+
+     64    greedy/unstructured    7.7865    4.3976     0.39
+     64       greedy/parabolic    6.7367    4.7466     0.36
+     64           wavelet/haar    9.9226    6.9618     0.00
+     64        wavelet/bior2.2    9.6014    6.2589     0.00
+     64            wavelet/db4   10.5333    7.1323     0.00
+     64           wavelet/sym4    9.2234    6.8104     0.00
+     64    random x5 (control)              5.4788     0.00   [best 5.2945]
+                   -> refined: best wavelet bior2.2 6.2589 vs best greedy 4.3976 (+42.3%), placement 173x cheaper
+
+
+================================================================================
+# target=face n=64 0.5||y||^2=533.127
+
+ budget              placement   on init  +refined  place s
+      8    greedy/unstructured   12.9217    7.5309     0.01
+      8       greedy/parabolic   11.2242    7.9221     0.02
+      8           wavelet/haar   12.9673    7.6577     0.00
+      8        wavelet/bior2.2   13.0347    7.9632     0.00
+      8            wavelet/db4   13.2087    8.3278     0.00
+      8           wavelet/sym4   12.7926    8.0332     0.00
+      8    random x5 (control)              7.7058     0.00   [best 7.5479]
+                   -> refined: best wavelet haar 7.6577 vs best greedy 7.5309 (+1.7%), placement 8x cheaper
+
+     16    greedy/unstructured    9.8605    5.2413     0.13
+     16       greedy/parabolic    8.9326    5.0323     0.11
+     16           wavelet/haar   11.7955    7.1203     0.00
+     16        wavelet/bior2.2   11.2478    5.9979     0.00
+     16            wavelet/db4   11.8890    7.1755     0.00
+     16           wavelet/sym4   11.8656    6.8453     0.00
+     16    random x5 (control)              5.9308     0.00   [best 5.5040]
+                   -> refined: best wavelet bior2.2 5.9979 vs best greedy 5.0323 (+19.2%), placement 91x cheaper
+
+     32    greedy/unstructured    7.1870    3.4993     0.20
+     32       greedy/parabolic    7.0740    3.8400     0.13
+     32           wavelet/haar    9.7138    5.5475     0.00
+     32        wavelet/bior2.2    9.4147    4.9793     0.00
+     32            wavelet/db4    9.8322    6.0977     0.00
+     32           wavelet/sym4    9.9379    5.0325     0.00
+     32    random x5 (control)              4.3141     0.00   [best 3.8897]
+                   -> refined: best wavelet bior2.2 4.9793 vs best greedy 3.4993 (+42.3%), placement 123x cheaper
+
+     64    greedy/unstructured    5.3669    2.3601     0.46
+     64       greedy/parabolic    5.6175    2.9554     0.45
+     64           wavelet/haar    7.2729    4.3348     0.01
+     64        wavelet/bior2.2    7.4934    3.9932     0.00
+     64            wavelet/db4    7.6244    5.5724     0.00
+     64           wavelet/sym4    7.3204    5.4735     0.00
+     64    random x5 (control)              3.4149     0.00   [best 3.3450]
+                   -> refined: best wavelet bior2.2 3.9932 vs best greedy 2.3601 (+69.2%), placement 172x cheaper
+

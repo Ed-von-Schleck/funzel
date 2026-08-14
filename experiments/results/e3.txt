@@ -1,0 +1,179 @@
+# E3: certified lower bound on the (P0) optimum (Leg A), exact N=2
+# myopia (Leg B). Module docstring states what each can and cannot show.
+# params: n=64 budgets=(1, 2, 3, 4, 6, 8, 12, 16) targets=('inmodel', 'cartoon', 'ascent', 'face')
+
+==============================================================================
+# target=inmodel n=64 0.5||y||^2=25741.0742 |bank|=320 Theta = positions x [sigma 1px..16px], |v|<=16
+# discrete atom norm over Theta: min=36.0 med=112.8 max=113.4, spread=3.15x (analytic convention wants 1.00x)
+#   narrow quartile median=113.4, wide quartile median=105.3; 1.0% of Theta has sub-pixel minor axis
+# greedy to N=16 in 19s
+# N=1 exact optimum 73.9952% vs greedy 73.9952% -> matched-filter placement costs +0.0000pp (0 iff the grid dictionary is exactly unit-norm)
+# 191 dirs after ascent (231s); ascent improved the bound by 0.0-0.0% -> hand-picked family was already at the ceiling, so the residual looseness is the relaxation gap
+
+  greedy vs a certified lower bound on the (P0) optimum at mass <= M_g
+  N  E_greedy     M_g    L(M_g)    L/E  subopt<=     s+5%    s+10%    s+25%  check
+  1   73.9952   1.020   54.7529  0.740     26.0%  52.8456  50.9721  45.5544  ok
+  2   49.0002   2.020   23.5228  0.480     52.0%  21.0913  18.7925  12.6917  ok
+  3   24.0052   3.020    5.2925  0.220     78.0%   3.6694   2.3427   0.1411  ok
+  4    0.0000   4.000    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (exact: E_opt=0)
+  6    0.0000   4.000    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (exact: E_opt=0)
+  8    0.0000   4.000    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (exact: E_opt=0)
+ 12    0.0000   4.000    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (exact: E_opt=0)
+ 16    0.0000   4.000    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (exact: E_opt=0)
+
+  mass sweep: the bound is conditional on M, so this is how fast it
+  decays as the budget is relaxed beyond greedy's own mass
+  N  E_greedy   L(1.0Mg)  L(1.25Mg)   L(1.5Mg)   L(2.0Mg)   L(3.0Mg)
+  1   73.9952    54.7529    45.5544    37.2012    23.0308     4.8337
+  2   49.0002    23.5228    12.6917     5.1758     0.0000     0.0000
+  3   24.0052     5.2925     0.1411     0.0000     0.0000     0.0000
+  4    0.0000     0.0000     0.0000     0.0000     0.0000     0.0000
+  6    0.0000     0.0000     0.0000     0.0000     0.0000     0.0000
+  8    0.0000     0.0000     0.0000     0.0000     0.0000     0.0000
+ 12    0.0000     0.0000     0.0000     0.0000     0.0000     0.0000
+ 16    0.0000     0.0000     0.0000     0.0000     0.0000     0.0000
+
+  C2 in-model control: ground truth attains error exactly 0 at mass 4.000,
+  so the bound there must be <= 0. Near-equal amplitudes make this nearly tight.
+  L(M_true) = 0.00000000% of 0.5||y||^2   -> ok
+
+==============================================================================
+# target=inmodel n=48 dictionary D=13824 (24 shapes x 576 positions), 95,544,576 pairs enumerated exactly
+                               error   % of 0.5||y||^2   l1 mass    coh
+       best-1 (greedy N=1)  11018.13          76.0955%
+             best-2 greedy   7697.32          53.1606%   164.697
+    best-2 exhaustive free   7697.32          53.1606%   164.697  0.000
+best-2 exhaustive coh<=0.9   7697.32          53.1606%   164.697  0.000
+best-2 exhaustive mass<=greedy   7697.32          53.1606%   164.697  0.000
+# C3 exhaustive-contains-greedy: greedy red=13564.08 <= free red=13564.08 -> ok
+# myopia cost at N=2, mass-matched: +0.000% of the exhaustive optimum -> greedy is exactly optimal here
+# greedy first atom idx 4770; unconstrained winner (4758, 4770) at coherence 0.0000, mass 164.70 (vs greedy mass 164.70)
+
+==============================================================================
+# target=cartoon n=64 0.5||y||^2=397.8127 |bank|=320 Theta = positions x [sigma 1px..16px], |v|<=16
+# discrete atom norm over Theta: min=36.0 med=112.8 max=113.4, spread=3.15x (analytic convention wants 1.00x)
+#   narrow quartile median=113.4, wide quartile median=105.3; 1.0% of Theta has sub-pixel minor axis
+# greedy to N=16 in 28s
+# N=1 exact optimum 15.7709% vs greedy 15.7709% -> matched-filter placement costs +0.0000pp (0 iff the grid dictionary is exactly unit-norm)
+# 191 dirs after ascent (230s); ascent improved the bound by 0.0-0.0% -> hand-picked family was already at the ceiling, so the residual looseness is the relaxation gap
+
+  greedy vs a certified lower bound on the (P0) optimum at mass <= M_g
+  N  E_greedy     M_g    L(M_g)    L/E  subopt<=     s+5%    s+10%    s+25%  check
+  1   15.7709   0.231   10.4186  0.661     33.9%   8.9411   7.5765   4.2624  ok
+  2    7.9432   0.319    2.2777  0.287     71.3%   1.6567   1.1344   0.1591  ok
+  3    6.5744   0.369    0.6779  0.103     89.7%   0.3215   0.0965   0.0000  ok
+  4    4.8988   0.505    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+  6    2.8572   0.702    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+  8    2.1697   0.697    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+ 12    1.6052   0.736    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+ 16    1.3093   1.203    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+
+  mass sweep: the bound is conditional on M, so this is how fast it
+  decays as the budget is relaxed beyond greedy's own mass
+  N  E_greedy   L(1.0Mg)  L(1.25Mg)   L(1.5Mg)   L(2.0Mg)   L(3.0Mg)
+  1   15.7709    10.4186     4.2624     1.2963     0.0000     0.0000
+  2    7.9432     2.2777     0.1591     0.0000     0.0000     0.0000
+  3    6.5744     0.6779     0.0000     0.0000     0.0000     0.0000
+  4    4.8988     0.0000     0.0000     0.0000     0.0000     0.0000
+  6    2.8572     0.0000     0.0000     0.0000     0.0000     0.0000
+  8    2.1697     0.0000     0.0000     0.0000     0.0000     0.0000
+ 12    1.6052     0.0000     0.0000     0.0000     0.0000     0.0000
+ 16    1.3093     0.0000     0.0000     0.0000     0.0000     0.0000
+
+==============================================================================
+# target=cartoon n=48 dictionary D=13824 (24 shapes x 576 positions), 95,544,576 pairs enumerated exactly
+                               error   % of 0.5||y||^2   l1 mass    coh
+       best-1 (greedy N=1)    128.19          57.2535%
+             best-2 greedy     96.24          42.9818%    21.084
+    best-2 exhaustive free     84.51          37.7452%    22.568  0.094
+best-2 exhaustive coh<=0.9     84.51          37.7452%    22.568  0.094
+best-2 exhaustive mass<=greedy     88.70          39.6132%    20.919  0.236
+# C3 exhaustive-contains-greedy: greedy red=255.33 <= free red=278.78 -> ok
+# myopia cost at N=2, mass-matched: +8.504% of the exhaustive optimum -> greedy is beaten
+# greedy first atom idx 11771; unconstrained winner (11695, 11846) at coherence 0.0943, mass 22.57 (vs greedy mass 21.08)
+
+==============================================================================
+# target=ascent n=64 0.5||y||^2=338.3024 |bank|=320 Theta = positions x [sigma 1px..16px], |v|<=16
+# discrete atom norm over Theta: min=36.0 med=112.8 max=113.4, spread=3.15x (analytic convention wants 1.00x)
+#   narrow quartile median=113.4, wide quartile median=105.3; 1.0% of Theta has sub-pixel minor axis
+# greedy to N=16 in 26s
+# N=1 exact optimum 47.3576% vs greedy 47.3576% -> matched-filter placement costs +0.0000pp (0 iff the grid dictionary is exactly unit-norm)
+# 191 dirs after ascent (231s); ascent improved the bound by 2.5-58.5% -> search over p was NOT saturated, so the residual looseness is not attributable to the relaxation gap alone
+
+  greedy vs a certified lower bound on the (P0) optimum at mass <= M_g
+  N  E_greedy     M_g    L(M_g)    L/E  subopt<=     s+5%    s+10%    s+25%  check
+  1   47.3576   0.168   36.1386  0.763     23.7%  34.3695  32.6447  27.7367  ok
+  2   24.6675   0.328   10.0196  0.406     59.4%   8.2603   6.6707   2.9202  ok
+  3   17.6232   0.411    2.8580  0.162     83.8%   1.8672   1.2660   0.2238  ok
+  4   15.0086   0.451    1.2967  0.086     91.4%   0.8105   0.4380   0.0000  ok
+  6   12.6388   0.514    0.2204  0.017     98.3%   0.0391   0.0000   0.0000  ok
+  8   10.4810   0.608    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+ 12    8.0945   0.724    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+ 16    6.8227   0.829    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+
+  mass sweep: the bound is conditional on M, so this is how fast it
+  decays as the budget is relaxed beyond greedy's own mass
+  N  E_greedy   L(1.0Mg)  L(1.25Mg)   L(1.5Mg)   L(2.0Mg)   L(3.0Mg)
+  1   47.3576    36.1386    27.7367    20.4448     9.1909     0.3411
+  2   24.6675    10.0196     2.9202     0.4949     0.0000     0.0000
+  3   17.6232     2.8580     0.2238     0.0000     0.0000     0.0000
+  4   15.0086     1.2967     0.0000     0.0000     0.0000     0.0000
+  6   12.6388     0.2204     0.0000     0.0000     0.0000     0.0000
+  8   10.4810     0.0000     0.0000     0.0000     0.0000     0.0000
+ 12    8.0945     0.0000     0.0000     0.0000     0.0000     0.0000
+ 16    6.8227     0.0000     0.0000     0.0000     0.0000     0.0000
+
+==============================================================================
+# target=ascent n=48 dictionary D=13824 (24 shapes x 576 positions), 95,544,576 pairs enumerated exactly
+                               error   % of 0.5||y||^2   l1 mass    coh
+       best-1 (greedy N=1)    147.14          77.9692%
+             best-2 greedy    106.85          56.6198%    18.077
+    best-2 exhaustive free    106.85          56.6198%    18.077  0.002
+best-2 exhaustive coh<=0.9    106.85          56.6198%    18.077  0.002
+best-2 exhaustive mass<=greedy    106.85          56.6198%    18.077  0.002
+# C3 exhaustive-contains-greedy: greedy red=163.73 <= free red=163.73 -> ok
+# myopia cost at N=2, mass-matched: +0.000% of the exhaustive optimum -> greedy is exactly optimal here
+# greedy first atom idx 11575; unconstrained winner (11575, 11872) at coherence 0.0021, mass 18.08 (vs greedy mass 18.08)
+
+==============================================================================
+# target=face n=64 0.5||y||^2=533.1265 |bank|=320 Theta = positions x [sigma 1px..16px], |v|<=16
+# discrete atom norm over Theta: min=36.0 med=112.8 max=113.4, spread=3.15x (analytic convention wants 1.00x)
+#   narrow quartile median=113.4, wide quartile median=105.3; 1.0% of Theta has sub-pixel minor axis
+# greedy to N=16 in 27s
+# N=1 exact optimum 30.8572% vs greedy 30.8572% -> matched-filter placement costs +0.0000pp (0 iff the grid dictionary is exactly unit-norm)
+# 191 dirs after ascent (230s); ascent improved the bound by 6.9-1339.4% -> search over p was NOT saturated, so the residual looseness is not attributable to the relaxation gap alone
+
+  greedy vs a certified lower bound on the (P0) optimum at mass <= M_g
+  N  E_greedy     M_g    L(M_g)    L/E  subopt<=     s+5%    s+10%    s+25%  check
+  1   30.8572   0.242   23.5162  0.762     23.8%  21.9248  20.3891  16.1166  ok
+  2   17.8711   0.360   10.3226  0.578     42.2%   9.0775   7.9312   4.9561  ok
+  3   15.0465   0.562    1.0119  0.067     93.3%   0.4888   0.1539   0.0000  ok
+  4   11.0659   0.567    0.9078  0.082     91.8%   0.4138   0.1114   0.0000  ok
+  6    9.1632   0.667    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+  8    7.6130   0.767    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+ 12    5.3834   1.035    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+ 16    4.5308   1.857    0.0000  0.000    100.0%   0.0000   0.0000   0.0000  ok  (vacuous)
+
+  mass sweep: the bound is conditional on M, so this is how fast it
+  decays as the budget is relaxed beyond greedy's own mass
+  N  E_greedy   L(1.0Mg)  L(1.25Mg)   L(1.5Mg)   L(2.0Mg)   L(3.0Mg)
+  1   30.8572    23.5162    16.1166    10.1339     3.4728     0.0000
+  2   17.8711    10.3226     4.9561     1.5448     0.0000     0.0000
+  3   15.0465     1.0119     0.0000     0.0000     0.0000     0.0000
+  4   11.0659     0.9078     0.0000     0.0000     0.0000     0.0000
+  6    9.1632     0.0000     0.0000     0.0000     0.0000     0.0000
+  8    7.6130     0.0000     0.0000     0.0000     0.0000     0.0000
+ 12    5.3834     0.0000     0.0000     0.0000     0.0000     0.0000
+ 16    4.5308     0.0000     0.0000     0.0000     0.0000     0.0000
+
+==============================================================================
+# target=face n=48 dictionary D=13824 (24 shapes x 576 positions), 95,544,576 pairs enumerated exactly
+                               error   % of 0.5||y||^2   l1 mass    coh
+       best-1 (greedy N=1)    211.01          70.9053%
+             best-2 greedy    165.18          55.5053%    22.279
+    best-2 exhaustive free    163.19          54.8380%    22.571  0.040
+best-2 exhaustive coh<=0.9    163.19          54.8380%    22.571  0.040
+best-2 exhaustive mass<=greedy    164.40          55.2425%    22.196  0.068
+# C3 exhaustive-contains-greedy: greedy red=264.83 <= free red=268.80 -> ok
+# myopia cost at N=2, mass-matched: +0.476% of the exhaustive optimum -> greedy is beaten
+# greedy first atom idx 11768; unconstrained winner (11681, 11767) at coherence 0.0399, mass 22.57 (vs greedy mass 22.28)

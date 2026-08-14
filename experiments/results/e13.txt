@@ -1,0 +1,21 @@
+# E13: hit rate for the canonical optimum as N grows.
+# 'distinct solutions' = clusters at 1px max matched distance.
+# 'hit rate (best)' = restarts landing in the same cluster as the
+#   lowest-error solution. This is the number the agreement-based
+#   procedure of section 10.11 depends on.
+
+  cartoon: 60 independent continuous restarts per N, n=48
+       N     best  distinct  largest  best in  hit rate     largest  2nd cluster
+            error solutions  cluster  largest    (best)   cl. error        error
+       3   4.2455        16       31       NO      1/60     4.7107%      5.3447%   [102s]
+       4   3.0854        31        8       NO      2/60     3.2909%      3.4029%   [148s]
+       6   2.2499        56        3      yes      3/60     2.2499%      2.5472%   [197s]
+       8   1.7977        58        3       NO      1/60     2.0604%      2.0617%   [375s]
+
+  ascent: 60 independent continuous restarts per N, n=48
+       N     best  distinct  largest  best in  hit rate     largest  2nd cluster
+            error solutions  cluster  largest    (best)   cl. error        error
+       3  11.8956        16       35       NO      1/60    12.9488%     12.5928%   [87s]
+       4   9.7290        35        6       NO      1/60    12.1366%     11.7594%   [130s]
+       6   8.4055        54        3       NO      1/60     9.4433%     10.2878%   [180s]
+       8   7.4664        60        1       NO      1/60     7.7364%      8.1062%   [260s]
