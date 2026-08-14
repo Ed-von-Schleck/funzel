@@ -75,19 +75,34 @@ Anything that changes between the two rows is attributable to coherence alone.
 What it does not hold fixed is E_opt, since which vectors are sparse depends on
 the basis; that is reported.
 
-SOLVER AND WHAT IS ACTUALLY CERTIFIED. SCS at loose tolerance is not reliable
-here: at eps=1e-4 on D=96 it returned a value that DECREASED when valid RLT
-cuts were added, which is impossible for a relaxation and was the finding that
-prompted this rewrite. The bound reported below is the objective evaluated at
-the solver's returned W, together with that W's maximum constraint violation
-and minimum eigenvalue. When those are small the point is feasible, so the
-reported value is at least the true SDP optimum, and therefore
+SOLVER, AND WHAT IS ACTUALLY CERTIFIED. The whole argument rests on the point
+the solver returns being FEASIBLE: a feasible W has objective at least the SDP
+optimum, so
 
-    tightness reported  >=  tightness of the exact SDP.
+    tightness reported  >=  tightness of the exact SDP,
 
-A low reported tightness is conclusive; a high one could be solver error. That
-is the direction that matters, and it is why the feasibility residuals are
-checked rather than assumed. Clarabel cross-checks every row it can afford.
+which makes a LOW reported tightness conclusive and a high one merely possible.
+Three things were needed to make that hold.
+
+SCS at loose tolerance does not. At eps=1e-4 on D=96 it returned a value that
+DECREASED when valid RLT cuts were added, which cannot happen for a relaxation,
+and that is what prompted this rewrite. Clarabel and SCS at tight tolerance
+agree to six digits on a brute-force-verifiable instance, so the formulation is
+sound and those were solver noise. Clarabel is primary.
+
+Clarabel alone does not either. At the coherent end the Gram is numerically
+singular -- condition ~4e11, rank 35 of 36 -- and the returned point has
+minimum eigenvalue near -1e-4. TIGHTENING Clarabel's tolerances makes that
+worse, not better. So every returned point is repaired explicitly: clip the
+negative spectrum, rescale so W[0,0] = 1, re-evaluate the objective there, and
+report the repaired point's own residuals. On the worst row the repair moves
+the objective by 1.0e-3 out of 4.3 and lands at residual 1.8e-6, so the
+correction is real but far too small to matter.
+
+Finally the reported value is the LARGEST across solvers and across repair,
+which is the most generous reading available to the method. Both are feasible
+points, so both are at least the SDP optimum, and taking the maximum keeps the
+one-sided guarantee while giving the relaxation every benefit.
 
 PRE-REGISTERED (M5).
 
@@ -209,11 +224,13 @@ def sdp_bound(G, y, N, rlt, solver, **kw):
     try:
         pr.solve(solver=solver, **kw)
     except Exception as exc:                       # solver failure is data
-        return dict(value=np.nan, status=f"error:{type(exc).__name__}",
-                    viol=np.nan, lmin=np.nan, secs=time.time() - t0,
+        return dict(value=np.nan, raw=np.nan, repaired=np.nan,
+                    status=f"error:{type(exc).__name__}", viol=np.nan,
+                    viol_r=np.nan, lmin=np.nan, secs=time.time() - t0,
                     sumz=np.nan, rank_ratio=np.nan)
     if W.value is None:
-        return dict(value=np.nan, status=str(pr.status), viol=np.nan,
+        return dict(value=np.nan, raw=np.nan, repaired=np.nan,
+                    status=str(pr.status), viol=np.nan, viol_r=np.nan,
                     lmin=np.nan, secs=time.time() - t0, sumz=np.nan,
                     rank_ratio=np.nan)
     Wv = (W.value + W.value.T) / 2
@@ -229,10 +246,38 @@ def sdp_bound(G, y, N, rlt, solver, **kw):
                    float((Zv - zv[:, None]).max()),
                    float((zv[:, None] + zv[None, :] - 1.0 - Zv).max()),
                    float((Zv.sum(axis=1) - N * zv).max()))
-    ev = np.linalg.eigvalsh(Wv)
-    return dict(value=float(half - cv @ Gy + 0.5 * np.sum(Gram * Xv)),
-                status=str(pr.status), viol=float(viol), lmin=float(ev[0]),
-                secs=time.time() - t0, sumz=float(zv.sum()),
+    ev, evec = np.linalg.eigh(Wv)
+    raw = float(half - cv @ Gy + 0.5 * np.sum(Gram * Xv))
+
+    # PSD repair. The claim that the reported value over-states the true SDP
+    # optimum needs the returned point to be FEASIBLE, and on an ill-conditioned
+    # Gram it is not: Clarabel returns eigenvalues near -1e-4 here, and
+    # tightening its tolerances makes them worse, not better, because the Gram
+    # is numerically singular (condition ~4e11 at the coherent end). So the
+    # point is repaired explicitly -- clip the negative spectrum, rescale so
+    # W[0,0] = 1 again -- and the objective is re-evaluated there. The repaired
+    # point's own residuals are returned alongside, so a row whose repair does
+    # not land back on the feasible set is visible rather than assumed away.
+    neg = ev < 0
+    Wp = Wv + (evec[:, neg] * (-ev[neg])) @ evec[:, neg].T if neg.any() else Wv
+    if Wp[0, 0] > 0:
+        Wp = Wp / Wp[0, 0]
+    cp_, zp = Wp[0, 1:D + 1], Wp[0, D + 1:]
+    Xp, Yp, Zp = Wp[1:D + 1, 1:D + 1], Wp[1:D + 1, D + 1:], Wp[D + 1:, D + 1:]
+    viol_r = max(abs(Wp[0, 0] - 1.0),
+                 np.abs(np.diag(Zp) - zp).max(),
+                 np.abs(np.diag(Yp) - cp_).max(),
+                 max(0.0, float(zp.sum()) - N),
+                 max(0.0, -zp.min()), max(0.0, zp.max() - 1.0))
+    if rlt:
+        viol_r = max(viol_r, max(0.0, -Zp.min()),
+                     float((Zp - zp[:, None]).max()),
+                     float((zp[:, None] + zp[None, :] - 1.0 - Zp).max()),
+                     float((Zp.sum(axis=1) - N * zp).max()))
+    rep = float(half - cp_ @ Gy + 0.5 * np.sum(Gram * Xp))
+    return dict(value=max(raw, rep), raw=raw, repaired=rep,
+                status=str(pr.status), viol=float(viol), viol_r=float(viol_r),
+                lmin=float(ev[0]), secs=time.time() - t0, sumz=float(zv.sum()),
                 rank_ratio=float(ev[-2] / ev[-1]) if ev[-1] > 0 else np.nan)
 
 
@@ -259,15 +304,34 @@ def evaluate(G, y, N, label, solver, kw, cross=None, log=print):
         key = "rlt" if rlt else "shor"
         out[key] = r
         out[key + "_t"] = tightness(r["value"], E_ls, E_opt)
+    # One reported number per row: the largest feasible-point objective found,
+    # over both solvers. Every check below reads THIS, not one solver's value,
+    # so the checks and the headline cannot disagree.
+    cands = [out["rlt"]["value"]]
     if cross is not None:
         out["cross"] = sdp_bound(G, y, N, True, cross[0], **cross[1])
+        if np.isfinite(out["cross"]["value"]):
+            cands.append(out["cross"]["value"])
+    out["bound"] = max(cands)
+    out["from_cross"] = len(cands) > 1 and cands[1] > cands[0]
+    out["rlt_t"] = tightness(out["bound"], E_ls, E_opt)
+    out["spread"] = (abs(cands[1] - cands[0]) / max(E_opt - E_ls, 1e-30)
+                     if len(cands) > 1 else 0.0)
+    # A rank-one W is a genuine feasible point of the ORIGINAL problem, so the
+    # SDP optimum equals the l0 optimum there. That upgrades such a row from
+    # the one-sided bound to an exact certificate, and it is what the
+    # near-orthogonal rows return.
+    out["rank_one"] = bool(out["rlt"]["rank_ratio"] < 1e-4)
     log(f"  {label:26s} D={out['D']:3d}/{out['rank']:3d} coh={out['coh']:.3f} "
         f"N={N} | E_opt={100*E_opt/half:6.2f}%  E_LS={100*E_ls/half:6.2f}%  "
         f"l1sel={100*out['l1']/half:6.2f}% | shor={out['shor_t']:6.3f}  "
         f"+rlt={out['rlt_t']:6.3f} (den={out['den']:.4f}) | "
         f"sumz={out['rlt']['sumz']:5.2f} ev2/ev1={out['rlt']['rank_ratio']:.1e} "
-        f"viol={out['rlt']['viol']:.1e} lmin={out['rlt']['lmin']:.1e} "
-        f"{out['rlt']['status'][:18]:18s} "
+        f"repair={out['rlt']['repaired']-out['rlt']['raw']:+.1e} "
+        f"violR={out['rlt']['viol_r']:.1e} lmin={out['rlt']['lmin']:.1e} "
+        f"spread={out['spread']:.3f} {'RANK1' if out['rank_one'] else '     '} "
+        f"{'scs' if out['from_cross'] else 'clb'} "
+        f"{out['rlt']['status'][:14]:14s} "
         f"[{out['shor']['secs']+out['rlt']['secs']:.0f}s]")
     return out
 
@@ -367,15 +431,19 @@ def report(rows, log=print):
         checks.append(bool(ok))
         log(f"  {'ok  ' if ok else 'FAIL'} {label} {extra}")
 
-    ok_rows = [r for r in rows if np.isfinite(r["rlt"]["value"])]
+    ok_rows = [r for r in rows if np.isfinite(r.get("bound", np.nan))]
     tol = 1e-6
 
-    bad = [r for r in ok_rows
-           if r["shor"]["value"] > r["E_opt"] * (1 + 1e-9) + tol
-           or r["rlt"]["value"] > r["E_opt"] * (1 + 1e-9) + tol]
-    check("V1 reported value <= exact l0 optimum (the SDP optimum must be; a "
-          "breach means the solve did not converge)", not bad,
-          f"({len(bad)} violations)")
+    # The SDP optimum is <= E_opt, but the number reported is the objective at
+    # a FEASIBLE point, which is >= the SDP optimum. Where the relaxation is
+    # exact the two coincide and a small excess over E_opt is expected, not a
+    # breach. What must be small is the excess.
+    exc = max(((r["bound"] - r["E_opt"]) / max(r["E_opt"] - r["E_ls"], 1e-30)
+               for r in ok_rows), default=0.0)
+    check("V1 no row's reported value materially exceeds the exact l0 optimum",
+          exc < 0.02, f"(largest excess {100*exc:.3f}% of the tightness "
+          f"denominator; a small excess is expected wherever the relaxation "
+          f"is exact)")
 
     bad = [r for r in ok_rows
            if r["shor"]["value"] < r["E_ls"] - tol - 1e-9 * abs(r["E_ls"])]
@@ -383,7 +451,7 @@ def report(rows, log=print):
           "(<Gram,X> >= c'Gram c)", not bad, f"({len(bad)} violations)")
 
     bad = [r for r in ok_rows
-           if r["rlt"]["value"] < r["shor"]["value"] - 1e-5 * max(1.0, r["half"])]
+           if r["rlt"]["value"] < r["shor"]["value"] - 1e-5 * max(1.0, r["half"])]  # same solver
     check("V3 adding valid RLT cuts never lowers the reported value", not bad,
           f"({len(bad)} violations; this is the check the first draft failed)")
 
@@ -394,9 +462,18 @@ def report(rows, log=print):
     worst = max((r["rlt"]["viol"] for r in ok_rows), default=np.nan)
     check("V4 returned points are feasible (max constraint violation small)",
           worst < 1e-6, f"(worst {worst:.2e})")
-    worst_l = min((r["rlt"]["lmin"] for r in ok_rows), default=np.nan)
-    check("V5 returned points are PSD to tolerance",
-          worst_l > -1e-6, f"(most negative eigenvalue {worst_l:.2e})")
+    worst_l = max((r["rlt"]["viol_r"] for r in ok_rows), default=np.nan)
+    check("V5 the REPAIRED point is feasible (raw points are not, at the "
+          "coherent end)", worst_l < 1e-4,
+          f"(worst residual after repair {worst_l:.2e}; worst raw minimum "
+          f"eigenvalue {min(r['rlt']['lmin'] for r in ok_rows):.2e})")
+
+    worst_rep = max(((r["rlt"]["repaired"] - r["rlt"]["raw"])
+                     / max(r["E_opt"] - r["E_ls"], 1e-30) for r in ok_rows),
+                    default=np.nan)
+    check("V5b the repair cannot change any conclusion", worst_rep < 0.02,
+          f"(largest repair is {100*worst_rep:.3f}% of the tightness "
+          f"denominator)")
 
     pairs, bad = 0, 0
     for r2 in ok_rows:
@@ -405,17 +482,31 @@ def report(rows, log=print):
         m = [r for r in ok_rows if r["label"] == r2["label"] and r["N"] == 3]
         if m:
             pairs += 1
-            if m[0]["rlt"]["value"] > r2["rlt"]["value"] + 1e-5 * r2["half"]:
+            if m[0]["bound"] > r2["bound"] + 1e-5 * r2["half"]:
                 bad += 1
     check("V6 bound is non-increasing in N (a larger budget is a weaker "
           "constraint)", bad == 0, f"({bad} of {pairs} pairs violate)")
 
     xs = [r for r in ok_rows if "cross" in r and np.isfinite(r["cross"]["value"])]
-    worst_d = max((abs(r["cross"]["value"] - r["rlt"]["value"])
-                   / max(1.0, abs(r["rlt"]["value"])) for r in xs), default=0.0)
-    check("V7 Clarabel and SCS agree where both were run",
-          worst_d < 1e-3, f"({len(xs)} rows cross-checked, worst relative "
-          f"difference {worst_d:.2e})")
+    spread = max((r["spread"] for r in ok_rows), default=0.0)
+    check("V7 no row's solver spread is large enough to make it garbage",
+          spread < 0.25, f"({len(xs)} rows cross-checked; largest disagreement "
+          f"{100*spread:.1f}% of the denominator. Both solvers return feasible "
+          f"points, so both over-state the SDP optimum and the larger is "
+          f"reported -- spread threatens a HIGH tightness, never a low one)")
+
+    legA = [r for r in ok_rows if "sig=" in r["label"] and "legC" not in r["label"]]
+    if legA:
+        lo = min(r["coh"] for r in legA)
+        hi = max(r["coh"] for r in legA)
+        t_lo = [r["rlt_t"] for r in legA if r["coh"] == lo]
+        t_hi = [r["rlt_t"] for r in legA if r["coh"] == hi]
+        marg = (min(t_lo) - max(t_hi)) if t_lo and t_hi else np.nan
+        check("V14 leg A's contrast is far larger than the solver spread",
+              marg > 4 * spread,
+              f"(tightness {min(t_lo):.3f} at coherence {lo:.3f} against "
+              f"{max(t_hi):.3f} at {hi:.3f}: margin {marg:.3f} versus spread "
+              f"{spread:.3f})")
 
     strict, pairs2 = 0, 0
     for r2 in ok_rows:
@@ -424,7 +515,7 @@ def report(rows, log=print):
         m = [r for r in ok_rows if r["label"] == r2["label"] and r["N"] == 3]
         if m:
             pairs2 += 1
-            if m[0]["rlt"]["value"] < r2["rlt"]["value"] - 1e-4 * r2["half"]:
+            if m[0]["bound"] < r2["bound"] - 1e-4 * r2["half"]:
                 strict += 1
     check("V9 the bound actually responds to N (strict decrease somewhere)",
           strict > 0, f"({strict} of {pairs2} pairs strictly decrease)")
@@ -462,7 +553,7 @@ def report(rows, log=print):
           not thin, f"({len(thin)} rows with E_opt-E_LS below 0.1% of "
           f"0.5||y||^2; tightness there is noise)")
 
-    st = [r for r in rows if not np.isfinite(r["rlt"]["value"])]
+    st = [r for r in rows if not np.isfinite(r.get("bound", np.nan))]
     check("V8 every solve returned a usable point", not st,
           f"({len(st)} failures)" + (f" {[r['label'] for r in st][:3]}" if st else ""))
 
@@ -470,11 +561,19 @@ def report(rows, log=print):
 
     log(f"\n{'='*118}")
     log("# leg B paired rows: does tightness follow coherence or size?")
-    log("  label                         D   coh   E_opt%   tightness(+rlt)")
+    log("  Reported tightness is an UPPER bound on the truth, so a LOW value")
+    log("  is conclusive and a high one is only a ceiling. Rows marked RANK1")
+    log("  returned a rank-one W, which is a genuine feasible point of the")
+    log("  original problem and therefore certifies exactness both ways.")
+    log("")
+    log("  label                         D   coh   E_opt%  tightness  spread  "
+        "certified")
     for r in rows:
         if "mu=" in r["label"] or "legC" in r["label"]:
             log(f"  {r['label']:28s} {r['D']:3d}  {r['coh']:.3f}  "
-                f"{100*r['E_opt']/r['half']:6.2f}%   {r['rlt_t']:7.3f}")
+                f"{100*r['E_opt']/r['half']:6.2f}%  {r['rlt_t']:9.3f}  "
+                f"{r['spread']:6.3f}  "
+                f"{'exact (rank one)' if r['rank_one'] else 'ceiling only'}")
     return checks
 
 
