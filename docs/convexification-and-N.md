@@ -117,11 +117,21 @@ $\operatorname{conv}S$ — every point reachable as a weighted average of points
 wants the minimum to be attained, one takes the closure, $\overline{\operatorname{conv}}\,S$.
 
 So the best any convex approach can do with "at most $N$ blobs" is determined by the convex hull of
-the set of $N$-blob encodings. **If that hull does not depend on $N$, then no convex method that
-minimises the error of the rendered image depends on $N$** — not this penalty or that one, not a
-cleverer algorithm, and by Corollary 7 not a reformulation introducing new variables either. The
-qualification is load-bearing rather than decorative: Theorem 9 exhibits a convex problem, with a
-different objective, whose value equals the $N$-blob optimum for every $N$.
+the set of $N$-blob encodings. **If that hull does not depend on $N$, then no convex relaxation
+that minimises the error of the rendered image has a value that depends on $N$** — not this
+penalty or that one, not a cleverer algorithm, and by Corollary 7 not a reformulation introducing
+new variables either. The qualification "minimises the error of the rendered image" is load-bearing
+rather than decorative: Theorem 9 exhibits a convex problem, with a different objective, whose
+value equals the $N$-blob optimum for every $N$.
+
+Two things this does not say. It is about the *value* of a relaxation, so it does not say that no
+procedure can use $N$: solving a convex problem and then keeping the blobs it favours most uses
+$N$, in the truncation, which is not a convex step. Section 9 measures exactly that procedure and
+finds it 6–409% worse than solving for $N$ blobs directly, which is the cost of the count being
+invisible to the part that does the optimising. And it is about relaxations of a *capped* set —
+without a cap on how strong a blob may be there is nothing to relax, as Section 4 notes, so the
+question only becomes interesting once a cap is imposed. What the theorems below show is that the
+cap does not survive.
 
 The hull does not depend on $N$. The reason is one picture. Take two blobs, each of amplitude $M$,
 and slide them towards each other. Their masses add. In the limit they are a single blob of
@@ -390,9 +400,11 @@ constraint, not blind to $N$ in value.
 
 Section 9 reports both regimes. Its second measurement lets the budget grow with $N$, which is
 where the theorem is silent, so the two do not conflict. Its third holds $\rho$ fixed and finds the
-gap closing exactly, at small $N$, by a cruder mechanism than the rate: the ball's own minimiser is
-an $N$-blob encoding once $N$ reaches its support size. Theorem 8's bound stays orders of magnitude
-above the measured gap throughout. The rate is correct and is never what decides the answer.
+gap closing exactly rather than asymptotically, by a cruder mechanism than the rate: the ball's own
+minimiser is an $N$-blob encoding once $N$ reaches its support size. Where that happens depends on
+the budget — at $N$ between 3 and 48 across the twelve cells measured, small only at the small
+budgets. Theorem 8's bound stays orders of magnitude above the measured gap throughout. The rate is
+correct and is never what decides the answer.
 
 Corollary 7 assumed the objective is the error of a linearly rendered image. That hypothesis is not
 a technicality. Drop it and convexification costs nothing at all.
@@ -624,25 +636,28 @@ by Theorem 3, the convexification of the $N$-blob family for *every* $N$ at once
 
 Ten results from this repository, each described in enough detail to be read without the other
 document. The first three concern the mass-ball relaxation, the next three the amplitude caps that
-a finite dictionary allows, then the moment relaxation, then the dictionary's coherence and where
-it comes from, and last the certificate. Section 6 cites one more, on the geometry of the optimum.
+a finite dictionary allows, then how tight any of it is as coherence varies, then the moment
+relaxation, then where the coherence comes from, and last the certificate. Section 6 cites two
+more, on the geometry of the optimum and on what separation buys.
 
-Every number below comes from images of 32 to 64 pixels a side and dictionaries of 59 to 768 blobs,
+Every number below comes from images of 32 to 64 pixels a side and dictionaries of 12 to 768 blobs,
 at $N\le4$ where the optimum is enumerated exactly and $N\le64$ where it is searched. That is three
 orders of magnitude below the budgets an encoder uses. The theory does not depend on scale; none of
 these figures should be quoted as though it does.
 
 **The gap is real with both problems solved exactly.** `experiments/e4_exact_l0.py`. Shrink the
-problem until neither side can be blamed on a solver: a $32\times32$ image, a dictionary of $D=768$
-blobs, and $N\le4$. Solve $\ell_0$ by enumerating every one of the $\binom{768}{3}=75{,}202{,}816$
-supports, and $\ell_1$ by following its exact solution path as $\lambda$ decreases — the path is
-piecewise linear, so it can be computed without approximation — then re-fitting amplitudes on the
-blobs it selects, which removes the shrinkage bias and can only help it. At matched blob count
-$\ell_1$ is
+problem until neither side can be blamed on a solver. Two panels on a $32\times32$ image, because
+enumeration costs $\binom{D}{N}$ and so $D$ and $N$ trade against each other: a rich dictionary of
+$D=768$ blobs at $N\le3$, where the $N=3$ case means enumerating every one of the
+$\binom{768}{3}=75{,}202{,}816$ supports, and a coarser $D=128$ at $N\le4$. Solve $\ell_1$ by
+following its exact solution path as $\lambda$ decreases — the path is piecewise linear, so it can
+be computed without approximation — then re-fitting amplitudes on the blobs it selects, which
+removes the shrinkage bias and can only help it. At matched blob count $\ell_1$ is
 worse by between **6% and 409%** across four targets and budgets from 2 to 4 blobs. The two agree
-only at $N=1$, where the problems coincide. The worst case, 409%, is on a target built as an exact
-sum of three dictionary blobs, at $N=2$: $\ell_0$ reaches error 8.70 and $\ell_1$ 44.25. On a
-cartoon target at $N=2$ the figures are 18.00 and 30.90, and the two answers share no blob at all.
+only at $N=1$, where the problems coincide. The worst case, 409%, is on the coarser panel, on a
+target built as an exact sum of three dictionary blobs, at $N=2$: $\ell_0$ reaches error 8.70 and
+$\ell_1$ 44.25. On a cartoon target at $N=2$ the figures are 18.00 and 30.90 — on the rich panel,
+this time — and the two answers share no blob at all.
 One qualification the experiment does not wear on its face: the enumeration is restricted to
 supports whose refitted mass is within twice the larger of greedy's and $\ell_1$'s, a guard against
 near-duplicate pairs with huge cancelling amplitudes. So the $\ell_0$ side is the exact optimum of
@@ -655,7 +670,10 @@ nothing is approximate.
 **A mass-constrained bound goes vacuous quickly.** `experiments/e3_absolute_bound.py`. Theorem 3
 says a total-mass constraint is the most any measure-space convexification can see, so a lower
 bound on (P0) built from one is the best of its kind. Measured on $64\times64$ images against
-budgets 1 to 16, it stops saying anything by $N=4$–8, where it falls to zero. At $N=1$, where the
+budgets 1 to 16, it stops saying anything by $N=4$–8, where it falls to zero: at $N=4$ on the
+cartoon, 6 on the face, 8 on the ascent. A fourth target is built as an exact sum of three
+dictionary blobs, and there the bound is also zero from $N=4$ — but so is the optimum, so that
+zero is exactness rather than vacuity and is not counted in the range. At $N=1$, where the
 single best blob can be found exactly by direct search so the true optimum is known, the bound
 reaches 66–76% of it and leaves 24–34% it cannot exclude.
 
@@ -688,18 +706,38 @@ is not unique, and a first-order method returns a dense one with 730 non-zeros. 
 ball-optimal encoding has three, which $N_0$ recovers. Reporting the returned minimiser's support
 size would have recorded 730, which is why the number above is the measured $N_0$.
 
-**The per-blob cap survives discretisation and is still useless here.**
-`experiments/e8_branch_and_bound.py`. On a finite dictionary Theorem 11 applies, so branch-and-bound
-has something to work with. Implemented on a $48\times48$ image with $D=248$: the node bound is
-informative only when a certain ratio falls below 1, and at the tightest cap the search may legally
-use — $M$ set to the largest amplitude in the best solution found so far, below which that solution
-would itself be excluded — the ratio is **5.7 at $N=4$ and 8.9 at $N=6$**. Two hundred thousand
-nodes returned a 100% gap. The reason is specific to Gaussian blobs: the incumbent's largest
-amplitude is 24.0 while
-$\|y\|=21.2$, so **a single blob carries the energy of the whole image**, and any cap large enough
-to admit it is far too large to constrain $N$ blobs. This is a different failure from the
-continuum one. There the cap is destroyed by collision; here it survives and is merely far too
-generous.
+**The per-blob cap survives discretisation and is still nearly useless here.**
+`experiments/e8_branch_and_bound.py`, with the node bound measured in
+`experiments/e25_node_bound.py`. On a finite dictionary Theorem 11 applies, so branch-and-bound has
+something to work with: the relaxation it solves at every node *is* $P_{N,M}$. Implemented on a
+$48\times48$ image with $D=248$. Its node bound is a cap times a sum of correlations against a
+residual energy, and it says nothing at all unless the ratio $M\sigma/R$ falls below 1. Judge it at
+the most favourable cap that exists — $M$ set to the largest amplitude in the optimum the search
+itself returns, below which that optimum would be excluded — and at the root the ratio is
+**2.3 to 5.3** across three targets at $N=4$ and $6$. For the root bound to certify outright, the
+cap would have to fall to **0.15–0.25** of the optimum's own largest amplitude.
+
+The reason is specific to Gaussian blobs: the largest amplitude in the optimum runs 0.83 to 1.20
+times $\|y\|$ — 24.0 against $\|y\|=21.2$ on the cartoon at $N=4$ — so **a single blob carries the
+energy of the whole image**, and any cap large enough to admit it is far too large to constrain
+$N$ blobs.
+
+Three qualifications, all against the conclusion. The bound is not uniformly vacuous: pushed down
+the tree it does fall below 1, on four of six instances, but always at the layer where only one
+blob is left to choose, so it arrives after the branching it would have to prevent. Two hundred
+thousand nodes leave a certified gap of **41–100%** rather than 100% throughout — at $N=4$ the
+certified lower bound reaches 59% of the attained error on the easiest of the three targets, and at
+$N=6$ it reaches nothing on any of them. And what the gap responds to is the cap rather than the
+search: on the same instances at the same node budget, widening the cap from $1.0$ to $2.0$ times
+that amplitude never narrows the gap and drives every instance to 100%. The search's own table,
+`results/e8.txt`, is the same reading from the other side — at twice the cap and twice the nodes it
+returns a 100% gap on all nine of its instances, $N=4,6,8$. So the instrument is not dead, it is
+cap-limited, and it degrades as $N$ grows, which is the direction an encoder moves in. Three of the
+five checks written down before this run failed, and they failed by making the picture less
+absolute; they are left failing in the output.
+
+This is a different failure from the continuum one. There the cap is destroyed by collision; here
+it survives and is merely far too generous.
 
 **The perspective relaxation fails the same way.** `experiments/e9_perspective.py`. The standard
 strengthening from the sparse-regression literature, applied at $D=248$, $N=3$ on $48\times48$
@@ -767,12 +805,17 @@ low value is conclusive and a high one is a ceiling.
 
 Holding the dictionary size and the atom positions fixed and sweeping only the atom width, which is
 what moves coherence: tightness is **1.000** at coherence 0.062 and **0.24–0.48** at coherence
-0.943, on both targets. The low-coherence rows return a rank-one solution, which is a genuine
-feasible point of the original problem and therefore certifies exactness in both directions rather
-than bounding it. Over the same sweep the exact optimum moves from 84% of the image energy to 10%:
-the relaxation is exact precisely where the dictionary explains nothing and near-useless where it
-explains most. A partial run over a finer width sweep, committed as `e21_legA_partial.txt` before
-the solver died, puts the coherent end lower still, at 0.08–0.30.
+0.943, on both targets. Since tightness is reported as a ceiling, the 1.000 needs corroboration to
+mean anything, and it gets it on one target of the two: on the cartoon the low-coherence rows
+return a rank-one solution, which is a genuine feasible point of the original problem and so
+certifies exactness in both directions rather than bounding it. On the ascent the same rows are
+not rank-one — the second eigenvalue is 8% of the first — so there the 1.000 is only a ceiling and
+exactness is not established. Over the same sweep the exact optimum moves from 84% of the image
+energy to 10%: the relaxation is exact, or at least bounded by 1, precisely where the dictionary
+explains nothing and near-useless where it explains most. A partial run over a finer width sweep,
+committed as `e21_legA_partial.txt` before the solver died, reaches lower still in the middle —
+0.076 at coherence 0.87 — but is not monotone: it recovers to 0.27–0.30 at 0.943, the value the
+coarse sweep reports. The endpoints are the finding; the interior is not ordered.
 
 Two qualifications, both against the experiment. Its paired rows, which vary coherence at matched
 dictionary size to separate the two, favour coherence in three of four cases and invert in the
@@ -784,7 +827,9 @@ the contrast and the solver spread.
 
 **Where the coherence comes from, and what does not fix it.** `experiments/e24_atom_shape.py`.
 Coherence drives every result above, so it is worth knowing what causes it. Three measurements on
-the $D=248$ dictionary. The pairs that are actually coherent — those above 0.9 — sit 1.13 pixels
+the same $D=248$ dictionary used above, rendered at $32\times32$ rather than $48\times48$: same
+blob geometry, same atom count, coherence 0.9616 against 0.9615. The pairs that are actually
+coherent — those above 0.9 — sit 1.13 pixels
 apart against 16.5 typical, are the **same size** to two decimals, and differ by 30° of
 orientation. So the redundancy is orientation at fixed size and position: an elongated bump rotated
 about nearly the same centre still shares most of its mass with the original, because a positive
@@ -827,11 +872,12 @@ side.
 
 A relaxation needs a cap on how strong a blob may be, or it has nothing to constrain. The tightest
 cap that still admits the answer is the answer's own largest amplitude, and on this dictionary that
-is the size of the whole image — amplitude 24 against an image norm of 21, and 1.19 times $\|y\|$
-at the enumerated optimum. So every cap is too loose before it is imposed: the big-$M$ node bound
-is off by 5.7–8.9×, the mass-ball solution already satisfies the per-blob cap at 0.745 of it, and
-Theorem 10's local version buys 1.6%. The one relaxation that needs no cap, the moment relaxation,
-fails instead through the second face of the same fact.
+is the size of the whole image — 0.83 to 1.20 times $\|y\|$ across targets and budgets, and 1.19
+times $\|y\|$ at the enumerated optimum. So every cap is too loose before it is imposed: the
+big-$M$ node bound needs the cap at 0.15–0.25 of that amplitude to certify and never gets it, the
+mass-ball solution already satisfies the per-blob cap at 0.745 of it, and Theorem 10's local
+version buys 1.6%. The one relaxation that needs no cap, the moment relaxation, fails instead
+through the second face of the same fact.
 
 That second face is coherence. Blobs that resemble each other can cancel, which is what lets a
 single blob carry the image and what makes the coefficients large and opposed. It is also what the
@@ -879,6 +925,15 @@ Gaussian blobs on small images, not universal constants. In particular "a single
 energy of the whole image" is a fact about this dictionary and would not hold for, say, a wavelet
 frame with uniformly bounded atom amplitudes.
 
+**And that fact is measured only at $N\le6$.** Every cap result rests on it, and the obvious
+deflationary reading has not been tested: at a budget of three or four blobs one broad blob must
+carry the image's mean brightness, which is most of $\|y\|$, whereas at a realistic budget each
+blob might only have to reach local intensity scale. If the largest amplitude falls back to that
+scale as $N$ grows, then "every cap is too loose" is a statement about the small-$N$ corner and
+big-$M$ deserves a retrial where the problem is real. Sweeping $\max_i|a_i|/\|y\|$ against $N$ with
+local search would settle it, needs no new machinery, and has not been run. It is the cheapest
+thing in this document that could overturn a conclusion in it.
+
 **Not claimed: that the blob count is the right budget.** Section 1 takes it as given, because
 (P0) does. Amplitudes here reach the scale of the image norm, so under a real quantiser their
 precision costs bits that a count does not measure. Every result below the budget line — what the
@@ -921,14 +976,13 @@ to the dual constraint $|\eta|\le1$ for tractability rather than to the count; i
 | Global convergence of Conic Particle Gradient Descent for (P$\lambda$) | statement from `papers/1907.10300v2.pdf`; its irrelevance here is the argument of Section 8 |
 | $\ell_1$ versus $\ell_0$ at matched $N$, both exact | measured, `experiments/e4_exact_l0.py` |
 | Mass-constrained bound goes vacuous by $N=4$–8 | measured, `experiments/e3_absolute_bound.py` |
-| Big-$M$ node bound off by 5.7–8.9× | measured, `experiments/e8_branch_and_bound.py` |
+| Big-$M$ node bound vacuous at the root at every cap that admits the answer; ratio 2.3–5.3 where under 1 is needed | measured, `experiments/e25_node_bound.py`, 3/6 checks, on the search of `experiments/e8_branch_and_bound.py`. The three failures are pre-registered claims this run refuted and they are recorded in the output: the bound does drop below 1 at the last branching layer, and the gap after 200,000 nodes is 41–100% rather than 100% throughout |
 | Perspective relaxation root gap 64–86% | measured, `experiments/e9_perspective.py` |
 | Separable share of the quadratic is 0.15% at $\lambda_2=0$, 57.7% at $\lambda_2=1$ | computed, `experiments/e20_separable_mass.py`; a certified upper bound on the raw material, not on the resulting gap |
 | Theorem 9 | proved above |
 | Coherence governs tightness and costs approximation power | measured, `results/e4_coherence.txt`, at the endpoints only; the sweep is not monotone and is less so on two of its three targets |
-| Big-$M$ node bound figures (5.7–8.9×, the 24.0 amplitude, 200,000 nodes) | **the raw output of `e8_branch_and_bound.py` is not committed.** The numbers are quoted from a run that left no artifact in this repository, which by the standard applied everywhere else here is not good enough. e22 corroborates the amplitude scale independently, on a different enumeration; the rest is uncorroborated until the run is repeated and its output committed |
+| Whether a *better* node bound would fail the same way | untested. e25 measures the Fenchel bound e8 uses, specialised to a node; a stronger relaxation solved at each node — rank-one convexification, a higher Lasserre level, problem-specific cuts — is a different instrument and is not covered |
 | Certificate value not separable from chance on the restart population | measured, `experiments/e14_certifiable.py`; the bootstrap interval is the claim, not the point estimate |
-| Branch-and-bound solvers reaching $10^7$ variables | from search summaries; the sources were never read |
 | Shor / doubly-nonnegative moment relaxation: exact at coherence 0.06, 0.24–0.48 at 0.94 | measured, `experiments/e21_moment_relaxation.py`, 15/16 checks. Reported tightness is an upper bound, so the low values are the conclusive ones; the failing check is the margin between the contrast and the solver spread |
 | Coherence comes from equal-size near-coincident atoms at different orientations; removing the mean does not help; a localised negative surround packs 2.9× better | measured, `experiments/e24_atom_shape.py`, 2/3 checks. The failing check is this file's own pre-registered prediction, which said the binding pairs would be cross-scale and was wrong |
 | Moment hierarchies for the BLASSO target the dual constraint, not the count | from search summaries; not read |

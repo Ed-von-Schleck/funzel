@@ -1,4 +1,4 @@
-# E19: fixed-mass sweep for Theorem 10 of convexification-and-N.md
+# E19: fixed-mass sweep for Theorem 8 of convexification-and-N.md
 # rho is HELD FIXED while N varies. Section 9's e3 lets it grow with
 # N, which is why that measurement cannot test the theorem.
 # Read the module docstring for what this can and cannot show; in
@@ -14,7 +14,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -37,7 +37,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-1.42e-14)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=2.79e-09, L=26.174446, 0.5||y||^2=99.4030)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -51,7 +51,7 @@
     N=2: search 27.631009 vs exhaustive 27.598816 -> search excess 3.219e-02 = 2.26% of the gap at that N, 0 degenerate pairs skipped
     ok   C2 exhaustive N=2 scan terminated 
 
-  [74s] 7/7 checks passed
+  [72s] 7/7 checks passed
 
 ==============================================================================================
 # target=cartoon n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
@@ -63,7 +63,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -86,7 +86,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-3.19e-12)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=1.08e-06, L=15.769077, 0.5||y||^2=99.4030)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -112,7 +112,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -135,7 +135,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-6.26e-11)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=8.28e-06, L=5.510560, 0.5||y||^2=99.4030)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -149,7 +149,7 @@
     N=2: search 19.156404 vs exhaustive 17.893390 -> search excess 1.263e+00 = 10.20% of the gap at that N, 0 degenerate pairs skipped
     ok   C2 exhaustive N=2 scan terminated 
 
-  [172s] 7/7 checks passed
+  [171s] 7/7 checks passed
 
 ==============================================================================================
 # target=cartoon n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
@@ -161,7 +161,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -184,7 +184,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-5.97e-11)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=3.04e-06, L=2.548298, 0.5||y||^2=99.4030)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -198,7 +198,7 @@
     N=2: search 19.156404 vs exhaustive 17.893390 -> search excess 1.263e+00 = 8.23% of the gap at that N, 0 degenerate pairs skipped
     ok   C2 exhaustive N=2 scan terminated 
 
-  [787s] 7/7 checks passed
+  [709s] 7/7 checks passed
 
 ==============================================================================================
 # target=face n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
@@ -210,7 +210,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -233,7 +233,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-3.41e-13)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=4.42e-07, L=47.442461, 0.5||y||^2=138.7728)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -247,7 +247,7 @@
     N=2: search 52.973086 vs exhaustive 52.471472 -> search excess 5.016e-01 = 9.97% of the gap at that N, 0 degenerate pairs skipped
     ok   C2 exhaustive N=2 scan terminated 
 
-  [90s] 7/7 checks passed
+  [80s] 7/7 checks passed
 
 ==============================================================================================
 # target=face n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
@@ -259,7 +259,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -282,7 +282,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-3.23e-11)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=4.40e-06, L=32.528820, 0.5||y||^2=138.7728)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -296,7 +296,7 @@
     N=2: search 45.081890 vs exhaustive 45.081890 -> search excess 0.000e+00 = 0.00% of the gap at that N, 0 degenerate pairs skipped
     ok   C2 exhaustive N=2 scan terminated 
 
-  [76s] 7/7 checks passed
+  [65s] 7/7 checks passed
 
 ==============================================================================================
 # target=face n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
@@ -308,7 +308,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -331,7 +331,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-3.73e-11)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=4.35e-06, L=16.524698, 0.5||y||^2=138.7728)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -345,7 +345,7 @@
     N=2: search 44.697323 vs exhaustive 44.527615 -> search excess 1.697e-01 = 0.61% of the gap at that N, 0 degenerate pairs skipped
     ok   C2 exhaustive N=2 scan terminated 
 
-  [130s] 7/7 checks passed
+  [124s] 7/7 checks passed
 
 ==============================================================================================
 # target=face n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
@@ -357,7 +357,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -380,7 +380,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-5.42e-10)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=9.60e-06, L=10.223841, 0.5||y||^2=138.7728)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -394,7 +394,7 @@
     N=2: search 44.697323 vs exhaustive 44.527615 -> search excess 1.697e-01 = 0.49% of the gap at that N, 0 degenerate pairs skipped
     ok   C2 exhaustive N=2 scan terminated 
 
-  [399s] 7/7 checks passed
+  [347s] 7/7 checks passed
 
 ==============================================================================================
 # target=inmodel n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
@@ -406,7 +406,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -429,7 +429,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-2.22e-16)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=3.50e-10, L=0.491214, 0.5||y||^2=1.8558)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -443,7 +443,7 @@
     N=2: search 0.518663 vs exhaustive 0.518663 -> search excess 0.000e+00 = 0.00% of the gap at that N, 0 degenerate pairs skipped
     ok   C2 exhaustive N=2 scan terminated 
 
-  [27s] 7/7 checks passed
+  [24s] 7/7 checks passed
 
 ==============================================================================================
 # target=inmodel n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
@@ -455,7 +455,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -478,7 +478,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-2.22e-16)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=5.96e-11, L=0.252375, 0.5||y||^2=1.8558)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -492,7 +492,7 @@
     N=2: search 0.323021 vs exhaustive 0.323021 -> search excess 0.000e+00 = 0.00% of the gap at that N, 0 degenerate pairs skipped
     ok   C2 exhaustive N=2 scan terminated 
 
-  [25s] 7/7 checks passed
+  [21s] 7/7 checks passed
 
 ==============================================================================================
 # target=inmodel n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
@@ -504,7 +504,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -527,7 +527,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=1.39e-17)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=3.20e-10, L=0.011104, 0.5||y||^2=1.8558)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -541,7 +541,7 @@
     N=2: search 0.251979 vs exhaustive 0.251979 -> search excess -5.551e-16 = -0.00% of the gap at that N, 0 degenerate pairs skipped
     ok   C2 exhaustive N=2 scan terminated 
 
-  [17s] 7/7 checks passed
+  [14s] 7/7 checks passed
 
 ==============================================================================================
 # target=inmodel n=32 D=768 P=1024 b=1.000000 (unit-norm dictionary)
@@ -553,7 +553,7 @@
 
   gap(N) = U(N,rho) - L(rho), both at the same mass budget.
   gap+cert is the certified upper bound on the true gap.
-  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 10's bound.
+  T(N) = rho*b*||y||/sqrt(N) + rho^2*b^2/(2N) is Theorem 8's bound.
   free mass is the mass the UNCAPPED best N-atom encoding wants; where
   it exceeds rho, that row is not the (P0) comparison -- see (iii).
 
@@ -576,7 +576,7 @@
 
   checks  (T = theory, S = solver diagnostic)
     ok   T1 gap >= 0 at every N (F_N^rho is inside B_rho) (min U-L=-1.94e-10)
-    ok   T2 Theorem 10's bound holds at every N 
+    ok   T2 Theorem 8's bound holds at every N 
     ok   T3 mass never exceeds rho 
     ok   S1 certificate small against the problem scale (cert=2.89e-08, L=0.000000, 0.5||y||^2=1.8558)
     ok   S2 raw search already monotone in N without carry-forward (carry-forward is valid regardless; this only reports
@@ -590,10 +590,10 @@
     N=2: search 0.251979 vs exhaustive 0.251979 -> search excess -5.551e-16 = -0.00% of the gap at that N, 0 degenerate pairs skipped
     ok   C2 exhaustive N=2 scan terminated 
 
-  [24s] 7/7 checks passed
+  [18s] 7/7 checks passed
 
 ==============================================================================================
-# summary: N0 against the budget at which Theorem 10's bound first
+# summary: N0 against the budget at which Theorem 8's bound first
 # says anything at all (T(N) < 0.5||y||^2)
 
   target      rho/||y||   L as %half     K     N0   T<half from N=

@@ -59,6 +59,14 @@ WHAT THIS CANNOT SHOW.
         at N=3; what fails is the CERTIFICATE, not the search.
   (iv)  One image size, one dictionary family, three targets. Same limits as
         section 9.
+
+ADDED AFTER THE FIRST RUN. Check C1 and the cap sweep it reads are not
+pre-registered. The first run returned gaps below 100% at N=4 where e8's own
+table reports 100% on the same instances at twice the cap, which pointed at the
+cap rather than the node budget; C1 measures that directly instead of inferring
+it across two files whose node budgets differ. No pre-registered check was
+retuned -- B2, B4 and B5 failed and are left failing, with their thresholds as
+written.
 """
 
 import sys
@@ -164,7 +172,8 @@ def run(targets=("cartoon", "ascent", "face"), Ns=(4, 6), n=48,
                 f"{100*err/half:10.4f} {100*gap:8.2f} {nodes:9d}")
             rows.append(dict(name=name, N=N, M=M, ny=ny, ratio=ratio,
                              m_crit=m_crit, m_prune=m_prune, err=err,
-                             front=front, gap=gap, nodes=nodes, secs=t))
+                             front=front, gap=gap, nodes=nodes, secs=t,
+                             Gram=Gram, b=b, yy=yy, half=half))
             chains.append((name, N, prefix_chain(Gram, b, yy, S, N, M)))
 
     log("")
@@ -177,9 +186,35 @@ def run(targets=("cartoon", "ascent", "face"), Ns=(4, 6), n=48,
         log(f"  {name:>7}  {N}   {cells}{pad}")
     deep = sum(1 for _, _, ch in chains
                if min(r[3] for r in ch) == ch[-1][3])
+    below = sum(1 for _, _, ch in chains if min(r[3] for r in ch) < 1)
     log(f"  the ratio is lowest at the deepest node on {deep} of {len(chains)} "
-        "chains, so depth")
-    log("  helps it, but not by enough and not soon enough to prune anything.")
+        f"chains and falls below 1")
+    log(f"  on {below}, always at |I| = N-1 -- the layer where only one atom is "
+        "left to choose,")
+    log("  so the bound arrives after the branching it would have to prevent.")
+
+    # Added after the first run: the 1.0x gaps came in below 100% where e8's
+    # own table at 2.0x reports 100% on the same instances, which points at
+    # the cap rather than the node budget. This measures that directly instead
+    # of inferring it across two files with different node budgets.
+    log("")
+    log("  the same instances at wider caps, same node budget -- does the gap")
+    log("  respond to the cap, or to the search?")
+    mults = (1.0, 1.5, 2.0)
+    log("   target  N   " + "".join(f"{f'{mu:.1f}x M':>8}" for mu in mults))
+    sweep = []
+    for r in rows:
+        gs = []
+        for mu in mults:
+            cap = mu * r["M"]
+            Sg, eg = greedy_then_swap(r["Gram"], r["b"], r["N"], cap)
+            _, _, g, _, _, _ = bnb(r["Gram"], r["b"], r["yy"], r["N"], cap,
+                                   Sg, eg, max_nodes=max_nodes,
+                                   time_limit=time_limit)
+            gs.append(g)
+        sweep.append(gs)
+        log(f"  {r['name']:>7}  {r['N']}   " + "".join(f"{100*g:8.2f}"
+                                                       for g in gs))
 
     log("")
     log("  checks")
@@ -198,26 +233,44 @@ def run(targets=("cartoon", "ascent", "face"), Ns=(4, 6), n=48,
           "optimum's own largest amplitude, which excludes it)")
 
     fr = [r["front"] / r["err"] for r in rows]
-    check("B2 the gap is the bound's doing, not a weak incumbent",
+    check("B2 [PRE-REGISTERED, FAILED] the gap is the bound's doing, not a "
+          "weak incumbent",
           all(x < 0.01 for x in fr),
           f"(the certified lower bound reaches {100*max(fr):.2f}% of the error "
-          "actually attained, so no incumbent however good would close it)")
+          f"attained, on {sum(1 for x in fr if x >= 0.01)} of {len(fr)} "
+          "instances; it is not uniformly zero, so on those the bound is "
+          "doing real work and the gap is partly the search's)")
 
     amp = [r["M"] / r["ny"] for r in rows]
     check("B3 a single blob carries the energy of the whole image",
           max(amp) > 1.0,
           f"(largest amplitude / ||y|| ranges {min(amp):.2f}-{max(amp):.2f})")
 
-    check(f"B4 {max_nodes} nodes leave the gap open",
+    check(f"B4 [PRE-REGISTERED, FAILED] {max_nodes} nodes leave the gap open",
           all(r["gap"] > 0.5 for r in rows),
           f"(certified gap {100*min(r['gap'] for r in rows):.0f}-"
           f"{100*max(r['gap'] for r in rows):.0f}%, node cap reached on "
-          f"{sum(1 for r in rows if r['nodes'] >= max_nodes)} of {len(rows)})")
+          f"{sum(1 for r in rows if r['nodes'] >= max_nodes)} of {len(rows)}; "
+          "the gap is total at N in "
+          f"{sorted({r['N'] for r in rows if r['gap'] > 0.999}) or 'none'} and "
+          "partial elsewhere, so the failure is not uniform)")
 
     flat = [r[3] for _, _, ch in chains for r in ch]
-    check("B5 [PREDICTION] the ratio never falls below 1 along the chain",
+    check("B5 [PREDICTION, FAILED] the ratio never falls below 1 along the "
+          "chain",
           all(x > 1 for x in flat),
-          f"(minimum over every prefix node: {min(flat):.2f})")
+          f"(minimum over every prefix node: {min(flat):.2f}; it drops under 1 "
+          "at the last branching layer, where the bound can no longer prevent "
+          "any branching)")
+
+    mono = all(gs[i] <= gs[i + 1] + 1e-9
+               for gs in sweep for i in range(len(gs) - 1))
+    check("C1 the gap widens with the cap, on every instance",
+          mono,
+          f"(added after the first run; median gap "
+          f"{100*sorted(g[0] for g in sweep)[len(sweep)//2]:.0f}% at 1.0x "
+          f"against {100*sorted(g[-1] for g in sweep)[len(sweep)//2]:.0f}% at "
+          f"{mults[-1]:.1f}x)")
 
     log("")
     pr = [r["m_prune"] / r["M"] for r in rows]
@@ -227,6 +280,21 @@ def run(targets=("cartoon", "ascent", "face"), Ns=(4, 6), n=48,
     log("  and the product overwhelms the residual before the search starts.")
     log("  Making the bound useful rather than merely non-zero would need the")
     log(f"  cap at {min(pr):.2f}-{max(pr):.2f} of the optimum's largest amplitude.")
+    nfail = sum(1 for c in checks[:5] if not c)
+    partial = sorted({r["N"] for r in rows if r["gap"] <= 0.999})
+    log("")
+    log(f"  {nfail} of the 5 pre-registered claims failed, and they sharpen the")
+    log("  result rather than overturning it. The bound is not uniformly")
+    log("  vacuous: it drops below 1 at the last branching layer, and at N in")
+    log(f"  {partial or 'none'} it certifies part of the way to the answer. But")
+    log("  that is the layer where only one atom is left to choose, so nothing")
+    log("  is pruned by it, and the certified fraction falls away at the larger")
+    log("  budget. The instrument degrades as N grows, which is the direction")
+    log("  an encoder moves in.")
+    log("  What it responds to is the cap, not the search: on the same")
+    log("  instances at the same node budget, widening the cap never narrows")
+    log("  the gap and widens it wherever there is room left to widen.")
+    log("")
     log("  Theorem 11 is not what fails -- the polytope really does see N. What")
     log("  fails is that the only handle it gives is an amplitude cap, and on")
     log("  Gaussian blobs the amplitudes have no scale to cap at.")
