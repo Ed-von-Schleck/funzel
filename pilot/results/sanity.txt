@@ -1,0 +1,12 @@
+E1 gauss / random-pos              20/20 recovered   median rel_err 0.0000
+E2 hermite / moments+LS            12/20 recovered   median rel_err 0.0000
+E3 beta / unlocked-from-2          20/20 recovered   median rel_err 0.0000
+E4-7 gabor k=0.25pi / spectro      20/20 recovered   median rel_err 0.0000   median k_err 0.000
+E4-7 gabor k=0.25pi / random        3/20 recovered   median rel_err 1.0000   median k_err 2.999
+E4-7 gabor k=0.25pi / eps          20/20 recovered   median rel_err 0.0000   median k_err 0.000
+E4-7 gabor k=0.25pi / polar        20/20 recovered   median rel_err 0.0000   median k_err 0.000
+E4-7 gabor k=0.60pi / spectro      20/20 recovered   median rel_err 0.0000   median k_err 0.000
+E4-7 gabor k=0.60pi / random        9/20 recovered   median rel_err 1.0000   median k_err 0.797
+E4-7 gabor k=0.60pi / eps           0/20 recovered   median rel_err 1.0000   median k_err 0.926
+E4-7 gabor k=0.60pi / polar        20/20 recovered   median rel_err 0.0000   median k_err 0.000
+total 408s
